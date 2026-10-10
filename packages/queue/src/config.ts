@@ -20,7 +20,7 @@ export interface QueueConfig {
 
 export type QueueConfigInput = Partial<QueueConfig>;
 
-export const DEFAULT_QUEUE_NAME = "snapforge:capture";
+export const DEFAULT_QUEUE_NAME = "capture";
 export const DEFAULT_QUEUE_PREFIX = "snapforge";
 export const DEFAULT_SYNC_TIMEOUT_MS = 2_000;
 

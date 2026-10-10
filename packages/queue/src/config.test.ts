@@ -3,6 +3,10 @@ import { describe, it } from "node:test";
 import { DEFAULT_SYNC_TIMEOUT_MS, QUEUE_DEFAULTS, resolveQueueConfig } from "./config.js";
 
 describe("resolveQueueConfig", () => {
+  it("uses a BullMQ-compatible default queue name", () => {
+    assert.doesNotMatch(resolveQueueConfig().queueName, /:/);
+  });
+
   it("falls back to a local Redis when REDIS_URL is absent", () => {
     const previousRedisUrl = process.env.REDIS_URL;
     const previousUpstashRedisUrl = process.env.UPSTASH_REDIS_URL;
