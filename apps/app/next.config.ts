@@ -7,6 +7,7 @@ loadEnv({ path: path.resolve(__dirname, "../../.env") });
 const nextConfig: NextConfig = {
   turbopack: {
     root: path.resolve(__dirname, "../.."),
+    resolveAlias: { "./capture-artifact.js": "./src/lib/capture-artifact.ts" },
   },
   transpilePackages: ["@snapforge/contracts", "@snapforge/brand", "@snapforge/database"],
   serverExternalPackages: [

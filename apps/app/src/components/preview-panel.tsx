@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Icon } from "./icons";
 import { IPhone17ProMax } from "./apple-iphone-17-pro";
 import { PdfPreview } from "./pdf-preview";
@@ -19,6 +20,7 @@ export function PreviewPanel({
   device: string;
   localCapture?: boolean;
 }) {
+  const [copyStatus, setCopyStatus] = useState("Copy link");
   if (pending || result?.pending) {
     const job = result?.pending ? result : null;
     return (
@@ -93,8 +95,18 @@ export function PreviewPanel({
       <div className={styles.preview}>
         {image ? (
           <div className={styles.actions}>
+            {image.startsWith("/c/") ? <button
+              type="button"
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(new URL(image, window.location.origin).href);
+                  setCopyStatus("Link copied");
+                } catch { setCopyStatus("Copy failed"); }
+              }}
+              className="inline-flex items-center gap-2 rounded-md border border-line bg-surface px-3 py-2 text-xs font-medium text-ink shadow-sm transition-colors hover:border-line-strong"
+            ><Icon name="copy" className="size-3.5" /><span role="status">{copyStatus}</span></button> : null}
             <a
-              href={image}
+              href={image.startsWith("/c/") ? `${image}?download=1` : image}
               download={`snapforge-${metrics.width}x${metrics.height}.${fileExtension}`}
               aria-label="Save capture"
               className="inline-flex items-center gap-2 rounded-md border border-line bg-surface px-3 py-2 text-xs font-medium text-ink shadow-sm transition-colors hover:border-line-strong"

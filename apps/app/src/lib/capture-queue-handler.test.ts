@@ -40,8 +40,8 @@ for (const format of ["png", "pdf"]) test(`${format} dashboard delivery uses art
       duration_ms: 100, cached: false, blocked_requests: 0, cdn_url: url },
     duration_ms: 100, attempts_made: 1, enqueued_at: snapshot.enqueued_at, completed_at: Date.now() } });
   assert.ok(result.ok && !result.pending);
-  assert.equal(result.image, url);
-  assert.equal(result.artifact_url, url);
+  assert.equal(result.image, "/c/jam9i");
+  assert.equal(result.artifact_url, "/c/jam9i");
 });
 
 test("ownership failure is safely returned by the dashboard polling route", async () => {

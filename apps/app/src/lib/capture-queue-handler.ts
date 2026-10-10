@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { ERROR_HTTP_STATUS, SnapforgeError } from "@snapforge/contracts";
 import { CaptureAdmissionError, readCaptureRequest, type CaptureService, type JobSnapshot } from "@snapforge/queue";
 import type { CaptureResult } from "./capture.js";
+import { captureArtifactPath } from "./capture-artifact.js";
 
 export interface QueuedCaptureDependencies {
   authenticate(): Promise<string | null>;
@@ -17,7 +18,7 @@ export function dashboardCaptureResult(snapshot: JobSnapshot): CaptureResult {
       url: data.url, final_url: data.final_url, format: data.format as "png" | "jpeg" | "webp" | "pdf",
       width: data.width, height: data.height, bytes: data.bytes, duration_ms: data.duration_ms, blocked_requests: data.blocked_requests, cached: data.cached,
       render_diagnostics: data.render_diagnostics,
-    }, image: data.cdn_url, artifact_url: data.cdn_url };
+    }, image: captureArtifactPath(id), artifact_url: captureArtifactPath(id) };
     return { ok: false, id, at, error: snapshot.result.error ?? {
       code: "render_incomplete", message: "Capture did not produce a downloadable artifact", retriable: true, request_id: snapshot.request_id,
     } };
