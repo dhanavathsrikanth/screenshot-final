@@ -178,7 +178,7 @@ test("resolveStorageConfig supports virtual-hosted S3 endpoints", () => {
 
 test("put sends revalidating cache headers and the right content type", async () => {
   const { store, sent } = harness();
-  const stored = await store.save(options, DATA, Buffer.from("abc"));
+  const stored = await store.save({ ...options, format: "png" }, DATA, Buffer.from("abc"));
   assert.equal(stored.bytes, 3);
   const put = sent.find((c) => c.name === "PutObjectCommand");
   assert.equal(put?.input.ContentType, "image/png");

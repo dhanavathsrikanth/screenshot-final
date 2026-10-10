@@ -5,7 +5,9 @@ import {
   S3Client,
   DeleteObjectCommand,
   type S3ClientConfig,
+  type PutObjectCommandInput,
 } from "@aws-sdk/client-s3";
+import { Upload } from "@aws-sdk/lib-storage";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 /**
@@ -87,6 +89,12 @@ export interface Presigner {
   ): Promise<string>;
 }
 
+export interface MultipartUploader {
+  put(input: PutObjectCommandInput): Promise<{ ETag?: string }>;
+}
+
+export const MULTIPART_THRESHOLD_BYTES = 10 * 1024 * 1024;
+
 const sdkPresigner: Presigner = {
   sign: (client, command, options) =>
     getSignedUrl(client as S3Client, command, options),
@@ -112,7 +120,7 @@ export class R2Storage implements StorageClient {
   private readonly config: StorageConfig;
   private readonly presigner: Presigner;
 
-  constructor(client: ObjectStoreClient, config: StorageConfig, presigner: Presigner = sdkPresigner) {
+  constructor(client: ObjectStoreClient, config: StorageConfig, presigner: Presigner = sdkPresigner, private readonly multipart?: MultipartUploader) {
     if (!config.bucket) throw new StorageConfigError("storage bucket is required");
     if (!config.accessKeyId) throw new StorageConfigError("storage access key is required");
     if (!config.secretAccessKey) throw new StorageConfigError("storage secret key is required");
@@ -130,16 +138,17 @@ export class R2Storage implements StorageClient {
     metadata?: StoredObjectMetadata,
   ): Promise<StoredObject> {
     const ttl = cacheControlSeconds ?? DEFAULT_PRESIGN_TTL_SECONDS;
-    const result = (await this.client.send(
-      new PutObjectCommand({
-        Bucket: this.bucket,
-        Key: objectKey,
-        Body: body,
-        ContentType: contentType,
-        CacheControl: `public, max-age=${ttl}, must-revalidate`,
-        ...(metadata && Object.keys(metadata).length > 0 ? { Metadata: metadata } : {}),
-      }),
-    )) as { ETag?: string } | undefined;
+    const input: PutObjectCommandInput = {
+      Bucket: this.bucket,
+      Key: objectKey,
+      Body: body,
+      ContentType: contentType,
+      CacheControl: `public, max-age=${ttl}, must-revalidate`,
+      ...(metadata && Object.keys(metadata).length > 0 ? { Metadata: metadata } : {}),
+    };
+    const result = (this.multipart && body.byteLength >= MULTIPART_THRESHOLD_BYTES
+      ? await this.multipart.put(input)
+      : await this.client.send(new PutObjectCommand(input))) as { ETag?: string } | undefined;
 
     return {
       objectKey,
@@ -263,5 +272,14 @@ export function createR2Storage(config: StorageConfig): R2Storage {
     },
     ...(config.endpoint ? { endpoint: config.endpoint, forcePathStyle: config.forcePathStyle ?? true } : {}),
   };
-  return new R2Storage(new S3Client(clientConfig), config);
+  const client = new S3Client(clientConfig);
+  return new R2Storage(client, config, sdkPresigner, {
+    put: async (params) => new Upload({
+      client,
+      params,
+      partSize: 5 * 1024 * 1024,
+      queueSize: 3,
+      leavePartsOnError: false,
+    }).done(),
+  });
 }

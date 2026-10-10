@@ -60,6 +60,28 @@ test("download action serves an attachment and storage errors do not disclose si
   assert.doesNotMatch(await unavailable.text(), /private-signature/);
 });
 
+test("retained previews bypass queue finalization only after authentication and an owned lookup", async () => {
+  let account: string | null = "owner";
+  let storedReads = 0;
+  let fallbackReads = 0;
+  const handle = createCaptureArtifactHandler({
+    authenticate: async () => account,
+    storedCapture: async (owner, job) => { storedReads++; assert.equal(job, id); return owner === "owner" ? snapshot : null; },
+    lookup: async () => { fallbackReads++; throw new Error("not owned"); },
+    storage: () => ({ config, client: { urlFor: async () => "https://storage.example/fresh" } }),
+    fetch: async () => new Response("%PDF"),
+  });
+  assert.equal((await handle(new Request("https://app.test/c/test"), token)).status, 200);
+  assert.equal(storedReads, 1);
+  assert.equal(fallbackReads, 0);
+  account = "other";
+  assert.equal((await handle(new Request("https://app.test/c/test"), token)).status, 404);
+  assert.equal(fallbackReads, 1);
+  account = null;
+  assert.equal((await handle(new Request("https://app.test/c/test"), token)).status, 401);
+  assert.equal(storedReads, 2);
+});
+
 test("an unsatisfiable PDF range preserves the storage size without exposing its body", async () => {
   const handle = createCaptureArtifactHandler({ authenticate: async () => "owner", lookup: async () => snapshot,
     storage: () => ({ config, client: { urlFor: async () => "https://storage.example/fresh" } }),

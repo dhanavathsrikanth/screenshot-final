@@ -54,6 +54,11 @@ export interface WorkerRuntimeOptions {
  * reverse order they were opened.
  */
 export function buildWorkerRuntime(options: WorkerRuntimeOptions = {}): WorkerRuntime {
+  const logger = options.logger ?? ((level, message, fields) => {
+    if (level === "debug") return;
+    const { url: _url, ...safeFields } = fields ?? {};
+    console.log(JSON.stringify({ level, message, ...safeFields }));
+  }) satisfies NonNullable<WorkerRuntimeOptions["logger"]>;
   const queueConfig = resolveQueueConfig();
   const connection = options.queueConnection ?? createQueueConnection(queueConfig);
   const store =
@@ -75,7 +80,7 @@ export function buildWorkerRuntime(options: WorkerRuntimeOptions = {}): WorkerRu
   const executor = createWorkerExecutor({
     engine,
     store,
-    logger: options.logger,
+    logger,
   });
 
   const workerId = options.workerId ?? `worker-${randomUUID()}`;

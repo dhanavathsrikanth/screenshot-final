@@ -35,6 +35,7 @@ export function captureObjectKey(artifactUrl: string, config: StorageConfig): st
 
 export interface CaptureArtifactDependencies {
   authenticate(): Promise<string | null>;
+  storedCapture?(accountId: string, jobId: string): Promise<JobSnapshot | null>;
   lookup(accountId: string, jobId: string, requestId: string): Promise<JobSnapshot>;
   storage(): { config: StorageConfig; client: Pick<StorageClient, "urlFor"> };
   fetch?: typeof fetch;
@@ -49,7 +50,7 @@ export function createCaptureArtifactHandler(deps: CaptureArtifactDependencies) 
       const jobId = captureArtifactJobId(token);
       if (!jobId) return new Response("Capture not found", { status: 404, headers });
       let snapshot: JobSnapshot;
-      try { snapshot = await deps.lookup(accountId, jobId, randomUUID()); }
+      try { snapshot = (await deps.storedCapture?.(accountId, jobId)) ?? await deps.lookup(accountId, jobId, randomUUID()); }
       catch { return new Response("Capture not found or no longer available", { status: 404, headers }); }
       const data = snapshot.result?.ok ? snapshot.result.data : undefined;
       if (!data?.cdn_url) return new Response("Capture not available", { status: 404, headers });

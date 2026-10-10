@@ -40,6 +40,7 @@ export function createWorkerExecutor(deps: {
       throw error;
     }
 
+    const renderedAt = Date.now();
     const stored = outcome.data.cached ? outcome.data : await deps.store.save(options, outcome.data, outcome.buffer);
     if (!stored.cdn_url) throw new SnapforgeError({
       code: "internal_error",
@@ -51,7 +52,10 @@ export function createWorkerExecutor(deps: {
       worker_id: context.workerId,
       attempt: context.attempt,
       duration_ms: Date.now() - started,
-      url: options.url,
+      engine_ms: renderedAt - started,
+      storage_ms: Date.now() - renderedAt,
+      phases_ms: outcome.timings?.phases_ms,
+      format: stored.format,
       bytes: stored.bytes,
       cached: stored.cached,
     });

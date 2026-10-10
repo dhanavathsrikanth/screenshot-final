@@ -1,4 +1,5 @@
 import { auth } from "@clerk/nextjs/server";
+import { captureLifecycle } from "@snapforge/database";
 import { createR2Storage, resolveStorageConfig } from "@snapforge/storage";
 import { createCaptureArtifactHandler } from "@/lib/capture-artifact";
 import { getCaptureRuntime } from "@/lib/capture-service";
@@ -9,6 +10,7 @@ export const maxDuration = 60;
 
 const handler = createCaptureArtifactHandler({
   authenticate: async () => (await auth()).userId,
+  storedCapture: (accountId, jobId) => captureLifecycle.storedCapture(accountId, jobId),
   lookup: async (accountId, jobId, requestId) => (await getCaptureRuntime()).service.lookup({ accountId }, jobId, requestId),
   storage: () => {
     const config = resolveStorageConfig();
