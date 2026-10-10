@@ -1,3 +1,4 @@
+import { once } from "node:events";
 import { Queue, Worker } from "bullmq";
 import { Redis } from "ioredis";
 import type { ConnectionOptions, Processor, WorkerOptions } from "bullmq";
@@ -25,6 +26,18 @@ export interface QueueConnection {
   /** Reserved for the worker's blocking `BRPOPLPUSH` loop. */
   worker: Redis;
   close(): Promise<void>;
+}
+
+export async function waitForQueueConnection(connection: QueueConnection): Promise<void> {
+  await Promise.all([connection.producer, connection.worker].map(async (client) => {
+    if (client.status === "ready") return;
+    if (client.status === "wait") {
+      await client.connect();
+      return;
+    }
+    if (client.status === "end") throw new Error("Capture queue connection is closed");
+    await once(client, "ready");
+  }));
 }
 
 export function createQueueConnection(config: QueueConfig): QueueConnection {

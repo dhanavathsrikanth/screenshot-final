@@ -2,6 +2,23 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { startWorkerRuntime } from "../src/main.js";
 
+test("worker waits for Redis before publishing readiness or accepting jobs", async () => {
+  const calls: string[] = [];
+  let connect: (() => void) | undefined;
+  const connected = new Promise<void>((resolve) => { connect = resolve; });
+  const started = startWorkerRuntime({
+    ready: async () => { calls.push("connecting"); await connected; },
+    engine: { warm: async () => { calls.push("warm"); } },
+    worker: { start: async () => { calls.push("run"); } },
+    heartbeat: { start: async () => { calls.push("ready"); }, close: async () => {} },
+    close: async () => {},
+  });
+  assert.deepEqual(calls, ["connecting"]);
+  connect!();
+  await started;
+  assert.deepEqual(calls, ["connecting", "warm", "run", "ready"]);
+});
+
 test("worker waits for browser initialization before accepting jobs", async () => {
   const calls: string[] = [];
   let ready: (() => void) | undefined;

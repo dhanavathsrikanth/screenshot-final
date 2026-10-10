@@ -22,6 +22,7 @@ import {
   resolveQueueConfig,
   type CaptureWorker,
   WorkerHeartbeat,
+  waitForQueueConnection,
 } from "@snapforge/queue";
 import { createWorkerExecutor } from "./executor.js";
 import { createWorkerCache } from "./cache.js";
@@ -31,6 +32,7 @@ export interface WorkerRuntime {
   engine: SnapforgeEngine;
   store: CaptureStore;
   heartbeat: WorkerHeartbeat;
+  ready(): Promise<void>;
   close(): Promise<void>;
 }
 
@@ -102,7 +104,7 @@ export function buildWorkerRuntime(options: WorkerRuntimeOptions = {}): WorkerRu
     }
   };
 
-  return { worker, engine, store, heartbeat, close };
+  return { worker, engine, store, heartbeat, ready: () => waitForQueueConnection(connection), close };
 }
 
 /**
@@ -131,10 +133,12 @@ export async function startWorkerRuntime(runtime: {
   engine: Pick<SnapforgeEngine, "warm">;
   worker: Pick<CaptureWorker, "start">;
   heartbeat?: Pick<WorkerHeartbeat, "start" | "close">;
+  ready?(): Promise<void>;
   close(): Promise<void>;
 }): Promise<void> {
   let keepWarmTimer: ReturnType<typeof setInterval> | undefined;
   try {
+    if (runtime.ready) await runtime.ready();
     await runtime.engine.warm();
     keepWarmTimer = setInterval(() => {
       void runtime.engine.warm().catch(() => {});
