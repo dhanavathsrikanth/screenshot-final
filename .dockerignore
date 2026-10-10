@@ -1,0 +1,12 @@
+**/node_modules
+**/dist
+**/.next
+**/tsconfig.tsbuildinfo
+.git
+.env*
+.qa
+**/qa
+**/probe-*.mjs
+**/repro-*.mjs
+**/render-*.mjs
+apps/benchmark/results

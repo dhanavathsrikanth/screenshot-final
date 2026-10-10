@@ -165,6 +165,17 @@ test("resolveStorageConfig keeps an explicit endpoint and cdn origin", () => {
   assert.equal(config?.forcePathStyle, true);
 });
 
+test("resolveStorageConfig supports virtual-hosted S3 endpoints", () => {
+  const config = resolveStorageConfig({
+    STORAGE_BUCKET: "shots",
+    STORAGE_ACCESS_KEY_ID: "key",
+    STORAGE_SECRET_ACCESS_KEY: "secret",
+    STORAGE_ENDPOINT: "https://storage.railway.app",
+    STORAGE_FORCE_PATH_STYLE: "false",
+  } as NodeJS.ProcessEnv);
+  assert.equal(config?.forcePathStyle, false);
+});
+
 test("put sends revalidating cache headers and the right content type", async () => {
   const { store, sent } = harness();
   const stored = await store.save(options, DATA, Buffer.from("abc"));

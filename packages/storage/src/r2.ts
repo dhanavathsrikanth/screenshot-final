@@ -248,7 +248,9 @@ export function resolveStorageConfig(env: NodeJS.ProcessEnv = process.env): Stor
         ? { endpoint: env.STORAGE_ENDPOINT }
         : {}),
     ...(env.STORAGE_CDN_BASE_URL ? { cdnBaseUrl: env.STORAGE_CDN_BASE_URL } : {}),
-    ...(env.STORAGE_FORCE_PATH_STYLE === "true" ? { forcePathStyle: true } : {}),
+    ...(env.STORAGE_FORCE_PATH_STYLE === "true" || env.STORAGE_FORCE_PATH_STYLE === "false"
+      ? { forcePathStyle: env.STORAGE_FORCE_PATH_STYLE === "true" }
+      : {}),
   };
 }
 
