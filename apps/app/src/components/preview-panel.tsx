@@ -97,6 +97,8 @@ export function PreviewPanel({
           <div className={styles.actions}>
             {image.startsWith("/c/") ? <button
               type="button"
+              aria-label="Copy capture link"
+              title="Requires your signed-in account; available while the capture is retained"
               onClick={async () => {
                 try {
                   await navigator.clipboard.writeText(new URL(image, window.location.origin).href);

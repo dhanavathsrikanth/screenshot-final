@@ -173,3 +173,10 @@ test("an uncertain capture submission is not automatically sent twice", async ()
   }));
   assert.equal(calls, 1);
 });
+
+test("documentation previews accept only capture delivery paths as relative URLs", () => {
+  assert.equal(responseCapture({ ok: true, metrics: { format: "pdf" }, image: "/c/uAAAAAAAAAAAAAAAAAAAAAA" })?.artifact, "/c/uAAAAAAAAAAAAAAAAAAAAAA");
+  for (const url of ["//attacker.example/file.pdf", "/api/keys", "/c/../api/keys", "/c/uAAA?redirect=evil"]) {
+    assert.equal(responseCapture({ ok: true, metrics: { format: "pdf" }, image: url }), null);
+  }
+});

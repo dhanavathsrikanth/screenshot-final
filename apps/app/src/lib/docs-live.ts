@@ -153,7 +153,8 @@ export function responseCapture(body: unknown): { artifact: string; format: stri
   if (typeof artifact !== "string" || !["png", "jpeg", "webp", "pdf"].includes(format)) return null;
   const inline = /^data:(image\/(png|jpeg|webp)|application\/pdf);base64,[A-Za-z0-9+/=]+$/.test(artifact);
   try {
-    const url = new URL(artifact);
+    const local = /^\/c\/[uij][A-Za-z0-9_-]{1,255}$/.test(artifact);
+    const url = new URL(artifact, local ? "https://snapforge.invalid" : undefined);
     if (!inline && (url.username || url.password || !["https:", "http:"].includes(url.protocol))) return null;
   } catch { return null; }
   return { artifact, format, jobId: typeof data.id === "string" ? data.id : undefined };
