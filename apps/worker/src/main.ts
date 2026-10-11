@@ -75,7 +75,7 @@ export function buildWorkerRuntime(options: WorkerRuntimeOptions = {}): WorkerRu
         storage: createR2Storage(storageConfig),
       });
     })();
-  const engine = createEngine({ maxConcurrentCaptures: queueConfig.concurrency, allowPrivateNetwork: false, ...options.engineConfig }, createWorkerCache(store));
+  const engine = createEngine({ maxConcurrentCaptures: queueConfig.concurrency, allowPrivateNetwork: false, prewarmPages: false, retries: 0, ...options.engineConfig }, createWorkerCache(store));
 
   const executor = createWorkerExecutor({
     engine,

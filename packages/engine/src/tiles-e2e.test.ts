@@ -50,7 +50,7 @@ test("scroll capture preserves reveal animations, lazy media, and delayed growth
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
   const engine = createEngine({ stealth: false, maxConcurrentCaptures: 1, autoConcurrency: false });
   t.after(async () => { await engine.close(); await new Promise<void>((resolve) => server.close(() => resolve())); });
-  const options = { url: `http://127.0.0.1:${(server.address() as AddressInfo).port}`, viewport: { width: 800, height: 500 }, full_page: true, cache_ttl: 0, timeout: 20_000 };
+  const options = { url: `http://127.0.0.1:${(server.address() as AddressInfo).port}`, viewport: { width: 800, height: 500 }, format: "png", full_page: true, cache_ttl: 0, timeout: 20_000 };
   const png = await engine.capture(options, { inspectPage: true });
   assert.match(png.inspection?.markdown ?? "", /Upward scrolls: 1/);
   assert.equal(png.data.render_diagnostics?.stopped_reason, "bottom");
@@ -91,7 +91,7 @@ test("scroll capture bounds, cleanup, and fractional device scaling", { timeout:
   const context = await browser.newContext({ viewport: { width: 412, height: 600 }, deviceScaleFactor: 2.625 });
   const page = await context.newPage();
   await page.setContent('<html style="scroll-behavior:smooth"><body style="margin:0"><main style="height:2500px">Fractional scale content</main></body></html>');
-  const options = captureOptionsSchema.parse({ url: "https://example.com", full_page: true });
+  const options = captureOptionsSchema.parse({ url: "https://example.com", full_page: true, format: "png" });
   const output = await captureTiles(page, options, { ...config, maxPageHeight: 2000 }, 2.625, "fractional");
   assert.equal(output.width, 1082);
   assert.equal(output.height, 5250);
@@ -132,7 +132,7 @@ test("section capture keeps the visible frame of infinite animations and restore
   const page = await browser.newPage({ viewport: { width: 800, height: 500 }, deviceScaleFactor: 2 });
   await page.setContent(`<html><style>body{margin:0}main{height:1000px;background:rgb(103,61,230);animation:reveal 10s infinite}@keyframes reveal{0%,4%{opacity:0}5%,100%{opacity:1}}</style><body><main>Animated content</main></body></html>`);
   await page.waitForTimeout(650);
-  const options = captureOptionsSchema.parse({ url: "https://example.com", full_page: true });
+  const options = captureOptionsSchema.parse({ url: "https://example.com", full_page: true, format: "png" });
   const output = await captureTiles(page, options, config, 2, "infinite");
   const pixel = await sharp(output.buffer).extract({ left: 1400, top: 300, width: 1, height: 1 }).removeAlpha().raw().toBuffer();
   assert.deepEqual(Array.from(pixel), [103, 61, 230]);
@@ -147,7 +147,7 @@ test("fixed footers appear at the bottom once and shadow headers do not repeat",
   const page = await browser.newPage({ viewport: { width: 800, height: 500 }, deviceScaleFactor: 2 });
   await page.setContent('<html><body style="margin:0;background:rgb(103,61,230)"><main style="height:1600px">Complete page</main><footer style="position:fixed;bottom:0;height:150px;width:100%;background:white">Footer</footer><div id="host"></div></body></html>');
   await page.evaluate(() => { document.querySelector("#host")!.attachShadow({ mode: "open" }).innerHTML = '<header style="position:fixed;top:0;height:30px;width:100%;background:white">Shadow header</header>'; });
-  const output = await captureTiles(page, captureOptionsSchema.parse({ url: "https://example.com", full_page: true }), config, 2, "fixed");
+  const output = await captureTiles(page, captureOptionsSchema.parse({ url: "https://example.com", full_page: true, format: "png" }), config, 2, "fixed");
   const pixel = async (top: number) => Array.from(await sharp(output.buffer).extract({ left: 1400, top, width: 1, height: 1 }).removeAlpha().raw().toBuffer());
   assert.deepEqual(await pixel(10), [255, 255, 255]);
   assert.deepEqual(await pixel(800), [103, 61, 230]);
@@ -161,9 +161,36 @@ test("navigation that becomes fixed after scrolling does not repeat", { timeout:
   t.after(() => browser.close());
   const page = await browser.newPage({ viewport: { width: 800, height: 500 }, deviceScaleFactor: 2 });
   await page.setContent('<html><body style="margin:0;background:rgb(103,61,230)"><nav style="height:40px;width:100%;background:white">Navigation</nav><main style="height:1600px">Complete page</main><script>addEventListener("scroll",()=>{document.querySelector("nav").style.position=scrollY>0?"fixed":"static";document.querySelector("nav").style.top="0";document.querySelector("main").style.paddingTop=scrollY>0?"40px":"0"})</script></body></html>');
-  const output = await captureTiles(page, captureOptionsSchema.parse({ url: "https://example.com", full_page: true }), config, 2, "dynamic-nav");
+  const output = await captureTiles(page, captureOptionsSchema.parse({ url: "https://example.com", full_page: true, format: "png" }), config, 2, "dynamic-nav");
   const pixel = async (top: number) => Array.from(await sharp(output.buffer).extract({ left: 1400, top, width: 1, height: 1 }).removeAlpha().raw().toBuffer());
   assert.deepEqual(await pixel(10), [255, 255, 255]);
   assert.deepEqual(await pixel(860), [103, 61, 230]);
   assert.equal(await page.locator("nav").evaluate((element) => (element as HTMLElement).style.visibility), "");
+});
+test("image assembly can release the renderer without changing PNG pixels or JPEG and WebP output", { timeout: 60_000 }, async (t) => {
+  const browser = await chromium.launch();
+  t.after(() => browser.close());
+  for (const format of ["png", "jpeg", "webp"] as const) {
+    const render = async (release: boolean) => {
+      const context = await browser.newContext({ viewport: { width: 320, height: 240 }, deviceScaleFactor: 2 });
+      const page = await context.newPage();
+      await page.setContent('<html><body style="margin:0;background:rgb(103,61,230)"><main style="height:900px"><h1>Full quality</h1><footer style="position:absolute;top:800px;color:white">Complete footer</footer></main></body></html>');
+      let released = false;
+      const output = await captureTiles(page, captureOptionsSchema.parse({ url: "https://example.com", full_page: true, format }),
+        { ...config, allowStatic: true }, 2, "release-renderer", release ? async () => {
+          assert.equal(await page.evaluate(() => scrollY), 0);
+          await context.close();
+          released = true;
+        } : undefined);
+      assert.equal(released, release);
+      await context.close();
+      return output;
+    };
+    const original = await render(false);
+    const released = await render(true);
+    assert.equal(released.width, original.width);
+    assert.equal(released.height, original.height);
+    assert.deepEqual(await sharp(released.buffer).raw().toBuffer(), await sharp(original.buffer).raw().toBuffer());
+    assert.deepEqual(released.diagnostics, original.diagnostics);
+  }
 });

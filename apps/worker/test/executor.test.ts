@@ -231,6 +231,16 @@ test("an incomplete render is never persisted", async () => {
   assert.equal(store.calls.length, 0);
 });
 
+test("an exhausted rendering budget is terminal instead of repeating a minute-long render", async () => {
+  const engine = new FakeEngine();
+  const store = new FakeStore();
+  engine.setErrors([new SnapforgeError({ code: "render_timeout", message: "Budget exhausted", requestId: "timeout" })]);
+  const executor = createWorkerExecutor({ engine: engine as never, store: store as never });
+  await assert.rejects(executor(OPTIONS, { workerId: "timeout-worker", attempt: 1, signal: new AbortController().signal, updateProgress: async () => {} }),
+    (error: unknown) => error instanceof SnapforgeError && error.code === "render_timeout" && error.retriable === false);
+  assert.equal(store.calls.length, 0);
+});
+
 test("storage without a delivery URL cannot produce a billable successful capture", async () => {
   const engine = new FakeEngine();
   const store = new FakeStore();

@@ -263,18 +263,19 @@ export class SnapforgeEngine {
     // Lease a slot for the whole retry loop. Recycling restarts this slot's browser
     // only, so a crash here never disturbs captures running on sibling slots.
     const slot = await timer.measure("pool_wait", () => this.pool.acquire(requestId));
+    const budget = new SettlementBudget(options.timeout);
     try {
       let lastError: SnapforgeError | null = null;
       for (let attempt = 0; attempt <= this.config.retries; attempt++) {
         try {
-          const outcome = await this.runAttempt(options, requestId, slot.id, mode, timer);
+          const outcome = await this.runAttempt(options, requestId, slot.id, mode, timer, budget);
           if (mode.inspectPage) return outcome;
           return { data: await timer.measure("cache_save", () => this.cache.save(options, outcome.data, outcome.buffer)), buffer: outcome.buffer };
         } catch (err) {
           const error = toSnapforgeError(err, requestId);
           lastError = error;
           const canRetry =
-            attempt < this.config.retries && error.code === "render_crashed";
+            attempt < this.config.retries && error.code === "render_crashed" && !budget.expired();
           this.config.logger("warn", "capture attempt failed", {
             request_id: requestId,
             slot: slot.id,
@@ -282,8 +283,10 @@ export class SnapforgeEngine {
             code: error.code,
             message: error.message,
           });
+          if (error.code === "render_crashed" || error.code === "render_timeout") {
+            await timer.measure("browser_recycle", () => this.pool.recycle(slot, error.message));
+          }
           if (!canRetry) throw error;
-          await timer.measure("browser_recycle", () => this.pool.recycle(slot, error.message));
         }
       }
       throw (
@@ -305,6 +308,7 @@ export class SnapforgeEngine {
     slotId: number,
     mode: { inspectPage?: boolean; includeSelectorBox?: boolean },
     timer: CaptureTimer,
+    budget: SettlementBudget,
   ): Promise<CaptureOutcome> {
     const started = Date.now();
     const viewport = resolveViewport(options, requestId);
@@ -324,6 +328,7 @@ export class SnapforgeEngine {
       this.config.prewarmPages ? slot.manager.standby : undefined,
     );
 
+    const deadlineTimer = setTimeout(() => { void session.close(); }, budget.remaining());
     try {
       session.egressCountry = await timer.measure("egress", () => this.verifySessionEgress(
         session,
@@ -331,8 +336,9 @@ export class SnapforgeEngine {
         requestId,
         options.url,
       ));
-      return await this.pipeline(session, options, requestId, viewport, started, slotId, mode, timer);
+      return await this.pipeline(session, options, requestId, viewport, started, slotId, mode, timer, budget);
     } catch (err) {
+      if (budget.expired()) throw new SnapforgeError({ code: "render_timeout", message: "Capture exhausted its rendering budget", requestId, retriable: false });
       try {
         session.artifacts.notePage(session.page.url());
       } catch {
@@ -344,6 +350,7 @@ export class SnapforgeEngine {
         artifacts: session.artifacts.snapshot(),
       });
     } finally {
+      clearTimeout(deadlineTimer);
       await timer.measure("cleanup", () => session.close());
     }
   }
@@ -382,6 +389,7 @@ export class SnapforgeEngine {
     slotId: number,
     mode: { inspectPage?: boolean; includeSelectorBox?: boolean },
     timer: CaptureTimer,
+    budget: SettlementBudget,
   ): Promise<CaptureOutcome> {
     const { page, tracker } = session;
 
@@ -393,7 +401,6 @@ export class SnapforgeEngine {
     };
     page.on("response", onNavResponse);
 
-    const budget = new SettlementBudget(options.timeout);
     if (options.format === "pdf") await page.emulateMedia({ media: "screen" });
     const waitUntil =
       options.wait_until === "networkidle" ? "domcontentloaded" : options.wait_until;
@@ -465,6 +472,9 @@ export class SnapforgeEngine {
     }
 
     let output: CaptureOutput;
+    let inspection: CaptureOutcome["inspection"];
+    let finalUrl: string | undefined;
+    let browserWorkComplete = false;
     let nativeTruncated = false;
     let selectorBox: { x: number; y: number; width: number; height: number } | undefined;
 
@@ -554,17 +564,23 @@ export class SnapforgeEngine {
       const plan = planCapture(options, metrics, this.config.maxPageHeight);
       nativeTruncated = options.full_page && raw.dh > this.config.maxPageHeight;
       output = await timer.measure("screenshot", () => options.full_page && options.full_page_algorithm === "by_sections"
-        ? captureTiles(page, options, { ...scrollConfig, timeoutMs: budget.remaining() }, viewport.deviceScaleFactor, requestId)
+        ? captureTiles(page, options, { ...scrollConfig, timeoutMs: budget.remaining() }, viewport.deviceScaleFactor, requestId, async () => {
+          await timer.measure("quality_check", () => ensureCaptureQuality(page, options, budget, this.config.contentWaitMs, requestId));
+          if (mode.inspectPage) inspection = await timer.measure("inspection", () => this.inspectPage(page));
+          finalUrl = page.url();
+          await timer.measure("cleanup", () => session.close());
+          browserWorkComplete = true;
+        })
         : captureOutput(page, plan, options, metrics, this.config.maxPageHeight));
-      if (options.full_page) await timer.measure("quality_check", () => ensureCaptureQuality(page, options, budget, this.config.contentWaitMs, requestId));
+      if (options.full_page && !browserWorkComplete) await timer.measure("quality_check", () => ensureCaptureQuality(page, options, budget, this.config.contentWaitMs, requestId));
     }
 
     ensureOutputQuality(output, options, requestId);
-    const inspection = mode.inspectPage ? await timer.measure("inspection", () => this.inspectPage(page)) : undefined;
+    if (mode.inspectPage && !browserWorkComplete) inspection = await timer.measure("inspection", () => this.inspectPage(page));
 
     const data: CaptureSuccessData = {
       url: options.url,
-      final_url: session.page.url(),
+      final_url: finalUrl ?? session.page.url(),
       format: options.format,
       width: output.width,
       height: output.height,

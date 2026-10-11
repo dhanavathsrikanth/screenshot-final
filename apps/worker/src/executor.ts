@@ -36,7 +36,14 @@ export function createWorkerExecutor(deps: {
         duration_ms: Date.now() - started,
         url: options.url,
         reason,
+        ...(error instanceof SnapforgeError ? {
+          code: error.code,
+          phases_ms: (error.details?.timings as { phases_ms?: Record<string, number> } | undefined)?.phases_ms,
+        } : {}),
       });
+      if (error instanceof SnapforgeError && error.code === "render_timeout") {
+        throw new SnapforgeError({ code: error.code, message: error.message, requestId: error.requestId, retriable: false, details: error.details });
+      }
       throw error;
     }
 

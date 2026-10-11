@@ -23,6 +23,7 @@ export async function captureTiles(
   config: FullPageConfig,
   deviceScaleFactor: number,
   requestId: string,
+  beforeEncode?: () => Promise<void>,
 ): Promise<CaptureOutput> {
   const deadline = Date.now() + config.timeoutMs;
   const checkDeadline = () => {
@@ -136,6 +137,8 @@ export async function captureTiles(
   if (!tiles.length) {
     throw new SnapforgeError({ code: "render_timeout", message: "No viewport could be captured within the full-page budget", requestId });
   }
+  await beforeEncode?.();
+  checkDeadline();
   const first = await sharp(tiles[0].buffer).metadata();
   const width = first.width!;
   const renderScale = first.height! / tiles[0].viewportHeight;

@@ -64,7 +64,8 @@ export const DEFAULT_CONCURRENCY_POLICY: ConcurrencyPolicy = {
 
 export function sampleCpu(now = Date.now()): CpuSample {
   const cpus = os.cpus();
-  const totalMemoryMb = Math.round(os.totalmem() / MB);
+  const memory = resolveMemoryCapacity(os.totalmem(), os.freemem(), process.constrainedMemory?.() ?? 0, process.availableMemory?.() ?? os.freemem());
+  const totalMemoryMb = Math.round(memory.total / MB);
   // availableParallelism respects cgroup CPU quotas and CPU affinity masks, which
   // os.cpus().length does not — it matters on the container hosts we deploy to.
   const detected =
@@ -74,10 +75,15 @@ export function sampleCpu(now = Date.now()): CpuSample {
   return {
     parallelism,
     load1,
-    freeMemoryMb: Math.round(os.freemem() / MB),
+    freeMemoryMb: Math.round(memory.free / MB),
     totalMemoryMb,
     sampledAt: now,
   };
+}
+
+export function resolveMemoryCapacity(total: number, free: number, limit: number, available: number): { total: number; free: number } {
+  const capacity = limit > 0 ? Math.min(total, limit) : total;
+  return { total: capacity, free: Math.max(0, Math.min(free, available, capacity)) };
 }
 
 export function deriveConcurrency(

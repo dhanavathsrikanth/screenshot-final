@@ -5,8 +5,15 @@ import {
   deriveConcurrency,
   resolvePolicy,
   sampleCpu,
+  resolveMemoryCapacity,
   type CpuSample,
 } from "./cpu.js";
+
+test("memory headroom uses the container limit rather than the host's free RAM", () => {
+  assert.deepEqual(resolveMemoryCapacity(64_000, 48_000, 1_000, 180), { total: 1_000, free: 180 });
+  assert.deepEqual(resolveMemoryCapacity(64_000, 48_000, 0, 48_000), { total: 64_000, free: 48_000 });
+  assert.deepEqual(resolveMemoryCapacity(64_000, 48_000, 1_000, 0), { total: 1_000, free: 0 });
+});
 
 function sample(overrides: Partial<CpuSample> = {}): CpuSample {
   return {
