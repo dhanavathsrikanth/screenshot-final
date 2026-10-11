@@ -8,6 +8,7 @@ import type { EngineHealthPayload } from "@/lib/capture";
 import { Icon } from "./icons";
 import { Sidebar } from "./sidebar";
 import { Input } from "./ui";
+import { CreditNotice } from "./credit-notice";
 import styles from "./workspace.module.css";
 
 let fallbackCollapsed = false;
@@ -113,7 +114,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
           </header>}
           <main id="workspace-content" tabIndex={-1} className={styles.main}>
             {isPlayground && <button type="button" className={`${styles.iconButton} ${styles.playgroundNavigation}`} aria-label="Open navigation" aria-expanded={openOverlay === "navigation"} aria-controls="mobile-navigation" onClick={() => setOverlay({ pathname, kind: "navigation" })}><Icon name="menu" /></button>}
-            <div className={styles.content}>{children}</div>
+            <div className={styles.content}><CreditNotice />{children}</div>
           </main>
         </div>
       </div>

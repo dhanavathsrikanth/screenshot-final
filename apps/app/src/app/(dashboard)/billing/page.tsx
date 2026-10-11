@@ -47,7 +47,7 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
         <h2 className="font-display text-xl font-semibold tracking-tight text-ink">Choose how you capture</h2>
         <p className="mt-1 text-sm text-ink-3">PNG, JPEG, WebP, PDF, device presets, API access, and capture history on every plan.</p>
       </div>
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div id="plans" className="grid scroll-mt-6 gap-4 lg:grid-cols-3">
         {LAUNCH_PLANS.map((key) => {
           const plan = PLAN_CATALOG[key];
           const featured = key === "pro";
@@ -86,7 +86,7 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
         </div>
       </Card>
 
-      <Card>
+      <div id="credit-packs" className="scroll-mt-6"><Card>
         <CardHeader title="Need a little more this month?" description="Optional one-time credit packs. No subscription change and no expiry." />
         <div className="grid gap-3 p-5 sm:grid-cols-3">
           {Object.entries(CREDIT_PACKS).map(([key, pack]) => {
@@ -94,7 +94,7 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
             return <div key={key} className="rounded-md border border-line bg-canvas p-4"><p className="font-display text-lg font-semibold text-ink">{formatNumber(pack.credits)} credits</p><p className="mt-1 text-sm text-ink-3">${pack.priceUsd} one time</p><BillingButton product={product} available={configured && Boolean(BILLING_PRODUCTS[product].id)}>Buy {formatNumber(pack.credits)} credits</BillingButton></div>;
           })}
         </div>
-      </Card>
+      </Card></div>
 
       <Card>
         <CardHeader title="Good to know before you choose" description="Clear allowances, consistent quality, and control over your spend." />

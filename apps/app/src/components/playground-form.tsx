@@ -71,6 +71,10 @@ export function Playground({ localCapture = false }: { localCapture?: boolean })
   const state = useMemo(() => customState ?? { ...DEFAULT_STATE, device: prefs.defaultDevice, format: prefs.defaultFormat, fullPage: prefs.fullPageByDefault }, [customState, prefs.defaultDevice, prefs.defaultFormat, prefs.fullPageByDefault]);
   const [result, setResult] = useState<CaptureResult | null>(null);
   const [pending, setPending] = useState(false);
+  useEffect(() => {
+    if (localCapture || !result || result.pending) return;
+    window.dispatchEvent(new Event(!result.ok && result.error.code === "quota_exceeded" ? "sf-credits-required" : "sf-credits-changed"));
+  }, [localCapture, result]);
   const [submittedUrl, setSubmittedUrl] = useState<string | null>(null);
   const [snippet, setSnippet] = useState<(typeof SNIPPETS)[number]>("curl");
   const [copied, setCopied] = useState(false);
