@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { CAPTURE_MIME_TYPES, captureOptionsSchema, SnapforgeError } from "@snapforge/contracts";
+import { CAPTURE_MIME_TYPES, captureCreditCost, captureOptionsSchema, SnapforgeError } from "@snapforge/contracts";
 import type { CaptureFormat } from "@snapforge/contracts";
 import type { SnapforgeEngine } from "@snapforge/engine";
 import { CaptureAdmissionError, type CaptureLease } from "@snapforge/queue";
@@ -15,7 +15,7 @@ export interface CaptureHandlerDependencies {
   acquire(accountId: string, requestId: string): Promise<CaptureLease>;
   getEngine(): Promise<Pick<SnapforgeEngine, "capture">>;
   prepare?(): Promise<void>;
-  reserve(accountId: string, requestId: string): Promise<boolean>;
+  reserve(accountId: string, requestId: string, credits?: number): Promise<boolean>;
   settle(requestId: string, succeeded: boolean): Promise<void>;
   record(accountId: string, entry: CaptureLogEntry): Promise<void>;
 }
@@ -84,10 +84,10 @@ export function createCaptureHandler(deps: CaptureHandlerDependencies) {
       url = parsed.data.url;
       format = parsed.data.format;
       const preparing = deps.prepare ? measure("warmup", () => deps.prepare!()).catch(() => undefined) : undefined;
-      reserved = await measure("reservation", () => deps.reserve(accountId!, requestId));
+      reserved = await measure("reservation", () => deps.reserve(accountId!, requestId, captureCreditCost(parsed.data)));
       if (!reserved) throw new SnapforgeError({
         code: "quota_exceeded",
-        message: "Monthly free captures and prepaid credits are exhausted",
+        message: "Not enough credits for this capture. Add credits or wait for your monthly reset.",
         requestId,
       });
       await preparing;

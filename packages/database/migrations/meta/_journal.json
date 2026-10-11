@@ -43,6 +43,27 @@
       "when": 1791077131826,
       "tag": "0005_request_idempotency_webhooks",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791688070379,
+      "tag": "0006_researched_pricing",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791704913085,
+      "tag": "0007_glamorous_mister_sinister",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791706233112,
+      "tag": "0008_tidy_leo",
+      "breakpoints": true
     }
   ]
 }

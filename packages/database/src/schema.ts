@@ -13,7 +13,7 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 
-export const planEnum = pgEnum("snapforge_plan", ["free", "pro", "scale"]);
+export const planEnum = pgEnum("snapforge_plan", ["free", "pro", "scale", "starter", "growth"]);
 export const reservationSourceEnum = pgEnum("capture_reservation_source", ["monthly", "prepaid"]);
 export const reservationStatusEnum = pgEnum("capture_reservation_status", ["held", "consumed", "released"]);
 
@@ -23,10 +23,11 @@ export const accounts = pgTable("accounts", {
   displayName: text("display_name"),
   plan: planEnum("plan").notNull().default("free"),
   prepaidCredits: integer("prepaid_credits").notNull().default(0),
+  refundedCreditDebt: integer("refunded_credit_debt").notNull().default(0),
   dodoCustomerId: text("dodo_customer_id").unique(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-}, (table) => [check("accounts_prepaid_nonnegative", sql`${table.prepaidCredits} >= 0`)]);
+}, (table) => [check("accounts_prepaid_nonnegative", sql`${table.prepaidCredits} >= 0`), check("accounts_refund_debt_nonnegative", sql`${table.refundedCreditDebt} >= 0`)]);
 
 export const apiKeys = pgTable("api_keys", {
   id: text("id").primaryKey(),
@@ -56,6 +57,8 @@ export const captureReservations = pgTable("capture_reservations", {
   jobId: text("job_id").unique(),
   userId: text("user_id").notNull().references(() => accounts.userId, { onDelete: "cascade" }),
   source: reservationSourceEnum("source").notNull(),
+  credits: integer("credits").notNull().default(1),
+  monthlyCredits: integer("monthly_credits"),
   periodStart: timestamp("period_start", { withTimezone: true }).notNull(),
   status: reservationStatusEnum("status").notNull().default("held"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -136,4 +139,11 @@ export const dodoWebhookEvents = pgTable("dodo_webhook_events", {
   processedAt: timestamp("processed_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-export const schema = { accounts, apiKeys, monthlyUsage, captureReservations, webhookOutbox, captureLogs, subscriptions, dodoWebhookEvents };
+export const dodoCreditPayments = pgTable("dodo_credit_payments", {
+  paymentId: text("payment_id").primaryKey(),
+  userId: text("user_id").notNull().references(() => accounts.userId, { onDelete: "cascade" }),
+  credits: integer("credits").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const schema = { accounts, apiKeys, monthlyUsage, captureReservations, webhookOutbox, captureLogs, subscriptions, dodoWebhookEvents, dodoCreditPayments };

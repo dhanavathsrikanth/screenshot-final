@@ -3,9 +3,9 @@
 import { useState } from "react";
 import { Button } from "./ui";
 
-type ProductKey = "pro" | "scale" | "credits_10k" | "credits_50k" | "credits_250k";
+type ProductKey = "starter" | "pro" | "growth" | "credits_1k" | "credits_5k" | "credits_20k";
 
-export function BillingButton({ product, children }: { product: ProductKey; children: React.ReactNode }) {
+export function BillingButton({ product, children, available = true, current = false }: { product: ProductKey; children: React.ReactNode; available?: boolean; current?: boolean }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -29,8 +29,8 @@ export function BillingButton({ product, children }: { product: ProductKey; chil
 
   return (
     <div>
-      <Button variant="primary" onClick={startCheckout} disabled={busy} className="mt-6 w-full">
-        {busy ? "Opening checkout…" : children}
+      <Button variant="primary" onClick={startCheckout} disabled={busy || !available || current} className="mt-6 w-full">
+        {current ? "Current plan" : busy ? "Opening checkout…" : available ? children : "Checkout coming soon"}
       </Button>
       {error ? <p role="alert" className="mt-2 text-xs text-bad-ink">{error}</p> : null}
     </div>

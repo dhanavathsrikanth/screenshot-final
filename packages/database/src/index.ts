@@ -6,7 +6,9 @@ import { fileURLToPath } from "node:url";
 import { config as loadEnv } from "dotenv";
 import type { CaptureFinalization, CaptureLifecycleRepository, CaptureSubmissionRepository, JobSnapshot, SealedCaptureSubmission } from "@snapforge/queue";
 import { CaptureRequestConflictError, type WebhookOutboxRepository, type WebhookClaim } from "@snapforge/queue";
-import { accounts, apiKeys, captureLogs, captureReservations, webhookOutbox, dodoWebhookEvents, monthlyUsage, schema, subscriptions } from "./schema.js";
+import { PLAN_CATALOG, allocateCaptureCredits, type PlanName } from "@snapforge/queue";
+import { accounts, apiKeys, captureLogs, captureReservations, webhookOutbox, dodoWebhookEvents, dodoCreditPayments, monthlyUsage, schema, subscriptions } from "./schema.js";
+import { retryBillingConnection } from "./connection-retry.js";
 
 const moduleDirectory = path.dirname(fileURLToPath(import.meta.url));
 loadEnv({ path: path.resolve(moduleDirectory, "../../../.env") });
@@ -18,8 +20,9 @@ if (!connectionString) throw new Error("DATABASE_URL must be configured for @sna
 export const pool = globalDatabase.__snapforgePool ??= new Pool({
   connectionString,
   max: Number(process.env.DATABASE_POOL_MAX ?? 5),
-  idleTimeoutMillis: Number(process.env.DATABASE_POOL_IDLE_TIMEOUT_MS ?? 120_000),
+  idleTimeoutMillis: Number(process.env.DATABASE_POOL_IDLE_TIMEOUT_MS ?? 30_000),
   connectionTimeoutMillis: 10_000,
+  keepAlive: true,
   allowExitOnIdle: process.env.NODE_ENV !== "production",
 });
 if (pool.listenerCount("error") === 0) pool.on("error", () => { console.warn("Database idle connection closed; the pool will reconnect on demand"); });
@@ -112,14 +115,16 @@ export async function findApiKeyByHash(keyHash: string) {
   return { id: key.id, billing_account_id: key.userId, scopes: key.scopes, active: true };
 }
 
-const PLAN_LIMITS = { free: 250, pro: 10_000, scale: 100_000 } as const;
-export type PlanName = keyof typeof PLAN_LIMITS;
+export type { PlanName } from "@snapforge/queue";
 
 function currentPeriodStart(now = new Date()) {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
 }
 
-export async function reserveCapture(userId: string, requestId: string, submission?: SealedCaptureSubmission): Promise<boolean> {
+export async function reserveCapture(userId: string, requestId: string, input?: SealedCaptureSubmission | number): Promise<boolean> {
+  const submission = typeof input === "number" ? undefined : input;
+  const credits = typeof input === "number" ? input : submission?.credits ?? 1;
+  allocateCaptureCredits(credits, 0, 0);
   if (submission && (submission.accountId !== userId || submission.jobId !== requestId || !submission.ciphertext ||
     submission.ciphertext.length > 512 * 1024 + 128 || !["sync", "async"].includes(submission.mode) || !Number.isSafeInteger(submission.enqueuedAt))) {
     throw new Error("Invalid capture submission reservation");
@@ -145,20 +150,18 @@ export async function reserveCapture(userId: string, requestId: string, submissi
       submissionCiphertext: submission.ciphertext, submissionMode: submission.mode, submittedAt: new Date(submission.enqueuedAt),
       requestFingerprint: submission.requestFingerprint ?? null, webhookCiphertext: submission.webhookCiphertext ?? null } : {};
     const periodStart = currentPeriodStart();
-    const planLimit = PLAN_LIMITS[account.plan];
+    const planLimit = PLAN_CATALOG[account.plan].credits;
     await tx.insert(monthlyUsage).values({ userId, periodStart, limit: planLimit }).onConflictDoUpdate({
       target: [monthlyUsage.userId, monthlyUsage.periodStart], set: { limit: planLimit },
     });
     const [usage] = await tx.select().from(monthlyUsage).where(and(eq(monthlyUsage.userId, userId), eq(monthlyUsage.periodStart, periodStart))).for("update");
-    if (usage.consumed + usage.reserved < usage.limit) {
-      await tx.update(monthlyUsage).set({ reserved: sql`${monthlyUsage.reserved} + 1` })
-        .where(and(eq(monthlyUsage.userId, userId), eq(monthlyUsage.periodStart, periodStart)));
-      await tx.insert(captureReservations).values({ requestId, userId, periodStart, source: "monthly", ...intentValues });
-      return true;
-    }
-    if (account.prepaidCredits < 1) return false;
-    await tx.update(accounts).set({ prepaidCredits: sql`${accounts.prepaidCredits} - 1`, updatedAt: new Date() }).where(eq(accounts.userId, userId));
-    await tx.insert(captureReservations).values({ requestId, userId, periodStart, source: "prepaid", ...intentValues });
+    const allocation = allocateCaptureCredits(credits, usage.limit - usage.consumed - usage.reserved, Math.max(0, account.prepaidCredits - account.refundedCreditDebt));
+    if (!allocation) return false;
+    if (allocation.monthly) await tx.update(monthlyUsage).set({ reserved: sql`${monthlyUsage.reserved} + ${allocation.monthly}` })
+      .where(and(eq(monthlyUsage.userId, userId), eq(monthlyUsage.periodStart, periodStart)));
+    if (allocation.prepaid) await tx.update(accounts).set({ prepaidCredits: sql`${accounts.prepaidCredits} - ${allocation.prepaid}`, updatedAt: new Date() }).where(eq(accounts.userId, userId));
+    await tx.insert(captureReservations).values({ requestId, userId, periodStart, credits, monthlyCredits: allocation.monthly,
+      source: allocation.monthly ? "monthly" : "prepaid", ...intentValues });
     return true;
   });
 }
@@ -177,13 +180,16 @@ export async function settleCapture(requestId: string, succeeded: boolean) {
       webhookCiphertext: null,
     }).where(and(eq(captureReservations.requestId, requestId), eq(captureReservations.status, "held"))).returning();
     if (!reservation) return;
-    if (reservation.source === "monthly") {
+    const monthlyCredits = reservation.monthlyCredits ?? (reservation.source === "monthly" ? reservation.credits : 0);
+    const prepaidCredits = reservation.credits - monthlyCredits;
+    if (monthlyCredits) {
       await tx.update(monthlyUsage).set({
-        reserved: sql`GREATEST(${monthlyUsage.reserved} - 1, 0)`,
-        ...(succeeded ? { consumed: sql`${monthlyUsage.consumed} + 1` } : {}),
+        reserved: sql`GREATEST(${monthlyUsage.reserved} - ${monthlyCredits}, 0)`,
+        ...(succeeded ? { consumed: sql`${monthlyUsage.consumed} + ${monthlyCredits}` } : {}),
       }).where(and(eq(monthlyUsage.userId, reservation.userId), eq(monthlyUsage.periodStart, reservation.periodStart)));
-    } else if (!succeeded) {
-      await tx.update(accounts).set({ prepaidCredits: sql`${accounts.prepaidCredits} + 1`, updatedAt: new Date() })
+    }
+    if (!succeeded && prepaidCredits) {
+      await tx.update(accounts).set({ prepaidCredits: sql`${accounts.prepaidCredits} + ${prepaidCredits}`, updatedAt: new Date() })
         .where(eq(accounts.userId, reservation.userId));
     }
   });
@@ -235,12 +241,15 @@ export async function commitCapture(input: CaptureFinalization): Promise<JobSnap
     if (reservation.result) return reservation.result;
     const succeeded = input.snapshot.result!.ok;
     if (reservation.status === "held") {
-      if (reservation.source === "monthly") {
-        await tx.update(monthlyUsage).set({ reserved: sql`${monthlyUsage.reserved} - 1`,
-          ...(succeeded ? { consumed: sql`${monthlyUsage.consumed} + 1` } : {}),
+      const monthlyCredits = reservation.monthlyCredits ?? (reservation.source === "monthly" ? reservation.credits : 0);
+      const prepaidCredits = reservation.credits - monthlyCredits;
+      if (monthlyCredits) {
+        await tx.update(monthlyUsage).set({ reserved: sql`${monthlyUsage.reserved} - ${monthlyCredits}`,
+          ...(succeeded ? { consumed: sql`${monthlyUsage.consumed} + ${monthlyCredits}` } : {}),
         }).where(and(eq(monthlyUsage.userId, reservation.userId), eq(monthlyUsage.periodStart, reservation.periodStart)));
-      } else if (!succeeded) {
-        await tx.update(accounts).set({ prepaidCredits: sql`${accounts.prepaidCredits} + 1`, updatedAt: new Date() })
+      }
+      if (!succeeded && prepaidCredits) {
+        await tx.update(accounts).set({ prepaidCredits: sql`${accounts.prepaidCredits} + ${prepaidCredits}`, updatedAt: new Date() })
           .where(eq(accounts.userId, reservation.userId));
       }
     }
@@ -450,29 +459,58 @@ export async function captureStats(userId: string) {
 }
 
 export async function getBillingState(userId: string) {
-  await db.insert(accounts).values({ userId }).onConflictDoNothing();
-  const [account] = await db.select().from(accounts).where(eq(accounts.userId, userId));
-  const periodStart = currentPeriodStart();
-  const [usage] = await db.select().from(monthlyUsage)
-    .where(and(eq(monthlyUsage.userId, userId), eq(monthlyUsage.periodStart, periodStart))).limit(1);
-  const limit = PLAN_LIMITS[account.plan];
-  const subscription = await getSubscription(userId);
-  return { plan: account.plan, prepaidCredits: account.prepaidCredits, included: limit, used: usage?.consumed ?? 0,
-    reserved: usage?.reserved ?? 0, customerId: account.dodoCustomerId, subscription };
+  return retryBillingConnection(async () => {
+    let [account] = await db.select().from(accounts).where(eq(accounts.userId, userId));
+    if (!account) {
+      await db.insert(accounts).values({ userId }).onConflictDoNothing();
+      [account] = await db.select().from(accounts).where(eq(accounts.userId, userId));
+    }
+    const periodStart = currentPeriodStart();
+    const [usage] = await db.select().from(monthlyUsage)
+      .where(and(eq(monthlyUsage.userId, userId), eq(monthlyUsage.periodStart, periodStart))).limit(1);
+    const limit = PLAN_CATALOG[account.plan].credits;
+    const subscription = await getSubscription(userId);
+    return { plan: account.plan, prepaidCredits: Math.max(0, account.prepaidCredits - account.refundedCreditDebt),
+      refundedCreditDebt: Math.max(0, account.refundedCreditDebt - account.prepaidCredits), included: limit, used: usage?.consumed ?? 0,
+      reserved: usage?.reserved ?? 0, customerId: account.dodoCustomerId, subscription };
+  });
 }
 
 export interface PaidProduct { id: string; credits: number; kind: "subscription" | "credits"; plan?: PlanName }
 
-export async function recordDodoEvent(input: { eventId: string; eventType: string; userId: string; customerId?: string; subscriptionId?: string; productId?: string; product?: PaidProduct; subscriptionStatus?: string; cancelAtPeriodEnd?: boolean; currentPeriodEnd?: Date | null }) {
+export interface DodoBillingSnapshot { customerId?: string; productId?: string; product?: PaidProduct; subscriptionStatus?: string; cancelAtPeriodEnd?: boolean; currentPeriodEnd?: Date | null; creditPayment?: { id: string; credits: number } }
+
+export async function recordDodoEvent(input: DodoBillingSnapshot & { eventId: string; eventType: string; userId: string; subscriptionId?: string; verify?: () => Promise<DodoBillingSnapshot> }) {
   return db.transaction(async (tx) => {
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`billing:${input.subscriptionId ?? input.userId}`}, 0))`);
     await tx.insert(accounts).values({ userId: input.userId }).onConflictDoNothing();
+    await tx.select().from(accounts).where(eq(accounts.userId, input.userId)).for("update");
     const [event] = await tx.insert(dodoWebhookEvents).values({ eventId: input.eventId, eventType: input.eventType }).onConflictDoNothing().returning();
     if (!event) return false;
+    if (input.verify) input = { ...input, ...await input.verify() };
+    if (input.subscriptionId) {
+      const [owner] = await tx.select({ userId: subscriptions.userId }).from(subscriptions).where(eq(subscriptions.id, input.subscriptionId));
+      if (owner && owner.userId !== input.userId) throw new Error("Subscription account mismatch");
+    }
+    if (input.customerId) {
+      const [owner] = await tx.select({ userId: accounts.userId }).from(accounts).where(eq(accounts.dodoCustomerId, input.customerId));
+      if (owner && owner.userId !== input.userId) throw new Error("Customer account mismatch");
+    }
     const accountUpdate: Partial<typeof accounts.$inferInsert> = { updatedAt: new Date() };
     if (input.customerId) accountUpdate.dodoCustomerId = input.customerId;
-    if (input.product?.kind === "credits") accountUpdate.prepaidCredits = sql`${accounts.prepaidCredits} + ${input.product.credits}` as unknown as number;
+    if (input.creditPayment) {
+      if (!Number.isSafeInteger(input.creditPayment.credits) || input.creditPayment.credits < 0) throw new Error("Invalid payment credits");
+      await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`billing-payment:${input.creditPayment.id}`}, 0))`);
+      const [previous] = await tx.select().from(dodoCreditPayments).where(eq(dodoCreditPayments.paymentId, input.creditPayment.id));
+      if (previous && previous.userId !== input.userId) throw new Error("Payment account mismatch");
+      const delta = input.creditPayment.credits - (previous?.credits ?? 0);
+      accountUpdate.prepaidCredits = sql`greatest(0, ${accounts.prepaidCredits} - ${accounts.refundedCreditDebt} + ${delta})` as unknown as number;
+      accountUpdate.refundedCreditDebt = sql`greatest(0, -(${accounts.prepaidCredits} - ${accounts.refundedCreditDebt} + ${delta}))` as unknown as number;
+      await tx.insert(dodoCreditPayments).values({ paymentId: input.creditPayment.id, userId: input.userId, credits: input.creditPayment.credits })
+        .onConflictDoUpdate({ target: dodoCreditPayments.paymentId, set: { credits: input.creditPayment.credits, updatedAt: new Date() } });
+    } else if (input.product?.kind === "credits") accountUpdate.prepaidCredits = sql`${accounts.prepaidCredits} + ${input.product.credits}` as unknown as number;
     if (input.product?.kind === "subscription" && input.product.plan &&
-      (input.subscriptionStatus === "active" || input.subscriptionStatus === "past_due")) accountUpdate.plan = input.product.plan;
+      input.subscriptionStatus === "active") accountUpdate.plan = input.product.plan;
     await tx.update(accounts).set(accountUpdate).where(eq(accounts.userId, input.userId));
     if (input.subscriptionId && input.product?.kind === "subscription" && input.product.plan && input.subscriptionStatus) {
       await tx.insert(subscriptions).values({ id: input.subscriptionId, userId: input.userId, productId: input.product.id,
@@ -489,9 +527,9 @@ export async function recordDodoEvent(input: { eventId: string; eventType: strin
           updatedAt: new Date() }).where(eq(subscriptions.id, input.subscriptionId));
       }
     }
-    if (input.subscriptionId && input.subscriptionStatus && input.subscriptionStatus !== "active" && input.subscriptionStatus !== "past_due") {
+    if (input.subscriptionId && input.subscriptionStatus && input.subscriptionStatus !== "active") {
       const [active] = await tx.select({ plan: subscriptions.plan }).from(subscriptions)
-        .where(and(eq(subscriptions.userId, input.userId), sql`${subscriptions.status} IN ('active', 'past_due')`))
+        .where(and(eq(subscriptions.userId, input.userId), eq(subscriptions.status, "active")))
         .orderBy(desc(subscriptions.updatedAt)).limit(1);
       await tx.update(accounts).set({ plan: active?.plan ?? "free", updatedAt: new Date() }).where(eq(accounts.userId, input.userId));
     }
@@ -501,7 +539,7 @@ export async function recordDodoEvent(input: { eventId: string; eventType: strin
 
 export async function getSubscription(userId: string) {
   const [subscription] = await db.select().from(subscriptions).where(eq(subscriptions.userId, userId))
-    .orderBy(desc(sql`case when ${subscriptions.status} in ('active', 'past_due') then 1 else 0 end`), desc(subscriptions.updatedAt)).limit(1);
+    .orderBy(desc(sql`case when ${subscriptions.status} = 'active' then 1 else 0 end`), desc(subscriptions.updatedAt)).limit(1);
   return subscription ?? null;
 }
 

@@ -21,6 +21,7 @@ export interface CaptureSubmissionMetadata extends CaptureLifecycleJob {
 }
 export interface SealedCaptureSubmission extends Omit<CaptureSubmissionMetadata, "acknowledged"> {
   ciphertext: string;
+  credits?: number;
   requestFingerprint?: string;
   webhookCiphertext?: string;
 }

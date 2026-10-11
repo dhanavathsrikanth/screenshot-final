@@ -46,12 +46,24 @@ test("lost HTTP response can be retried with default-normalized options without 
   const f = fixture();
   const identity = { accountId: "account", apiKeyId: "key-a" };
   const first = await f.service.submit(identity, { url: "https://example.com" }, "request-one", "async", "safe-key");
-  const second = await f.service.submit(identity, { url: "https://example.com", format: "png" }, "request-two", "async", "safe-key");
+  const second = await f.service.submit(identity, { url: "https://example.com", format: "webp" }, "request-two", "async", "safe-key");
   assert.equal(first.id, second.id);
   assert.equal(f.count(), 1);
   assert.equal(f.host.added.length, 1);
   assert.equal(f.admitted.length, 1);
+  assert.equal(f.records.get(first.id)?.credits, 1);
   assert.equal((await f.service.lookupRequest(identity, "safe-key", "request-three")).id, first.id);
+});
+
+test("a PDF reserves three credits and an idempotent retry reuses that reservation", async () => {
+  const f = fixture();
+  const identity = { accountId: "account", apiKeyId: "key-a" };
+  const body = { url: "https://example.com", format: "pdf", full_page: true };
+  const first = await f.service.submit(identity, body, "first", "async", "pdf-key");
+  const retry = await f.service.submit(identity, body, "retry", "async", "pdf-key");
+  assert.equal(first.id, retry.id);
+  assert.equal(f.records.get(first.id)?.credits, 3);
+  assert.equal(f.count(), 1);
 });
 
 test("conflicting options, modes, callback secrets, and credentials preserve the original capture", async () => {

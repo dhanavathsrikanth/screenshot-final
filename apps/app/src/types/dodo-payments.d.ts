@@ -14,11 +14,15 @@ declare module "@dodopayments/nextjs" {
   export function Webhooks(config: {
     webhookKey: string;
     onPaymentSucceeded?: (payload: unknown) => Promise<void>;
+    onRefundSucceeded?: (payload: unknown) => Promise<void>;
+    onSubscriptionPaused?: (payload: unknown) => Promise<void>;
     onSubscriptionActive?: (payload: unknown) => Promise<void>;
     onSubscriptionRenewed?: (payload: unknown) => Promise<void>;
     onSubscriptionUpdated?: (payload: unknown) => Promise<void>;
     onSubscriptionExpired?: (payload: unknown) => Promise<void>;
     onSubscriptionOnHold?: (payload: unknown) => Promise<void>;
     onSubscriptionCancelled?: (payload: unknown) => Promise<void>;
+    onSubscriptionPlanChanged?: (payload: unknown) => Promise<void>;
+    onSubscriptionFailed?: (payload: unknown) => Promise<void>;
   }): (request: Request) => Promise<Response>;
 }

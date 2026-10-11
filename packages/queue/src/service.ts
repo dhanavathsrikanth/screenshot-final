@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { captureOptionsSchema, captureRequestSchema, idempotencyKeySchema, SnapforgeError, type CaptureOptions, type CaptureSuccessData, type CaptureWebhook } from "@snapforge/contracts";
+import { captureCreditCost, captureOptionsSchema, captureRequestSchema, idempotencyKeySchema, SnapforgeError, type CaptureOptions, type CaptureSuccessData, type CaptureWebhook } from "@snapforge/contracts";
 import { captureRequestFingerprint, CaptureRequestConflictError, idempotentJobId } from "./idempotency.js";
 import { deliverCaptureSubmission, type CaptureSubmissionCodec, type CaptureSubmissionRepository } from "./submission.js";
 import { CaptureFinalizer, type CaptureLifecycleRepository } from "./settlement.js";
@@ -19,7 +19,7 @@ export interface CaptureHistoryEntry {
 export interface CaptureBilling {
   lifecycle?: CaptureLifecycleRepository;
   submissions?: CaptureSubmissionRepository;
-  reserveCapture(accountId: string, reservationId: string): Promise<boolean>;
+  reserveCapture(accountId: string, reservationId: string, credits?: number): Promise<boolean>;
   settleCapture(reservationId: string, succeeded: boolean): Promise<void>;
   linkReservationToJob(accountId: string, reservationId: string, jobId: string): Promise<void>;
   reservationForJob(accountId: string, jobId: string): Promise<string | null>;
@@ -78,8 +78,8 @@ export class CaptureService {
       if (this.deps.billing.submissions) return this.submitDurable(identity, jobId, options, requestId, mode ?? (options.sync ? "sync" : "async"), undefined, parsed.data.webhook);
       if (parsed.data.webhook) throw new SnapforgeError({ code: "unsupported_option", message: "Durable webhook delivery is not configured", requestId });
       reservationAttempted = true;
-      if (!await this.deps.billing.reserveCapture(identity.accountId, jobId)) {
-        throw new SnapforgeError({ code: "quota_exceeded", message: "No captures or credits are available", requestId });
+      if (!await this.deps.billing.reserveCapture(identity.accountId, jobId, captureCreditCost(options))) {
+        throw new SnapforgeError({ code: "quota_exceeded", message: "Not enough credits for this capture. Add credits or wait for your monthly reset.", requestId });
       }
       await this.deps.billing.linkReservationToJob(identity.accountId, jobId, jobId);
       attemptedEnqueue = true;
@@ -171,10 +171,10 @@ export class CaptureService {
       const webhookCiphertext = webhook ? codec.sealWebhook(webhook, { accountId: identity.accountId, jobId }) : undefined;
       reservationAttempted = true;
       const reserved = await submissions.reserveSubmission({ ...identity, jobId, mode, enqueuedAt: intent.enqueuedAt, ciphertext, requestFingerprint,
-        webhookCiphertext });
+        webhookCiphertext, credits: captureCreditCost(options) });
       if (!reserved) {
         reservationAttempted = false;
-        throw new SnapforgeError({ code: "quota_exceeded", message: "No captures or credits are available", requestId });
+        throw new SnapforgeError({ code: "quota_exceeded", message: "Not enough credits for this capture. Add credits or wait for your monthly reset.", requestId });
       }
       try {
         await deliverCaptureSubmission(jobId, { submissions, codec, queue: this.deps.queue, dispatcher: this.deps.dispatcher, admission: this.deps.admission });

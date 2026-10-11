@@ -8,7 +8,7 @@ export async function GET() {
   const { userId } = await auth();
   if (!userId) return Response.json({ error: "unauthorized" }, { status: 401 });
   const billing = await getBillingState(userId);
-  return Response.json({ remaining: Math.max(0, billing.included - billing.used) + billing.prepaidCredits }, {
+  return Response.json({ remaining: Math.max(0, billing.included - billing.used - billing.reserved) + billing.prepaidCredits }, {
     headers: { "cache-control": "no-store" },
   });
 }

@@ -9,6 +9,6 @@
     "sourceMap": false,
     "resolveJsonModule": true
   },
-  "include": ["src/lib/capture*.ts", "src/lib/engine.ts", "src/lib/engine.test.ts", "src/lib/docs-*.ts"],
+  "include": ["src/lib/capture*.ts", "src/lib/engine.ts", "src/lib/engine.test.ts", "src/lib/docs-*.ts", "src/lib/billing-price*.ts", "src/lib/billing-verification*.ts"],
   "exclude": ["src/lib/capture-runtime-handler.ts"]
 }

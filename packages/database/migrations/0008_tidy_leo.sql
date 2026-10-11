@@ -1,0 +1,2 @@
+ALTER TABLE "accounts" ADD COLUMN "refunded_credit_debt" integer DEFAULT 0 NOT NULL;--> statement-breakpoint
+ALTER TABLE "accounts" ADD CONSTRAINT "accounts_refund_debt_nonnegative" CHECK ("accounts"."refunded_credit_debt" >= 0);
