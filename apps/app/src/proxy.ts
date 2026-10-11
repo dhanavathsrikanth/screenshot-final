@@ -14,7 +14,7 @@ const authenticate = clerkMiddleware(async (auth, request) => {
 });
 
 export default function proxy(request: NextRequest, event: NextFetchEvent) {
-  if ((!isAppHost(request) && request.nextUrl.pathname === "/pricing") || request.nextUrl.pathname === "/api/webhook") {
+  if ((!isAppHost(request) && request.nextUrl.pathname === "/pricing") || request.nextUrl.pathname === "/api/webhook" || request.nextUrl.pathname === "/api/webhooks/clerk") {
     return NextResponse.next();
   }
   return authenticate(request, event);

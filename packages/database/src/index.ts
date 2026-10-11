@@ -66,6 +66,18 @@ export async function ensureAccount(userId: string, profile: { email?: string | 
     } });
 }
 
+export async function syncClerkAccount(userId: string, readProfile: () => Promise<{ email: string | null; displayName: string | null } | null>) {
+  await db.transaction(async (tx) => {
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${`clerk:${userId}`}))`);
+    const profile = await readProfile();
+    if (!profile) return;
+    await tx.insert(accounts).values({ userId, ...profile }).onConflictDoUpdate({
+      target: accounts.userId,
+      set: { ...profile, updatedAt: new Date() },
+    });
+  });
+}
+
 export async function createApiKey(input: { id: string; userId: string; label: string; prefix: string; keyHash: string; scopes: string[] }) {
   return db.transaction(async (tx) => {
     await tx.insert(accounts).values({ userId: input.userId }).onConflictDoNothing();

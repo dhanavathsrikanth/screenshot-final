@@ -14,6 +14,7 @@ const webhookHandler = webhookKey ? Webhooks({
   onSubscriptionExpired: handleSubscription,
   onSubscriptionOnHold: handleSubscription,
   onSubscriptionPaused: handleSubscription,
+  onSubscriptionUnpaused: handleSubscription,
   onSubscriptionCancelled: handleSubscription,
 }) : null;
 

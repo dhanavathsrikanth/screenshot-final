@@ -16,6 +16,7 @@ declare module "@dodopayments/nextjs" {
     onPaymentSucceeded?: (payload: unknown) => Promise<void>;
     onRefundSucceeded?: (payload: unknown) => Promise<void>;
     onSubscriptionPaused?: (payload: unknown) => Promise<void>;
+    onSubscriptionUnpaused?: (payload: unknown) => Promise<void>;
     onSubscriptionActive?: (payload: unknown) => Promise<void>;
     onSubscriptionRenewed?: (payload: unknown) => Promise<void>;
     onSubscriptionUpdated?: (payload: unknown) => Promise<void>;
