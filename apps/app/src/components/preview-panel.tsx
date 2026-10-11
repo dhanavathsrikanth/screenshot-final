@@ -5,11 +5,11 @@ import { Icon } from "./icons";
 import { IPhone17ProMax } from "./apple-iphone-17-pro";
 import { PdfPreview } from "./pdf-preview";
 import styles from "./preview-panel.module.css";
-import { Badge, Card } from "./ui";
+import { Badge, Button } from "./ui";
 import type { CaptureResult } from "@/lib/capture";
 import { DEVICE_PRESETS } from "@snapforge/contracts";
 
-export function PreviewPanel({
+function PreviewContent({
   result,
   pending,
   device,
@@ -20,11 +20,10 @@ export function PreviewPanel({
   device: string;
   localCapture?: boolean;
 }) {
-  const [copyStatus, setCopyStatus] = useState("Copy link");
   if (pending || result?.pending) {
     const job = result?.pending ? result : null;
     return (
-      <Card className="flex min-h-[420px] flex-col items-center justify-center gap-3 p-10 text-center">
+      <div className={styles.stageMessage} role="status">
         <span className="relative flex size-11 items-center justify-center">
           <span className="absolute size-11 animate-ping rounded-pill bg-accent/25" />
           <span className="relative flex size-9 items-center justify-center rounded-pill bg-accent/20 text-accent-ink">
@@ -35,21 +34,19 @@ export function PreviewPanel({
         <p className="max-w-xs text-sm text-ink-3">
           {localCapture ? "Preparing your capture. Keep this page open until it finishes." : job?.state === "active" ? "Preparing a complete capture. You can reload this page and check its progress." : "Your capture is waiting to start. You can reload this page without submitting it again."}
         </p>
-      </Card>
+      </div>
     );
   }
 
   if (!result) {
     return (
-      <Card className="min-h-[420px] overflow-hidden bg-canvas">
-        <div className="min-h-[420px]" aria-hidden="true" />
-      </Card>
+      <div className={styles.stageMessage} aria-label="Empty capture preview"><Icon name="device" className="size-8" /><p>Your screenshot will appear here</p></div>
     );
   }
 
   if (!result.ok) {
     return (
-      <Card className="min-h-[420px] p-5">
+      <div className={styles.stageMessage} role="alert">
         <div className="flex items-start justify-between gap-4">
           <div>
             <Badge tone="danger" icon="alert">
@@ -63,13 +60,12 @@ export function PreviewPanel({
             </p>
           </div>
         </div>
-      </Card>
+      </div>
     );
   }
 
   const { metrics, image } = result;
   const isPdf = metrics.format === "pdf";
-  const fileExtension = metrics.format === "jpeg" ? "jpg" : metrics.format;
   const deviceScaleFactor = isPdf ? 1 : metrics.render_diagnostics?.device_scale_factor ?? 1;
   const previewWidth = metrics.width / deviceScaleFactor;
   const preset = DEVICE_PRESETS[device];
@@ -93,31 +89,6 @@ export function PreviewPanel({
   return (
     <div className="mx-auto w-full max-w-full" style={{ width: previewWidth }}>
       <div className={styles.preview}>
-        {image ? (
-          <div className={styles.actions}>
-            {image.startsWith("/c/") ? <button
-              type="button"
-              aria-label="Copy capture link"
-              title="Requires your signed-in account; available while the capture is retained"
-              onClick={async () => {
-                try {
-                  await navigator.clipboard.writeText(new URL(image, window.location.origin).href);
-                  setCopyStatus("Link copied");
-                } catch { setCopyStatus("Copy failed"); }
-              }}
-              className="inline-flex items-center gap-2 rounded-md border border-line bg-surface px-3 py-2 text-xs font-medium text-ink shadow-sm transition-colors hover:border-line-strong"
-            ><Icon name="copy" className="size-3.5" /><span role="status">{copyStatus}</span></button> : null}
-            <a
-              href={image.startsWith("/c/") ? `${image}?download=1` : image}
-              download={`snapforge-${metrics.width}x${metrics.height}.${fileExtension}`}
-              aria-label="Save capture"
-              className="inline-flex items-center gap-2 rounded-md border border-line bg-surface px-3 py-2 text-xs font-medium text-ink shadow-sm transition-colors hover:border-line-strong"
-            >
-              <Icon name="download" className="size-3.5" />
-              Save
-            </a>
-          </div>
-        ) : null}
         {isIphone17ProMax ? (
           <IPhone17ProMax>
             {renderedImage}
@@ -141,22 +112,58 @@ export function PreviewPanel({
             </div>
           </div>
         ) : (
-          <div className={styles.browserWindow}>
-            <div className={styles.browserBar} aria-hidden="true">
-              <span className={styles.closeDot} />
-              <span className={styles.minimizeDot} />
-              <span className={styles.maximizeDot} />
-            </div>
-            <div className={styles.browserScreen}>
-              {isPdf ? renderedImage : (
-                <div className="max-h-[720px] overflow-auto">
-                  <div className="sf-checkerboard w-full">{renderedImage}</div>
-                </div>
-              )}
-            </div>
-          </div>
+          <div className="sf-checkerboard w-full">{renderedImage}</div>
         )}
       </div>
     </div>
+  );
+}
+
+export function PreviewPanel({ result, pending, device, url, localCapture = false, creditCost = 1, onReset, onCapture }: {
+  url: string;
+  result: CaptureResult | null;
+  pending: boolean;
+  device: string;
+  localCapture?: boolean;
+  creditCost?: number;
+  onReset: () => void;
+  onCapture: () => void;
+}) {
+  const [copyStatus, setCopyStatus] = useState("Copy link");
+  const capture = !pending && result?.ok && !result.pending ? result : null;
+  const image = capture?.image;
+  const extension = capture?.metrics.format === "jpeg" ? "jpg" : capture?.metrics.format;
+  const displayedUrl = capture?.metrics.final_url || url;
+  let domain = "New capture";
+  try { domain = new URL(/^https?:\/\//i.test(displayedUrl) ? displayedUrl : `https://${displayedUrl}`).hostname; } catch {}
+
+  return (
+    <section className={styles.panel} aria-label="Capture preview">
+      <div className={styles.actions}>
+        <h2 className={styles.previewTitle}>Preview</h2>
+        {image && <>
+          {image.startsWith("/c/") && <Button variant="secondary" aria-label="Copy capture link" onClick={async () => {
+            try {
+              await navigator.clipboard.writeText(new URL(image, window.location.origin).href);
+              setCopyStatus("Link copied");
+            } catch { setCopyStatus("Copy failed"); }
+          }}><Icon name="copy" className="size-4" /><span role="status">{copyStatus}</span></Button>}
+          <a href={image.startsWith("/c/") ? `${image}?download=1` : image} download={`snapforge-${capture.metrics.width}x${capture.metrics.height}.${extension}`} aria-label="Save capture" className="inline-flex items-center gap-2 rounded-md border border-line bg-raised px-3 py-2 text-xs font-medium text-ink"><Icon name="download" className="size-4" />Save</a>
+        </>}
+        <Button variant="ghost" onClick={onReset} disabled={pending}><Icon name="refresh" className="size-4" />Reset</Button>
+        <Button variant="primary" onClick={onCapture} disabled={pending}><Icon name="play" className="size-4" />{pending ? "Capturing…" : `Capture · ${creditCost} ${creditCost === 1 ? "credit" : "credits"}`}</Button>
+      </div>
+      <div className={styles.previewArea}>
+        <div className={styles.browserWindow}>
+          <div className={styles.browserBar}>
+            <span className={styles.windowControls} aria-hidden="true"><span className={styles.closeDot} /><span className={styles.minimizeDot} /><span className={styles.maximizeDot} /></span>
+            <span className={styles.browserTab} title={displayedUrl || domain}><Icon name="device" className="size-3 shrink-0" /><span>{domain}</span></span>
+          </div>
+          <div className={styles.browserScreen} aria-busy={pending || !!result?.pending}>
+            <PreviewContent result={result} pending={pending} device={device} localCapture={localCapture} />
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }

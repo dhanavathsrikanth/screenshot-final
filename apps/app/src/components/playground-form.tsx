@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { Icon } from "@/components/icons";
+import { captureCreditCost } from "@snapforge/contracts";
 import {
-  Badge,
   Button,
   Card,
   CardHeader,
@@ -22,7 +22,6 @@ import {
   buildQueryCurl,
   buildTypeScript,
   DEFAULT_STATE,
-  effectiveViewport,
   toCaptureOptions,
   type PlaygroundState,
 } from "@/lib/playground";
@@ -30,6 +29,7 @@ import type { CaptureResult } from "@/lib/capture";
 import { CAPTURE_JOB_SESSION_KEY, CAPTURE_REQUEST_SESSION_KEY, followCapture, startCapture } from "@/lib/capture-client";
 import { PreviewPanel } from "./preview-panel";
 import { CodeTabs } from "./code-tabs";
+import styles from "./playground.module.css";
 import { DEFAULT_PREFS, preferenceSnapshot, readPreferences, subscribePreferences } from "@/lib/console-preferences";
 
 const DEVICES = [
@@ -47,6 +47,23 @@ const DEVICES = [
 
 const SNIPPETS = ["curl", "typescript", "python", "mcp"] as const;
 
+function SettingsSection({ title, description, defaultOpen = false, children }: {
+  title: string;
+  description: string;
+  defaultOpen?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <details className={`${styles.settingsSection} sf-card border border-line`} open={defaultOpen}>
+      <summary className={styles.sectionToggle}>
+        <span><span className="block text-sm font-medium text-ink">{title}</span><span className="mt-1 block text-xs text-ink-3">{description}</span></span>
+        <Icon name="chevron" className={styles.sectionArrow} />
+      </summary>
+      <div className="border-t border-line">{children}</div>
+    </details>
+  );
+}
+
 export function Playground({ localCapture = false }: { localCapture?: boolean }) {
   const [customState, setState] = useState<PlaygroundState | null>(null);
   const preferenceVersion = useSyncExternalStore(subscribePreferences, preferenceSnapshot, () => null);
@@ -54,9 +71,9 @@ export function Playground({ localCapture = false }: { localCapture?: boolean })
   const state = useMemo(() => customState ?? { ...DEFAULT_STATE, device: prefs.defaultDevice, format: prefs.defaultFormat, fullPage: prefs.fullPageByDefault }, [customState, prefs.defaultDevice, prefs.defaultFormat, prefs.fullPageByDefault]);
   const [result, setResult] = useState<CaptureResult | null>(null);
   const [pending, setPending] = useState(false);
+  const [submittedUrl, setSubmittedUrl] = useState<string | null>(null);
   const [snippet, setSnippet] = useState<(typeof SNIPPETS)[number]>("curl");
   const [copied, setCopied] = useState(false);
-  const [advanced, setAdvanced] = useState(false);
   const active = useRef<AbortController | null>(null);
 
   const reset = useCallback(() => {
@@ -71,7 +88,6 @@ export function Playground({ localCapture = false }: { localCapture?: boolean })
     });
   }, []);
 
-  const viewport = useMemo(() => effectiveViewport(state), [state]);
   const options = useMemo(() => toCaptureOptions(state), [state]);
 
   const code = useMemo(() => {
@@ -127,6 +143,7 @@ export function Playground({ localCapture = false }: { localCapture?: boolean })
     if (active.current) return;
     const controller = new AbortController();
     active.current = controller;
+    setSubmittedUrl(state.url);
     setPending(true);
     setCopied(false);
     try {
@@ -162,7 +179,7 @@ export function Playground({ localCapture = false }: { localCapture?: boolean })
     } finally {
       if (!controller.signal.aborted) { active.current = null; setPending(false); }
     }
-  }, [localCapture, options, watch]);
+  }, [localCapture, options, state.url, watch]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -183,27 +200,11 @@ export function Playground({ localCapture = false }: { localCapture?: boolean })
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Capture playground" description="Start with a URL. Adjust the details, preview the result, and copy your request." action={
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge tone="neutral" icon="device">
-            {viewport.width}×{viewport.height}
-            {viewport.deviceScaleFactor > 1 ? ` @${viewport.deviceScaleFactor}x` : ""}
-          </Badge>
-          <Button variant="ghost" onClick={reset} disabled={pending}>
-            <Icon name="refresh" className="size-4" />
-            Reset
-          </Button>
-          <Button variant="primary" onClick={() => void run()} disabled={pending}>
-            <Icon name="play" className="size-4" />
-            {pending ? "Capturing…" : "Capture"}
-          </Button>
-        </div>
-      } />
+      <PageHeader title="Capture playground" description="Start with a URL. Adjust the details, preview the result, and copy your request." />
 
-      <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,320px)_minmax(0,1fr)]">
-        <div className="space-y-4">
-          <Card>
-            <CardHeader title="Target" description="What to render" />
+      <div className={styles.layout}>
+        <div className={`${styles.settings} space-y-4`}>
+          <SettingsSection title="Target" description="What to render" defaultOpen>
             <div className="space-y-4 p-5">
               <div className="space-y-1.5">
                 <Label htmlFor="url">URL</Label>
@@ -213,7 +214,14 @@ export function Playground({ localCapture = false }: { localCapture?: boolean })
                   spellCheck={false}
                   placeholder="example.com/pricing"
                   onChange={(event) => patch({ url: event.target.value })}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" && !event.nativeEvent.isComposing && !event.ctrlKey && !event.metaKey && !event.altKey && window.matchMedia("(min-width: 1024px) and (pointer: fine)").matches) {
+                      event.preventDefault();
+                      void run();
+                    }
+                  }}
                 />
+                <p className={styles.enterHint}>Press Enter to capture · Ctrl / ⌘ Enter from anywhere</p>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="device">Device preset</Label>
@@ -256,10 +264,9 @@ export function Playground({ localCapture = false }: { localCapture?: boolean })
                 </div>
               ) : null}
             </div>
-          </Card>
+          </SettingsSection>
 
-          <Card>
-            <CardHeader title="Output" description="Format and framing" />
+          <SettingsSection title="Output" description="Format and framing" defaultOpen>
             <div className="space-y-4 p-5">
               <div className="space-y-1.5">
                 <p className="text-xs font-medium text-ink-2">Format</p>
@@ -320,10 +327,9 @@ export function Playground({ localCapture = false }: { localCapture?: boolean })
                 description="Emulate prefers-color-scheme: dark"
               />
             </div>
-          </Card>
+          </SettingsSection>
 
-          <Card>
-            <CardHeader title="Timing" description="Settlement strategy" />
+          <SettingsSection title="Timing" description="Settlement strategy">
             <div className="space-y-4 p-5">
               <div className="space-y-1.5">
                 <Label htmlFor="waitUntil">Wait until</Label>
@@ -380,10 +386,9 @@ export function Playground({ localCapture = false }: { localCapture?: boolean })
                 description="Allow network activity and fonts to settle."
               />
             </div>
-          </Card>
+          </SettingsSection>
 
-          <Card>
-            <CardHeader title="Blocking" description="Cleanliness filters" />
+          <SettingsSection title="Blocking" description="Cleanliness filters">
             <div className="space-y-2 p-5">
               <Toggle
                 checked={state.blockCookieBanners}
@@ -410,30 +415,10 @@ export function Playground({ localCapture = false }: { localCapture?: boolean })
                 description="Analytics, pixels, session replay"
               />
             </div>
-          </Card>
+          </SettingsSection>
 
-          <Card>
-            <button
-              type="button"
-              onClick={() => setAdvanced((value) => !value)}
-              className="flex w-full items-center justify-between px-5 py-4 text-left"
-              aria-expanded={advanced}
-            >
-              <span>
-                <span className="block text-sm font-medium text-ink">
-                  Advanced
-                </span>
-                <span className="mt-1 block text-sm text-ink-3">
-                  Hide elements or add custom CSS and JavaScript.
-                </span>
-              </span>
-              <Icon
-                name={advanced ? "x" : "sliders"}
-                className="size-4 shrink-0 text-ink-3"
-              />
-            </button>
-            {advanced ? (
-              <div className="space-y-4 border-t border-line p-5">
+          <SettingsSection title="Advanced" description="Hide elements or add custom CSS and JavaScript.">
+              <div className="space-y-4 p-5">
                 <div className="space-y-1.5">
                   <Label hint="comma or newline separated">Hide selectors</Label>
                   <Input
@@ -473,14 +458,14 @@ export function Playground({ localCapture = false }: { localCapture?: boolean })
                   />
                 </div>
               </div>
-            ) : null}
-          </Card>
+          </SettingsSection>
         </div>
 
-        <div className="min-w-0 space-y-4">
-        <PreviewPanel result={result} pending={pending} device={state.device} localCapture={localCapture} />
+        <div className={styles.preview}>
+          <PreviewPanel creditCost={captureCreditCost(options)} url={pending ? submittedUrl ?? state.url : state.url} result={result} pending={pending} device={state.device} localCapture={localCapture} onReset={reset} onCapture={() => void run()} />
+        </div>
 
-          <Card>
+          <Card className={styles.code}>
             <CardHeader
               title="Code"
               description="Copy the exact request this form will send"
@@ -511,7 +496,6 @@ export function Playground({ localCapture = false }: { localCapture?: boolean })
               </div>
             ) : null}
           </Card>
-        </div>
       </div>
     </div>
   );

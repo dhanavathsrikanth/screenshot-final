@@ -1,16 +1,31 @@
 .preview {
   min-width: 0;
 }
+.panel { min-width: 0; }
+.previewTitle { margin-right: auto; color: var(--sf-text-primary); font-size: 14px; font-weight: 500; }
+.previewArea { height: max(240px, calc(100dvh - 240px)); overflow: auto; overscroll-behavior: contain; }
+.previewArea > section { min-height: 100%; }
+.captureScroll { max-height: max(200px, calc(100dvh - 282px)); overflow: auto; overscroll-behavior: contain; }
+.emptyScreen { min-height: max(198px, calc(100dvh - 282px)); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; color: var(--sf-text-muted); background: var(--sf-bg-canvas); font-size: 13px; }
+.addressBar { flex: 1; margin-left: 12px; border-radius: 4px; background: var(--sf-color-neutral-800); color: var(--sf-color-neutral-200); padding: 1px 10px; font-size: 10px; }
 
 .actions {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
   flex-wrap: wrap;
+  align-items: center;
   padding-bottom: 10px;
+}
+@media (max-width: 1023px), (pointer: coarse) {
+  .actions { position: sticky; top: 0; z-index: 5; padding-top: 8px; background: var(--sf-bg-surface); }
+  .actions button, .actions a { min-height: 44px; }
 }
 
 .browserWindow {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
   overflow: hidden;
   border: 1px solid var(--sf-color-neutral-900);
   border-radius: 18px;
@@ -20,11 +35,13 @@
 }
 
 .browserBar {
-  display: flex;
-  height: 24px;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) 56px;
+  min-height: 40px;
+  flex-shrink: 0;
+  align-items: center;
   gap: 7px;
-  padding: 2px 4px 8px;
+  padding: 2px 4px 6px;
 }
 
 .closeDot,
@@ -49,10 +66,18 @@
 }
 
 .browserScreen {
-  overflow: hidden;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
   border-radius: 12px;
-  background: var(--sf-color-neutral-900);
+  background: var(--sf-bg-canvas);
 }
+.stageMessage { display: flex; min-height: 100%; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 32px; text-align: center; color: var(--sf-text-secondary); font-size: 13px; }
+.windowControls { display: flex; align-items: center; gap: 7px; }
+.browserTab { display: flex; align-items: center; justify-content: center; gap: 8px; min-width: 0; width: 100%; max-width: 480px; margin-inline: auto; padding: 8px 16px; border-radius: 12px 12px 4px 4px; color: var(--sf-color-neutral-100); background: var(--sf-color-neutral-800); font-size: 11px; }
+.browserTab span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.browserScreen.emptyScreen { background: var(--sf-bg-canvas); }
 
 .deviceFrame {
   position: relative;

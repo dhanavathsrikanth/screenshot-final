@@ -1,0 +1,19 @@
+.layout { display: grid; align-items: start; gap: 24px; min-width: 0; }
+.settings { min-width: 0; order: 1; }
+.code { min-width: 0; order: 2; }
+.preview { min-width: 0; order: 3; }
+.enterHint { display: none; color: var(--sf-text-muted); font-size: 11px; line-height: 1.5; }
+.settingsSection { overflow: hidden; }
+.sectionToggle { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 68px; padding: 16px 20px; list-style: none; cursor: pointer; }
+.sectionToggle::-webkit-details-marker { display: none; }
+.sectionToggle:hover { background: var(--sf-bg-surface-raised); }
+.sectionToggle:focus-visible { outline: 2px solid var(--sf-color-primary-600); outline-offset: -3px; border-radius: 8px; }
+.sectionArrow { width: 16px; height: 16px; flex-shrink: 0; color: var(--sf-text-muted); transform: rotate(90deg); }
+.settingsSection[open] > .sectionToggle .sectionArrow { transform: rotate(-90deg); }
+@media (min-width: 1024px) and (pointer: fine) {
+  .layout { grid-template-columns: minmax(0, 300px) minmax(0, 1fr); }
+  .settings { grid-column: 1; grid-row: 1 / 3; }
+  .preview { grid-column: 2; grid-row: 1; }
+  .code { grid-column: 2; grid-row: 2; }
+  .enterHint { display: block; }
+}
