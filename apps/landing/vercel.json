@@ -1,0 +1,14 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "buildCommand": "pnpm run build",
+  "outputDirectory": "dist",
+  "redirects": [
+    { "source": "/pricing", "destination": "/#pricing", "permanent": true },
+    { "source": "/sign-in/:path*", "destination": "https://app.screenshotapi.tech/sign-in/:path*", "permanent": false },
+    { "source": "/sign-up/:path*", "destination": "https://app.screenshotapi.tech/sign-up/:path*", "permanent": false },
+    { "source": "/docs/:path*", "destination": "https://app.screenshotapi.tech/docs/:path*", "permanent": false },
+    { "source": "/playground", "destination": "https://app.screenshotapi.tech/playground", "permanent": false },
+    { "source": "/billing", "destination": "https://app.screenshotapi.tech/billing", "permanent": false }
+  ]
+}
