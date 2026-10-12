@@ -4,7 +4,7 @@ import {
   REGION_PRESETS,
   captureOptionsSchema,
   isRegionId,
-} from "@snapforge/contracts";
+} from "@screenshotapi/contracts";
 import { countryMatches, resolveRegion } from "./region.js";
 
 test("region preset table is internally consistent", () => {

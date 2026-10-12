@@ -1,8 +1,8 @@
-import { CAPTURE_RENDER_VERSION, type CaptureOptions, type CaptureSuccessData } from "@snapforge/contracts";
+import { CAPTURE_RENDER_VERSION, type CaptureOptions, type CaptureSuccessData } from "@screenshotapi/contracts";
 
 /**
  * The engine's view of a capture store. Declared here rather than imported from
- * `@snapforge/storage` so the engine keeps no storage or AWS dependency: the engine
+ * `@screenshotapi/storage` so the engine keeps no storage or AWS dependency: the engine
  * renders, and something else decides whether the bytes are worth keeping.
  *
  * A hit must carry the bytes. `CaptureOutcome.buffer` is required, so a port that could

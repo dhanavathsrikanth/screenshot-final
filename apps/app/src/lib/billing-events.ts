@@ -1,6 +1,6 @@
-import { findSubscriptionOwner, recordDodoEvent } from "@snapforge/database";
+import { findSubscriptionOwner, recordDodoEvent } from "@screenshotapi/database";
 import { productForId } from "@/lib/billing";
-import { verifyBillingOwner, verifiedCreditPayment, verifiedSubscription, type DodoResource } from "@/lib/billing-verification";
+import { billingUserId, verifyBillingOwner, verifiedCreditPayment, verifiedSubscription, type DodoResource } from "@/lib/billing-verification";
 import { readDodoResource } from "@/lib/dodo-api";
 
 function readPayload(payload: unknown) {
@@ -13,7 +13,7 @@ export async function handleSubscription(payload: unknown, verifiedUserId?: stri
   if (!subscriptionId) throw new Error("Missing subscription ID");
   const owner = await findSubscriptionOwner(subscriptionId);
   if (!owner && !verifiedUserId && !productForId(data.product_id)) return;
-  const metadataUserId = data.metadata?.snapforge_user_id;
+  const metadataUserId = billingUserId(data);
   const userId = owner ?? verifiedUserId ?? (typeof metadataUserId === "string" ? metadataUserId : undefined);
   if (!userId) throw new Error("Missing subscription account");
   await recordDodoEvent({
@@ -39,7 +39,7 @@ export async function handlePayment(payload: unknown, expectedUserId?: string) {
   if (expectedUserId) verifyBillingOwner(payment, expectedUserId);
   if (payment.status !== "succeeded") throw new Error("Payment has not succeeded");
   if (payment.subscription_id) {
-    const userId = payment.metadata?.snapforge_user_id;
+    const userId = billingUserId(payment);
     if (typeof userId !== "string") throw new Error("Missing payment account");
     await handleSubscription({ data: payment, type, timestamp: `payment:${paymentId}:${data.refund_id ?? ""}`,
       eventId: type === "refund.succeeded" ? `refund:${data.refund_id}` : `payment:${paymentId}` }, userId);
@@ -48,7 +48,7 @@ export async function handlePayment(payload: unknown, expectedUserId?: string) {
   const product = productForId(payment.product_cart?.[0]?.product_id);
   if (!product) return;
   if (product.kind !== "credits") throw new Error("Unexpected payment product");
-  const userId = payment.metadata?.snapforge_user_id;
+  const userId = billingUserId(payment);
   if (typeof userId !== "string") throw new Error("Missing payment account");
   await recordDodoEvent({ eventId: type === "refund.succeeded" ? `refund:${data.refund_id}` : `payment:${paymentId}`,
     eventType: type, userId,

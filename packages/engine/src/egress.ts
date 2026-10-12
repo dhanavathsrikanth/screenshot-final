@@ -1,5 +1,5 @@
 import type { BrowserContext } from "playwright";
-import { SnapforgeError } from "@snapforge/contracts";
+import { ScreenshotAPIError } from "@screenshotapi/contracts";
 import { countryMatches, type ResolvedRegion } from "./region.js";
 
 export interface EgressResult {
@@ -50,7 +50,7 @@ export async function verifyEgress(
   try {
     observed = await lookupCountry(context, lookupUrl);
   } catch (err) {
-    throw new SnapforgeError({
+    throw new ScreenshotAPIError({
       code: "egress_unavailable",
       message: `Could not verify egress for region "${region.id}": ${
         err instanceof Error ? err.message : String(err)
@@ -62,7 +62,7 @@ export async function verifyEgress(
   }
 
   if (observed === null) {
-    throw new SnapforgeError({
+    throw new ScreenshotAPIError({
       code: "egress_unavailable",
       message: `Egress lookup returned no country for region "${region.id}"`,
       requestId,
@@ -72,7 +72,7 @@ export async function verifyEgress(
   }
 
   if (!countryMatches(observed, region.country)) {
-    throw new SnapforgeError({
+    throw new ScreenshotAPIError({
       code: "egress_mismatch",
       message: `Egress country ${observed} does not match requested region "${region.id}" (${region.country}). Set a proxy that egresses from ${region.country}.`,
       requestId,

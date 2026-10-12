@@ -1,5 +1,5 @@
-import type { CaptureSuccessData } from "@snapforge/contracts";
-import { readPngSize } from "@snapforge/engine";
+import type { CaptureSuccessData } from "@screenshotapi/contracts";
+import { readPngSize } from "@screenshotapi/engine";
 import type { BenchmarkSite } from "./sites.js";
 
 export interface CheckFailure {

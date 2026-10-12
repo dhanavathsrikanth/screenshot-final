@@ -1,10 +1,35 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { captureOptionsSchema } from "@snapforge/contracts";
+import { captureOptionsSchema } from "@screenshotapi/contracts";
 import { CaptureQueue } from "./queue.js";
 import { resolveQueueConfig } from "./config.js";
 import { FakeJob, FakeQueueHost } from "./fakes.js";
 import type { CaptureJobPayload, CaptureJobResult } from "./types.js";
+import { compatibleWebhookHeaders, signPayload, verifySignature } from "./webhook.js";
+
+it("renamed callback headers keep legacy signatures identical", () => {
+  const body = '{"ok":true}';
+  const signature = signPayload({ secret: "example-signing-secret", body });
+  const headers = compatibleWebhookHeaders({ "x-screenshotapi-signature": signature, "x-screenshotapi-job-id": "job-1" });
+  assert.equal(headers["x-snapforge-signature"], signature);
+  assert.equal(headers["x-snapforge-job-id"], "job-1");
+  assert.ok(verifySignature({ secret: "example-signing-secret", body, signature: headers["x-snapforge-signature"] }));
+});
+
+it("new deployment settings override legacy values while existing settings still work", () => {
+  const current = process.env.SCREENSHOTAPI_QUEUE_CONCURRENCY;
+  const legacy = process.env.SNAPFORGE_QUEUE_CONCURRENCY;
+  try {
+    delete process.env.SCREENSHOTAPI_QUEUE_CONCURRENCY;
+    process.env.SNAPFORGE_QUEUE_CONCURRENCY = "3";
+    assert.equal(resolveQueueConfig().concurrency, 3);
+    process.env.SCREENSHOTAPI_QUEUE_CONCURRENCY = "5";
+    assert.equal(resolveQueueConfig().concurrency, 5);
+  } finally {
+    if (current === undefined) delete process.env.SCREENSHOTAPI_QUEUE_CONCURRENCY; else process.env.SCREENSHOTAPI_QUEUE_CONCURRENCY = current;
+    if (legacy === undefined) delete process.env.SNAPFORGE_QUEUE_CONCURRENCY; else process.env.SNAPFORGE_QUEUE_CONCURRENCY = legacy;
+  }
+});
 
 const config = resolveQueueConfig({ redisUrl: "redis://example:6379" });
 

@@ -3,8 +3,8 @@ import {
   InProcessCaptureCache,
   type CaptureCachePort,
   type CachedCapture,
-  type SnapforgeEngine,
-} from "@snapforge/engine";
+  type ScreenshotAPIEngine,
+} from "@screenshotapi/engine";
 import {
   CaptureCache,
   CaptureStore,
@@ -12,17 +12,17 @@ import {
   createR2Storage,
   resolveStorageConfig,
   type CacheStats,
-} from "@snapforge/storage";
+} from "@screenshotapi/storage";
 
 interface EngineHolder {
-  engine?: SnapforgeEngine;
+  engine?: ScreenshotAPIEngine;
   store?: CaptureStore;
-  starting?: Promise<SnapforgeEngine>;
+  starting?: Promise<ScreenshotAPIEngine>;
   prepared?: Promise<void>;
 }
 
-const globalRef = globalThis as unknown as { __snapforgeEngine?: EngineHolder };
-const holder: EngineHolder = (globalRef.__snapforgeEngine ??= {});
+const globalRef = globalThis as unknown as { __screenshotapiEngine?: EngineHolder };
+const holder: EngineHolder = (globalRef.__screenshotapiEngine ??= {});
 
 /**
  * Builds the capture cache.
@@ -52,7 +52,7 @@ function buildCache(): CaptureCachePort {
   return new InProcessCaptureCache();
 }
 
-export function createDashboardEngine(cache: CaptureCachePort): SnapforgeEngine {
+export function createDashboardEngine(cache: CaptureCachePort): ScreenshotAPIEngine {
   return createEngine({
     headless: true,
     stealth: true,
@@ -66,7 +66,7 @@ export function createDashboardEngine(cache: CaptureCachePort): SnapforgeEngine 
   }, cache);
 }
 
-export function getEngine(): Promise<SnapforgeEngine> {
+export function getEngine(): Promise<ScreenshotAPIEngine> {
   if (holder.engine) return Promise.resolve(holder.engine);
   if (!holder.starting) {
     holder.starting = Promise.resolve()

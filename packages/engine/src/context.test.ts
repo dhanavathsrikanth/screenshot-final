@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import type { Browser } from "playwright";
-import { captureOptionsSchema } from "@snapforge/contracts";
+import { captureOptionsSchema } from "@screenshotapi/contracts";
 import { contextOptionsFor, createSession, resolveViewport } from "./context.js";
 import { resolveRegion } from "./region.js";
 import { resolveConfig } from "./types.js";

@@ -16,9 +16,9 @@ export function Sidebar({ collapsed, onSearch, onToggle, onNavigate, onClose }: 
   return (
     <nav className={`${styles.sidebar} ${collapsed ? styles.rail : ""}`} aria-label="Primary">
       <div className={styles.brand}>
-        <Link href="/" onClick={onNavigate} className={styles.brandLink} aria-label="Snapforge overview">
+        <Link href="/" onClick={onNavigate} className={styles.brandLink} aria-label="ScreenshotAPI overview">
           <BrandMark className="size-8" />
-          {!collapsed && <span><span className={styles.wordmark}>Snapforge<span className="text-accent-ink">.</span></span><span className={styles.workspaceLabel}>Your capture workspace</span></span>}
+          {!collapsed && <span><span className={styles.wordmark}>ScreenshotAPI<span className="text-accent-ink">.</span></span><span className={styles.workspaceLabel}>Your capture workspace</span></span>}
         </Link>
         {onClose && <button type="button" className={`${styles.iconButton} ml-auto`} onClick={onClose} aria-label="Close navigation"><Icon name="x" /></button>}
       </div>

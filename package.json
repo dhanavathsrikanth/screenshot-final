@@ -1,8 +1,8 @@
 {
-  "name": "snapforge-monorepo",
+  "name": "screenshotapi-monorepo",
   "version": "0.1.0",
   "private": true,
-  "description": "Snapforge - Next-Gen Screenshot API Platform",
+  "description": "ScreenshotAPI - Next-Gen Screenshot API Platform",
   "scripts": {
     "build": "pnpm -r run build",
     "test": "pnpm -r run test",

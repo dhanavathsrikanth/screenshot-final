@@ -51,7 +51,7 @@
 
 /*
  * Theme: dark (default, matches "sleek, dark-themed command center").
- * Export via `@snapforge/brand/tokens.css` when adding UI apps later.
+ * Export via `@screenshotapi/brand/tokens.css` when adding UI apps later.
  */
 [data-theme="dark"],
 :root {

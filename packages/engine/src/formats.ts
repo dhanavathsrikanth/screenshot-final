@@ -1,5 +1,5 @@
 import type { Page } from "playwright";
-import type { CaptureOptions, RenderDiagnostics } from "@snapforge/contracts";
+import type { CaptureOptions, RenderDiagnostics } from "@screenshotapi/contracts";
 
 export interface PageMetrics {
   viewportWidth: number;

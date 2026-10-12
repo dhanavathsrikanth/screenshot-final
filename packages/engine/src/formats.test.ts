@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { captureOptionsSchema } from "@snapforge/contracts";
+import { captureOptionsSchema } from "@screenshotapi/contracts";
 import { buildPdfOptions, planCapture, readPngSize } from "./formats.js";
 
 function options(input: Record<string, unknown>) {

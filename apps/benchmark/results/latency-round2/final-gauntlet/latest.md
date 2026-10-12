@@ -1,4 +1,4 @@
-# Snapforge Gauntlet - 30-Site Quality Gate
+# ScreenshotAPI Gauntlet - 30-Site Quality Gate
 
 - **Verdict**: FAIL (pass rate 85.71% vs gate 95%; 2 blocked_by_target site(s) excluded from the gate)
 - **Started**: 2026-10-03T02:46:32.318Z

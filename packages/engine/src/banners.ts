@@ -61,7 +61,7 @@ export const CMP_SELECTORS: readonly string[] = [
 export function buildBannerRemovalScript(
   selectors: readonly string[] = CMP_SELECTORS,
   sweepLifetimeMs = 30_000,
-  bridgeName = "__snapforgeBannerSweep",
+  bridgeName = "__screenshotapiBannerSweep",
   restoreScroll = true,
 ): string {
   return `(() => {

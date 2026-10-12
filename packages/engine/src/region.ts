@@ -1,11 +1,11 @@
 import {
   REGION_PRESETS,
-  SnapforgeError,
+  ScreenshotAPIError,
   isRegionId,
   type CaptureOptions,
   type ProxyOptions,
   type RegionId,
-} from "@snapforge/contracts";
+} from "@screenshotapi/contracts";
 
 export interface ResolvedRegion {
   id: RegionId;
@@ -26,7 +26,7 @@ export function resolveRegion(
 ): ResolvedRegion | null {
   if (!options.region) return null;
   if (!isRegionId(options.region)) {
-    throw new SnapforgeError({
+    throw new ScreenshotAPIError({
       code: "unsupported_option",
       message: `Unknown region "${options.region}". Supported regions: ${Object.keys(REGION_PRESETS).join(", ")}`,
       requestId,

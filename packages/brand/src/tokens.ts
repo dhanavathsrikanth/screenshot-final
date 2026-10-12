@@ -1,5 +1,5 @@
 /**
- * Snapforge brand tokens.
+ * ScreenshotAPI brand tokens.
  *
  * Source of truth: the Hostinger brand palette, verified against the live
  * hostinger.com stylesheet (primary #673DE6, plus the #E536DB -> #673DE6 ->

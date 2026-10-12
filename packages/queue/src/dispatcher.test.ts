@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { captureOptionsSchema, SnapforgeError } from "@snapforge/contracts";
+import { captureOptionsSchema, ScreenshotAPIError } from "@screenshotapi/contracts";
 import { CaptureQueue } from "./queue.js";
 import { CaptureDispatcher, isTimeout } from "./dispatcher.js";
 import { resolveQueueConfig } from "./config.js";
@@ -200,8 +200,8 @@ describe("CaptureDispatcher sync fast path", () => {
     assert.equal(result.job_id, "job_1", "the job handle stays the BullMQ job id");
   });
 
-  it("preserves a SnapforgeError code when the wait rejects", async () => {
-    const error = new SnapforgeError({
+  it("preserves a ScreenshotAPIError code when the wait rejects", async () => {
+    const error = new ScreenshotAPIError({
       code: "blocked_by_target",
       message: "target blocked the render",
       requestId: "req_1",
@@ -236,7 +236,7 @@ describe("CaptureDispatcher sync fast path", () => {
 
     await assert.rejects(
       dispatcher.dispatch({ requestId: "req_1", mode: "sync", ...basePayload }),
-      (error: unknown) => error instanceof SnapforgeError && error.code === "internal_error",
+      (error: unknown) => error instanceof ScreenshotAPIError && error.code === "internal_error",
     );
   });
 
@@ -249,7 +249,7 @@ describe("CaptureDispatcher sync fast path", () => {
 
     await assert.rejects(
       dispatcher.dispatch({ requestId: "req_1", mode: "sync", ...basePayload }),
-      (error: unknown) => error instanceof SnapforgeError && /vanished/.test(error.message),
+      (error: unknown) => error instanceof ScreenshotAPIError && /vanished/.test(error.message),
     );
   });
 });

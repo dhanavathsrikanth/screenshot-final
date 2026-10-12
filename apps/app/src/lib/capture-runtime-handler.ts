@@ -1,4 +1,4 @@
-import { reserveCapture, settleCapture, recordCapture } from "@snapforge/database";
+import { reserveCapture, settleCapture, recordCapture } from "@screenshotapi/database";
 import { acquireCaptureAdmission } from "@/lib/capture-admission";
 import { createCaptureHandler } from "@/lib/capture-handler";
 import { createQueuedCaptureHandlers } from "@/lib/capture-queue-handler";

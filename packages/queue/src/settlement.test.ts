@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
-import { captureOptionsSchema } from "@snapforge/contracts";
+import { captureOptionsSchema } from "@screenshotapi/contracts";
 import { CaptureCompletionConsumer, CaptureFinalizer, type CaptureFinalization, type CaptureLifecycleRepository } from "./settlement.js";
 import { CaptureService, type CaptureBilling } from "./service.js";
 import { CaptureQueue } from "./queue.js";

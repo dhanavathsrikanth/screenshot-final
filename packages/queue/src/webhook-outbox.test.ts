@@ -35,7 +35,7 @@ test("delivery pins a public address, signs its stable identity, and never follo
     const outcome = await sendWebhookAttempt(claim, target, 1000, { resolve: async () => [{ address: "8.8.8.8", family: 4 }],
       send: async (url, address, body, headers) => {
         assert.equal(url.hostname, "hooks.example.com"); assert.equal(address.address, "8.8.8.8");
-        assert.equal(verifySignature({ body, secret: target.secret, signature: headers["x-snapforge-signature"] }), true);
+        assert.equal(verifySignature({ body, secret: target.secret, signature: headers["x-screenshotapi-signature"] }), true);
         assert.equal(JSON.parse(body).delivery_id, claim.id);
         assert.equal(JSON.parse(body).delivery_generation, claim.generation);
         assert.equal(JSON.parse(body).job_id, claim.jobId);

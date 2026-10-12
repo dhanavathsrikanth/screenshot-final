@@ -3,11 +3,11 @@ import assert from "node:assert/strict";
 import { randomBytes, randomUUID } from "node:crypto";
 import { EventEmitter } from "node:events";
 import { CaptureCompletionConsumer, captureJobPayloadSchema, createCaptureSubmissionCodec, deliverCaptureSubmission,
-  type CaptureFinalization, type CaptureJobPayload, type CaptureJobView, type DispatchRequest, type SealedCaptureSubmission } from "@snapforge/queue";
+  type CaptureFinalization, type CaptureJobPayload, type CaptureJobView, type DispatchRequest, type SealedCaptureSubmission } from "@screenshotapi/queue";
 import { captureLifecycle, captureSubmissions, commitCapture, getBillingState, linkReservationToJob, pool,
   recordCapture, reservationForJob, reserveCapture, settleCapture } from "./index.js";
 
-const enabled = process.env.SNAPFORGE_SETTLEMENT_TEST === "1";
+const enabled = process.env.SCREENSHOTAPI_SETTLEMENT_TEST === "1";
 const codec = createCaptureSubmissionCodec(randomBytes(32).toString("base64"));
 const testAccounts: string[] = [];
 const billing = { reserveCapture, settleCapture, linkReservationToJob, reservationForJob, recordCapture,

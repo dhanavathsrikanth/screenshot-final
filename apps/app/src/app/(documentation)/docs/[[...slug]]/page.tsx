@@ -13,7 +13,7 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const page = getDoc((await params).slug?.join("/") ?? "");
-  return { title: `${page?.title ?? "Page not found"} · Snapforge Docs`, description: page?.description };
+  return { title: `${page?.title ?? "Page not found"} · ScreenshotAPI Docs`, description: page?.description };
 }
 
 export default async function DocumentationPage({ params }: Props) {

@@ -38,7 +38,7 @@ export function DocsArticle({ page }: { page: DocPage }) {
         {section.code && <DocsCode samples={section.code} live={docLiveExamples(page, section)} />}
       </section>)}
     </div>
-    <div className={styles.pageFooter}><span>Snapforge documentation</span><a href={`/docs/markdown/${page.slug}`}><Icon name="download" className="size-3.5" />Markdown source</a></div>
+    <div className={styles.pageFooter}><span>ScreenshotAPI documentation</span><a href={`/docs/markdown/${page.slug}`}><Icon name="download" className="size-3.5" />Markdown source</a></div>
     <nav className={styles.pagination} aria-label="Documentation pages">{previous ? <Link href={docHref(previous.slug)}><small>Previous</small><strong>{previous.title}</strong><Icon name="chevron" className="size-4" /></Link> : <span />}{next && <Link href={docHref(next.slug)}><small>Next</small><strong>{next.title}</strong><Icon name="chevron" className="size-4" /></Link>}</nav>
   </>;
 }

@@ -15,4 +15,4 @@ export * from "./submission.js";
 export * from "./idempotency.js";
 export * from "./webhook-outbox.js";
 export * from "./hot-cache.js";
-export { PLAN_CATALOG, allocateCaptureCredits, type PlanName } from "@snapforge/contracts";
+export { PLAN_CATALOG, allocateCaptureCredits, type PlanName } from "@screenshotapi/contracts";

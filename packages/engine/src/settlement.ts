@@ -1,5 +1,5 @@
 import type { Page } from "playwright";
-import type { CaptureOptions } from "@snapforge/contracts";
+import type { CaptureOptions } from "@screenshotapi/contracts";
 import { sleep } from "./util.js";
 import { readContentState } from "./readiness.js";
 

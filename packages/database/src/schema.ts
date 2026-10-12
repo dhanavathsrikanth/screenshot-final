@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import type { CaptureJobResult, CaptureMode, JobSnapshot } from "@snapforge/queue";
+import type { CaptureJobResult, CaptureMode, JobSnapshot } from "@screenshotapi/queue";
 import {
   boolean,
   check,

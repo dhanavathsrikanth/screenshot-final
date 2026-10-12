@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { SnapforgeError } from "@snapforge/contracts";
+import { ScreenshotAPIError } from "@screenshotapi/contracts";
 import { CaptureService, artifactData, type CaptureBilling, type CaptureServiceDependencies } from "./service.js";
 import { CaptureQueue } from "./queue.js";
 import { CaptureDispatcher } from "./dispatcher.js";
@@ -63,12 +63,12 @@ test("admission denial still fails closed before reservation or rendering", asyn
   assert.equal(f.calls.includes("release"), false, "admission was never granted, so there is nothing to release");
 });
 
-for (const body of [{ ...input, format: "bad" }, async () => { throw new SnapforgeError({ code: "invalid_request", message: "bad JSON", requestId: "request" }); }]) {
+for (const body of [{ ...input, format: "bad" }, async () => { throw new ScreenshotAPIError({ code: "invalid_request", message: "bad JSON", requestId: "request" }); }]) {
   test("invalid requests fail closed without consuming admission, reservation, or render", async () => {
     const f = fixture();
     let billingCalls = 0;
     f.deps.billing.settleCapture = async () => { billingCalls++; };
-    await assert.rejects(f.service.submit({ accountId: "account" }, body, "request", "async"), SnapforgeError);
+    await assert.rejects(f.service.submit({ accountId: "account" }, body, "request", "async"), ScreenshotAPIError);
     assert.deepEqual(f.calls, [], "admission is taken only after a valid body parses");
     assert.equal(f.host.jobs.size, 0);
     assert.equal(billingCalls, 0);
@@ -106,7 +106,7 @@ test("ambiguous enqueue retains reservation and returns its recoverable handle",
   const f = fixture({ dispatcher: { dispatch: async () => { throw new Error("unknown enqueue outcome"); } },
     queue: { getJob: async () => { throw new Error("Redis outage"); }, snapshot: async () => null } });
   await assert.rejects(f.service.submit({ accountId: "account" }, input, "request", "async"), (error: unknown) => {
-    assert.ok(error instanceof SnapforgeError);
+    assert.ok(error instanceof ScreenshotAPIError);
     assert.equal(error.code, "egress_unavailable");
     assert.equal(error.details?.job_id, "stable-job");
     return true;
@@ -119,7 +119,7 @@ test("accepted job lookup outage preserves its handle and reservation", async ()
   const f = fixture();
   f.deps.queue.snapshot = async () => { throw new Error("status transport failed"); };
   await assert.rejects(f.service.submit({ accountId: "account" }, input, "request", "async"), (error: unknown) => {
-    assert.ok(error instanceof SnapforgeError);
+    assert.ok(error instanceof ScreenshotAPIError);
     assert.equal(error.details?.job_id, "stable-job");
     return true;
   });
@@ -216,7 +216,7 @@ test("sync waiter failures cannot settle a still-active worker job", async () =>
 });
 
 import { HotCache } from "./hot-cache.js";
-import { captureOptionsSchema } from "@snapforge/contracts";
+import { captureOptionsSchema } from "@screenshotapi/contracts";
 
 test("hot-cache hit returns the cached artifact synchronously without admitting or charging", async () => {
   const hotCache = new HotCache();
@@ -251,7 +251,7 @@ test("webhook-bearing submit bypasses the hot cache", async () => {
   const webhook = { url: "https://hook.example.com", secret: "a-very-strong-shared-secret-key" };
   await assert.rejects(
     f.service.submit({ accountId: "account" }, { ...input, cache_ttl: 120, webhook }, "request", "async"),
-    (error: unknown) => error instanceof SnapforgeError && error.code === "unsupported_option",
+    (error: unknown) => error instanceof ScreenshotAPIError && error.code === "unsupported_option",
   );
   assert.equal(f.host.added.length, 0, "webhook requests must not bypass durable delivery");
 });
@@ -283,7 +283,7 @@ test("durable submission mode bypasses the hot cache", async () => {
 
   await assert.rejects(
     f.service.submit({ accountId: "account" }, { ...input, cache_ttl: 120 }, "request", "async"),
-    (error: unknown) => error instanceof SnapforgeError && error.code === "egress_unavailable",
+    (error: unknown) => error instanceof ScreenshotAPIError && error.code === "egress_unavailable",
     "durable submission paths run through the queue, not the hot cache, so acknowledge fails when the fake queue has no job",
   );
   assert.notEqual(f.calls.at(0), undefined, "durable path must run even with a hot cache hit available");

@@ -2,7 +2,7 @@ import { Checkout } from "@dodopayments/nextjs";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { NextRequest } from "next/server";
 import { BILLING_PRODUCTS, type BillingProduct } from "@/lib/billing";
-import { ensureAccount, getSubscription } from "@snapforge/database";
+import { ensureAccount, getSubscription } from "@screenshotapi/database";
 import { billingPriceMatches } from "@/lib/billing-price";
 
 const checkout = Checkout({
@@ -54,7 +54,7 @@ export async function POST(request: Request) {
     billing_currency: "USD",
     product_cart: [{ product_id: product.id, quantity: 1 }],
     customer: { email, ...(user.fullName ? { name: user.fullName } : {}) },
-    metadata: { snapforge_user_id: userId, snapforge_product: productKey },
+    metadata: { screenshotapi_user_id: userId, snapforge_user_id: userId, screenshotapi_product: productKey },
     return_url: process.env.DODO_PAYMENTS_RETURN_URL ?? new URL("/billing?checkout=complete", request.url).toString(),
   };
   const forwarded = new NextRequest(request.url, {

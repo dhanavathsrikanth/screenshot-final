@@ -12,7 +12,7 @@ export function Brand() {
   return (
     <span className="inline-flex items-center gap-2.5">
       <BrandMark />
-      <span className="text-[17px] font-semibold tracking-[-0.6px] text-ink">Snapforge<span className="text-accent-ink">.</span></span>
+      <span className="text-[17px] font-semibold tracking-[-0.6px] text-ink">ScreenshotAPI<span className="text-accent-ink">.</span></span>
     </span>
   );
 }

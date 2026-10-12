@@ -5,5 +5,5 @@ export {
   RedisCaptureAdmission,
   createCaptureAdmission,
   acquireCaptureAdmission,
-} from "@snapforge/queue";
-export type { CaptureLease, CaptureAdmission, AdmissionRedis } from "@snapforge/queue";
+} from "@screenshotapi/queue";
+export type { CaptureLease, CaptureAdmission, AdmissionRedis } from "@screenshotapi/queue";

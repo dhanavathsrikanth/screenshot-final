@@ -1,5 +1,5 @@
 {
-  "name": "@snapforge/database",
+  "name": "@screenshotapi/database",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -19,7 +19,7 @@
     "db:migrate": "drizzle-kit migrate --config drizzle.config.ts"
   },
   "dependencies": {
-    "@snapforge/queue": "workspace:*",
+    "@screenshotapi/queue": "workspace:*",
     "dotenv": "^16.6.1",
     "drizzle-orm": "^0.44.7",
     "pg": "^8.16.3"

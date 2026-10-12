@@ -1,5 +1,5 @@
-import type { CaptureOptions, CaptureSuccessData } from "@snapforge/contracts";
-import { cacheKey, FastLRU, type FastLruStats } from "@snapforge/storage";
+import type { CaptureOptions, CaptureSuccessData } from "@screenshotapi/contracts";
+import { cacheKey, FastLRU, type FastLruStats } from "@screenshotapi/storage";
 
 export interface HotCacheOptions {
   /** Maximum entries kept in memory. Defaults to 1024. */

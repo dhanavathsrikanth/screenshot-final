@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { Redis } from "ioredis";
-import { SnapforgeError } from "@snapforge/contracts";
+import { ScreenshotAPIError } from "@screenshotapi/contracts";
 
 export const CAPTURE_ADMISSION_DEFAULTS = {
   requests: 60,
@@ -32,7 +32,7 @@ export interface HttpRateLimit {
 
 type AdmissionOptions = { [K in keyof typeof CAPTURE_ADMISSION_DEFAULTS]: K extends "prefix" ? string : number };
 
-export class CaptureAdmissionError extends SnapforgeError {
+export class CaptureAdmissionError extends ScreenshotAPIError {
   readonly httpStatus: number;
   readonly retryAfterSeconds: number;
 
@@ -287,15 +287,15 @@ export async function createCaptureAdmission(env: NodeJS.ProcessEnv = process.en
   return new RedisCaptureAdmission(redis);
 }
 
-const globalRef = globalThis as unknown as { __snapforgeAdmission?: Promise<CaptureAdmission> };
+const globalRef = globalThis as unknown as { __screenshotapiAdmission?: Promise<CaptureAdmission> };
 
 export async function acquireCaptureAdmission(accountId: string, requestId: string): Promise<CaptureLease> {
-  globalRef.__snapforgeAdmission ??= createCaptureAdmission().catch((error) => {
-    globalRef.__snapforgeAdmission = undefined;
+  globalRef.__screenshotapiAdmission ??= createCaptureAdmission().catch((error) => {
+    globalRef.__screenshotapiAdmission = undefined;
     throw error;
   });
   try {
-    return await (await globalRef.__snapforgeAdmission).acquire(accountId, requestId);
+    return await (await globalRef.__screenshotapiAdmission).acquire(accountId, requestId);
   } catch (error) {
     if (error instanceof CaptureAdmissionError) throw error;
     throw new CaptureAdmissionError(requestId, false);

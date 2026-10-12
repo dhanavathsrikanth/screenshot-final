@@ -1,5 +1,5 @@
-import { CAPTURE_FORMATS, captureSuccessDataSchema } from "@snapforge/contracts";
-import type { CaptureSuccessData } from "@snapforge/contracts";
+import { CAPTURE_FORMATS, captureSuccessDataSchema } from "@screenshotapi/contracts";
+import type { CaptureSuccessData } from "@screenshotapi/contracts";
 import type { JobSnapshot } from "./types.js";
 
 export function artifactData(input: unknown): CaptureSuccessData | null {

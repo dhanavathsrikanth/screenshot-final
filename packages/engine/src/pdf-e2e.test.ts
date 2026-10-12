@@ -41,8 +41,8 @@ test("full-page PDF prepares below-fold content and preserves the screen layout"
   assert.match(result.inspection?.markdown ?? "", /Below-fold content loaded/);
   assert.equal(result.data.width, 800);
   assert.equal(result.data.height, 1818);
-  if (process.env.SNAPFORGE_PDF_QA_DIR) {
-    await mkdir(process.env.SNAPFORGE_PDF_QA_DIR, { recursive: true });
-    await writeFile(join(process.env.SNAPFORGE_PDF_QA_DIR, "quality-fixture.pdf"), result.buffer);
+  if (process.env.SCREENSHOTAPI_PDF_QA_DIR) {
+    await mkdir(process.env.SCREENSHOTAPI_PDF_QA_DIR, { recursive: true });
+    await writeFile(join(process.env.SCREENSHOTAPI_PDF_QA_DIR, "quality-fixture.pdf"), result.buffer);
   }
 });

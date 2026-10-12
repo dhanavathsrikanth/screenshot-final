@@ -6,7 +6,7 @@ import { chromium } from "playwright";
 import { createEngine } from "./engine.js";
 import { installNetworkGuard } from "./network.js";
 import { readQualityState } from "./quality.js";
-import { SnapforgeError } from "@snapforge/contracts";
+import { ScreenshotAPIError } from "@screenshotapi/contracts";
 import { InProcessCaptureCache } from "./cache.js";
 
 test("runtime quality and standalone proxy integration", { timeout: 120_000 }, async (t) => {
@@ -30,7 +30,7 @@ test("runtime quality and standalone proxy integration", { timeout: 120_000 }, a
 
   await t.test("navigation/footer text cannot make a loading shell successful or cached", async () => {
     await assert.rejects(engine.capture({ url: `${base}/shell`, timeout: 10_000, fail_if_incomplete: true }), (error: unknown) => {
-      assert.ok(error instanceof SnapforgeError);
+      assert.ok(error instanceof ScreenshotAPIError);
       assert.equal(error.code, "render_incomplete");
       assert.deepEqual(error.details?.failures, ["loading_shell"]);
       return true;
@@ -47,7 +47,7 @@ test("runtime quality and standalone proxy integration", { timeout: 120_000 }, a
   });
   await t.test("explicit output requirements fail before cache saving", async () => {
     const before = cache.size;
-    await assert.rejects(engine.capture({ url: `${base}/`, timeout: 10_000, min_capture_height: 4000 }), (error: unknown) => error instanceof SnapforgeError && error.code === "render_incomplete");
+    await assert.rejects(engine.capture({ url: `${base}/`, timeout: 10_000, min_capture_height: 4000 }), (error: unknown) => error instanceof ScreenshotAPIError && error.code === "render_incomplete");
     assert.equal(cache.size, before);
   });
   await t.test("standalone proxy carries actual browser traffic without a region", async () => {

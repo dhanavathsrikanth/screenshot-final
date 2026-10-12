@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { captureCreditCost, captureOptionsSchema, captureRequestSchema, idempotencyKeySchema, SnapforgeError, type CaptureOptions, type CaptureSuccessData, type CaptureWebhook } from "@snapforge/contracts";
+import { captureCreditCost, captureOptionsSchema, captureRequestSchema, idempotencyKeySchema, ScreenshotAPIError, type CaptureOptions, type CaptureSuccessData, type CaptureWebhook } from "@screenshotapi/contracts";
 import { captureRequestFingerprint, CaptureRequestConflictError, idempotentJobId } from "./idempotency.js";
 import { deliverCaptureSubmission, type CaptureSubmissionCodec, type CaptureSubmissionRepository } from "./submission.js";
 import { CaptureFinalizer, type CaptureLifecycleRepository } from "./settlement.js";
@@ -62,7 +62,7 @@ export class CaptureService {
     try {
       const body = typeof input === "function" ? await (input as () => Promise<unknown>)() : input;
       const parsed = captureRequestSchema.safeParse(body);
-      if (!parsed.success) throw new SnapforgeError({ code: "invalid_request", message: "Capture options are invalid", requestId });
+      if (!parsed.success) throw new ScreenshotAPIError({ code: "invalid_request", message: "Capture options are invalid", requestId });
       const options = captureOptionsSchema.parse(parsed.data);
 
       // Synchronous hot-cache fast path. Webhook-bearing and durable-submission
@@ -76,10 +76,10 @@ export class CaptureService {
       admitted = true;
 
       if (this.deps.billing.submissions) return this.submitDurable(identity, jobId, options, requestId, mode ?? (options.sync ? "sync" : "async"), undefined, parsed.data.webhook);
-      if (parsed.data.webhook) throw new SnapforgeError({ code: "unsupported_option", message: "Durable webhook delivery is not configured", requestId });
+      if (parsed.data.webhook) throw new ScreenshotAPIError({ code: "unsupported_option", message: "Durable webhook delivery is not configured", requestId });
       reservationAttempted = true;
       if (!await this.deps.billing.reserveCapture(identity.accountId, jobId, captureCreditCost(options))) {
-        throw new SnapforgeError({ code: "quota_exceeded", message: "Not enough credits for this capture. Add credits or wait for your monthly reset.", requestId });
+        throw new ScreenshotAPIError({ code: "quota_exceeded", message: "Not enough credits for this capture. Add credits or wait for your monthly reset.", requestId });
       }
       await this.deps.billing.linkReservationToJob(identity.accountId, jobId, jobId);
       attemptedEnqueue = true;
@@ -93,7 +93,7 @@ export class CaptureService {
         try {
           found = await this.deps.queue.getJob(jobId);
         } catch {
-          throw new SnapforgeError({
+          throw new ScreenshotAPIError({
             code: "egress_unavailable", message: "Capture submission is being recovered. Check its job before retrying.",
             requestId, details: { job_id: jobId },
           });
@@ -135,12 +135,12 @@ export class CaptureService {
   }
 
   private async submitIdempotent(identity: CaptureIdentity, input: unknown, requestId: string, mode: CaptureMode | undefined, key: string): Promise<JobSnapshot> {
-    if (!idempotencyKeySchema.safeParse(key).success) throw new SnapforgeError({ code: "invalid_request", message: "Idempotency-Key must contain 1–128 letters, digits, dots, underscores or hyphens", requestId });
+    if (!idempotencyKeySchema.safeParse(key).success) throw new ScreenshotAPIError({ code: "invalid_request", message: "Idempotency-Key must contain 1–128 letters, digits, dots, underscores or hyphens", requestId });
     const submissions = this.deps.billing.submissions;
-    if (!submissions?.existingRequest) throw new SnapforgeError({ code: "unsupported_option", message: "Durable request idempotency is not configured", requestId });
+    if (!submissions?.existingRequest) throw new ScreenshotAPIError({ code: "unsupported_option", message: "Durable request idempotency is not configured", requestId });
     const body = typeof input === "function" ? await (input as () => Promise<unknown>)() : input;
     const parsed = captureRequestSchema.safeParse(body);
-    if (!parsed.success) throw new SnapforgeError({ code: "invalid_request", message: "Capture options are invalid", requestId });
+    if (!parsed.success) throw new ScreenshotAPIError({ code: "invalid_request", message: "Capture options are invalid", requestId });
     const options = captureOptionsSchema.parse(parsed.data);
     const resolvedMode = mode ?? (options.sync ? "sync" : "async");
     const fingerprint = captureRequestFingerprint({ options, mode: resolvedMode, webhook: parsed.data.webhook });
@@ -155,7 +155,7 @@ export class CaptureService {
   }
 
   async lookupRequest(identity: CaptureIdentity, key: string, requestId: string): Promise<JobSnapshot> {
-    if (!idempotencyKeySchema.safeParse(key).success) throw new SnapforgeError({ code: "invalid_request", message: "Invalid Idempotency-Key", requestId });
+    if (!idempotencyKeySchema.safeParse(key).success) throw new ScreenshotAPIError({ code: "invalid_request", message: "Invalid Idempotency-Key", requestId });
     return this.lookup(identity, idempotentJobId(identity.accountId, key), requestId);
   }
 
@@ -174,7 +174,7 @@ export class CaptureService {
         webhookCiphertext, credits: captureCreditCost(options) });
       if (!reserved) {
         reservationAttempted = false;
-        throw new SnapforgeError({ code: "quota_exceeded", message: "Not enough credits for this capture. Add credits or wait for your monthly reset.", requestId });
+        throw new ScreenshotAPIError({ code: "quota_exceeded", message: "Not enough credits for this capture. Add credits or wait for your monthly reset.", requestId });
       }
       try {
         await deliverCaptureSubmission(jobId, { submissions, codec, queue: this.deps.queue, dispatcher: this.deps.dispatcher, admission: this.deps.admission });
@@ -186,7 +186,7 @@ export class CaptureService {
     } catch (error) {
       if (error instanceof CaptureRequestConflictError) throw error;
       if (reservationAttempted) {
-        throw new SnapforgeError({ code: "egress_unavailable", message: "Capture submission outcome is being recovered. Check its job before retrying.",
+        throw new ScreenshotAPIError({ code: "egress_unavailable", message: "Capture submission outcome is being recovered. Check its job before retrying.",
           requestId, details: { job_id: jobId } });
       }
       await this.deps.admission.releaseJob(identity.accountId, jobId).catch(() => this.warn("Capture admission release failed", jobId));
@@ -197,7 +197,7 @@ export class CaptureService {
   private async acknowledge(identity: CaptureIdentity, jobId: string, requestId: string): Promise<JobSnapshot> {
     try { return await this.lookup(identity, jobId, requestId); }
     catch {
-      throw new SnapforgeError({ code: "egress_unavailable", message: "Capture is accepted. Check its job before retrying.", requestId, details: { job_id: jobId } });
+      throw new ScreenshotAPIError({ code: "egress_unavailable", message: "Capture is accepted. Check its job before retrying.", requestId, details: { job_id: jobId } });
     }
   }
 
@@ -221,10 +221,10 @@ export class CaptureService {
     const accountMatches = owned?.data.billing_account_id === identity.accountId;
     const legacyKeyMatches = !owned?.data.billing_account_id && identity.apiKeyId && owned?.data.api_key_id === identity.apiKeyId;
     if (!owned || (!accountMatches && !legacyKeyMatches) || (identity.apiKeyId && owned.data.api_key_id !== identity.apiKeyId)) {
-      throw new SnapforgeError({ code: "invalid_request", message: "Job not found", requestId });
+      throw new ScreenshotAPIError({ code: "invalid_request", message: "Job not found", requestId });
     }
     const snapshot = await this.deps.queue.snapshot(jobId, owned);
-    if (!snapshot) throw new SnapforgeError({ code: "invalid_request", message: "Job not found", requestId });
+    if (!snapshot) throw new ScreenshotAPIError({ code: "invalid_request", message: "Job not found", requestId });
     const result = { ...snapshot, webhook: snapshot.webhook ? { url: snapshot.webhook.url, event: snapshot.webhook.event } : null };
     if (snapshot.state !== "completed" && snapshot.state !== "failed") return result;
     const finalized = await new CaptureFinalizer(this.deps.billing, this.deps.admission, this.deps.logger).finalize(owned, snapshot, identity.accountId);

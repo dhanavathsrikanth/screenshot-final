@@ -1,4 +1,4 @@
-import { createLauncher } from "@snapforge/engine";
+import { createLauncher } from "@screenshotapi/engine";
 
 for (const channel of [undefined, "chromium"]) {
   const stealth = true;

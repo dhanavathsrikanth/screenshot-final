@@ -1,5 +1,5 @@
-import type { CaptureSuccessData } from "@snapforge/contracts";
-import type { CaptureOutcome } from "@snapforge/engine";
+import type { CaptureSuccessData } from "@screenshotapi/contracts";
+import type { CaptureOutcome } from "@screenshotapi/engine";
 
 /** Craft a buffer with a valid PNG signature and IHDR dimensions but arbitrary size. */
 export function makePng(width: number, height: number, byteLength: number): Buffer {

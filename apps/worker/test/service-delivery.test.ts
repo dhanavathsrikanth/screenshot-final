@@ -2,10 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import http from "node:http";
 import type { AddressInfo } from "node:net";
-import { createEngine, nullCaptureCache } from "@snapforge/engine";
-import { CaptureCache, CaptureStore, MemoryCacheBackend, type StorageClient } from "@snapforge/storage";
+import { createEngine, nullCaptureCache } from "@screenshotapi/engine";
+import { CaptureCache, CaptureStore, MemoryCacheBackend, type StorageClient } from "@screenshotapi/storage";
 import { CaptureDispatcher, CaptureQueue, CaptureService, CaptureWorker, resolveQueueConfig,
-  type CaptureJobView, type CaptureQueueHost, type JobState } from "@snapforge/queue";
+  type CaptureJobView, type CaptureQueueHost, type JobState } from "@screenshotapi/queue";
 import { createWorkerExecutor } from "../src/executor.js";
 
 test("shared service delivers real PNG and PDF browser output through artifact links", { timeout: 60_000 }, async (t) => {

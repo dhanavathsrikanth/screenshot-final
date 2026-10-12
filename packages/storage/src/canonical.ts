@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { CAPTURE_RENDER_VERSION, type CaptureOptions } from "@snapforge/contracts";
+import { CAPTURE_RENDER_VERSION, type CaptureOptions } from "@screenshotapi/contracts";
 
 /**
  * Options that describe *delivery* rather than *rendering*. Two requests differing only

@@ -1,4 +1,4 @@
-import { SnapforgeError } from "@snapforge/contracts";
+import { ScreenshotAPIError } from "@screenshotapi/contracts";
 import { BrowserManager } from "./browser.js";
 import {
   deriveConcurrency,
@@ -86,7 +86,7 @@ export class BrowserSlot {
 interface Waiter {
   requestId: string;
   resolve: (slot: BrowserSlot) => void;
-  reject: (error: SnapforgeError) => void;
+  reject: (error: ScreenshotAPIError) => void;
 }
 
 /**
@@ -130,7 +130,7 @@ export class BrowserPool {
   slot(id: number): BrowserSlot {
     const found = this.slots[id];
     if (!found) {
-      throw new SnapforgeError({
+      throw new ScreenshotAPIError({
         code: "internal_error",
         message: `Unknown browser slot ${id}`,
         requestId: "engine",
@@ -193,7 +193,7 @@ export class BrowserPool {
 
   async acquire(requestId: string): Promise<BrowserSlot> {
     if (this.destroyed) {
-      throw new SnapforgeError({
+      throw new ScreenshotAPIError({
         code: "internal_error",
         message: "Browser pool is closed",
         requestId,
@@ -274,7 +274,7 @@ export class BrowserPool {
     this.waiters = [];
     for (const waiter of pending) {
       waiter.reject(
-        new SnapforgeError({
+        new ScreenshotAPIError({
           code: "internal_error",
           message: reason,
           requestId: waiter.requestId,

@@ -6,7 +6,7 @@ Implemented on 2026-10-03. This completes ticket 2 in [todo1.md](../todo1.md), i
 
 ## Customer outcome
 
-The dashboard and public API now use `CaptureService` from `@snapforge/queue` for validation, account admission, credit reservation, dispatch, ownership checks, and terminal result handling. The dashboard authenticates through Clerk on the server, uses the existing account directly, and does not require an API key. Its default capture path sends work to the same worker queue as the API. It does not launch a dashboard browser or make a public API HTTP round trip.
+The dashboard and public API now use `CaptureService` from `@screenshotapi/queue` for validation, account admission, credit reservation, dispatch, ownership checks, and terminal result handling. The dashboard authenticates through Clerk on the server, uses the existing account directly, and does not require an API key. Its default capture path sends work to the same worker queue as the API. It does not launch a dashboard browser or make a public API HTTP round trip.
 
 The playground receives a job handle, displays queued/rendering status, and polls until ready or failed. It saves only the accepted job ID in session storage. Reloading the same tab restores status requests for that job rather than sending another capture POST. Leaving the page stops browser polling and allows the worker job to continue. Transient network errors, HTTP 503, and HTTP 429 retry status reads with backoff. A recovery handle in a submission error is also retained.
 
@@ -28,7 +28,7 @@ Rendering options, settlement budgets, fonts, scrolling, retries, and content-qu
 
 Configure the same Redis TCP database, queue name/prefix, and billing database in the API, dashboard, and worker. The worker also requires configured object storage and delivery URLs. `REDIS_URL` or `UPSTASH_REDIS_URL` provides TCP connectivity; REST credentials alone cannot run BullMQ.
 
-The dashboard default is the queue in development and production. Set `SNAPFORGE_LOCAL_CAPTURE=1` explicitly for local inline development. Production ignores that switch and never falls back to local rendering. Dashboard health reflects ready worker heartbeats and queue pause state, rather than an idle browser in the web process.
+The dashboard default is the queue in development and production. Set `SCREENSHOTAPI_LOCAL_CAPTURE=1` explicitly for local inline development. Production ignores that switch and never falls back to local rendering. Dashboard health reflects ready worker heartbeats and queue pause state, rather than an idle browser in the web process.
 
 No deployment, secret change, or billing migration was performed. Drain legacy jobs before rolling out the shared admission namespace so legacy and new admission accounting do not overlap. The workspace currently has REST Redis credentials but no TCP URL, so configure TCP and storage before running the fleet together.
 

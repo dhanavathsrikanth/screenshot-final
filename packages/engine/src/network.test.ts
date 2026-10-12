@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { assertPublicProxyUrl, assertPublicUrl, isPublicAddress } from "./network.js";
-import { SnapforgeError } from "@snapforge/contracts";
+import { ScreenshotAPIError } from "@screenshotapi/contracts";
 
 test("public network policy rejects local, metadata, mapped, and reserved addresses", () => {
   for (const address of ["127.0.0.1", "10.0.0.1", "172.20.0.1", "192.168.0.1", "169.254.169.254", "100.64.0.1", "0.0.0.0", "198.18.0.1", "224.0.0.1", "::1", "::", "fc00::1", "fe80::1", "::ffff:127.0.0.1", "::ffff:7f00:1", "2002:7f00:1::"]) {
@@ -34,7 +34,7 @@ test("proxy network validation accepts supported public endpoints and rejects pr
     await assertPublicProxyUrl(server, "proxy", publicLookup);
   }
   for (const server of ["socks5://127.0.0.1:1080", "proxy.example.com:bad", "file:///tmp/proxy", "http://user:password@proxy.example.com:8080"]) {
-    await assert.rejects(assertPublicProxyUrl(server, "proxy", publicLookup), (error: unknown) => error instanceof SnapforgeError && error.code === "invalid_request");
+    await assert.rejects(assertPublicProxyUrl(server, "proxy", publicLookup), (error: unknown) => error instanceof ScreenshotAPIError && error.code === "invalid_request");
   }
-  await assert.rejects(assertPublicUrl("not a URL", "proxy"), (error: unknown) => error instanceof SnapforgeError && error.code === "invalid_request");
+  await assert.rejects(assertPublicUrl("not a URL", "proxy"), (error: unknown) => error instanceof ScreenshotAPIError && error.code === "invalid_request");
 });

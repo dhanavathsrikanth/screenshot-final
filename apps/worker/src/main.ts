@@ -1,12 +1,12 @@
 /**
- * Snapforge worker process entry point.
+ * ScreenshotAPI worker process entry point.
  *
  * Boots the headless capture engine, an R2-backed byte store, and a BullMQ worker that
  * dispatches capture jobs to them. Designed to be supervised by a process manager
  * (systemd, Docker, fly machines) — the only side effects are Redis + R2 + outbound
  * HTTP for stealth fetches.
  */
-import { SnapforgeEngine, createEngine } from "@snapforge/engine";
+import { ScreenshotAPIEngine, createEngine } from "@screenshotapi/engine";
 import { randomUUID } from "node:crypto";
 import { pathToFileURL } from "node:url";
 import {
@@ -15,7 +15,7 @@ import {
   createR2Storage,
   resolveStorageConfig,
   CaptureStore,
-} from "@snapforge/storage";
+} from "@screenshotapi/storage";
 import {
   createCaptureWorker,
   createQueueConnection,
@@ -23,13 +23,13 @@ import {
   type CaptureWorker,
   WorkerHeartbeat,
   waitForQueueConnection,
-} from "@snapforge/queue";
+} from "@screenshotapi/queue";
 import { createWorkerExecutor } from "./executor.js";
 import { createWorkerCache } from "./cache.js";
 
 export interface WorkerRuntime {
   worker: CaptureWorker;
-  engine: SnapforgeEngine;
+  engine: ScreenshotAPIEngine;
   store: CaptureStore;
   heartbeat: WorkerHeartbeat;
   ready(): Promise<void>;
@@ -135,7 +135,7 @@ export function runWorker(options: WorkerRuntimeOptions = {}): Promise<void> {
 }
 
 export async function startWorkerRuntime(runtime: {
-  engine: Pick<SnapforgeEngine, "warm">;
+  engine: Pick<ScreenshotAPIEngine, "warm">;
   worker: Pick<CaptureWorker, "start">;
   heartbeat?: Pick<WorkerHeartbeat, "start" | "close">;
   ready?(): Promise<void>;

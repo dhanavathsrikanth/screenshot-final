@@ -1,4 +1,4 @@
-# Snapforge: Next-Gen Screenshot API Platform
+# ScreenshotAPI: Next-Gen Screenshot API Platform
 
 > Full-page engine rebuilt 2026-10-06: desktop output defaults to 2× resolution; the default algorithm loads and captures visible sections in one downward pass, preserving scroll reveals. Motion and scroll timing are configurable, PDF encoding reuses lossless compressed pixels, and the playground shows section/resolution evidence and height-limit status. [Behavior and verification](docs/full-page-capture.md). This does not close the live-site latency or deployment gates.
 
@@ -158,10 +158,10 @@
 ---
 
 ### 🤖 Chunk 6: AI Agent Layer (Official MCP Server)
-*Position Snapforge as the primary visual sensory engine for LLMs and AI coding assistants.*
+*Position ScreenshotAPI as the primary visual sensory engine for LLMs and AI coding assistants.*
 
 - [x] **6.1 Model Context Protocol (MCP) Server**:
-  - Package `@snapforge/mcp` providing ready-to-run tools for Claude Desktop, Cursor, and agent frameworks.
+  - Package `@screenshotapi/mcp` providing ready-to-run tools for Claude Desktop, Cursor, and agent frameworks.
 - [x] **6.2 Agent-Specific Tools**:
   - `take_screenshot`: Fast visual capture with base64 / image return.
   - `inspect_page`: Captures screenshot + extracts clean readability markdown and accessible DOM tree.
@@ -178,8 +178,8 @@
 > palette, primary `#673DE6`). No raw hex literals in components. See `AGENTS.md`.
 
 - [x] **7.0 Brand Token Integration (`packages/brand`)**:
-  - Token package is in place. Consume via `@snapforge/brand` in TS and the `--sf-*`
-    CSS custom properties from `@snapforge/brand/tokens.css` in components.
+  - Token package is in place. Consume via `@screenshotapi/brand` in TS and the `--sf-*`
+    CSS custom properties from `@screenshotapi/brand/tokens.css` in components.
 - [x] **7.1 Interactive Capture Playground**:
   - Visual controls for every parameter (device, viewport, full-page, delay, ad blocking).
   - Real-time side-by-side preview with latency, dimensions, and image size metrics.

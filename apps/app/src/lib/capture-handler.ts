@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
-import { CAPTURE_MIME_TYPES, captureCreditCost, captureOptionsSchema, SnapforgeError } from "@snapforge/contracts";
-import type { CaptureFormat } from "@snapforge/contracts";
-import type { SnapforgeEngine } from "@snapforge/engine";
-import { CaptureAdmissionError, type CaptureLease } from "@snapforge/queue";
+import { CAPTURE_MIME_TYPES, captureCreditCost, captureOptionsSchema, ScreenshotAPIError } from "@screenshotapi/contracts";
+import type { CaptureFormat } from "@screenshotapi/contracts";
+import type { ScreenshotAPIEngine } from "@screenshotapi/engine";
+import { CaptureAdmissionError, type CaptureLease } from "@screenshotapi/queue";
 import type { CaptureLogEntry, CaptureResult } from "./capture.js";
 
 export const MAX_CAPTURE_REQUEST_BYTES = 256 * 1024;
@@ -13,7 +13,7 @@ const localCaptureOptionsSchema = captureOptionsSchema.extend({
 export interface CaptureHandlerDependencies {
   authenticate(): Promise<string | null>;
   acquire(accountId: string, requestId: string): Promise<CaptureLease>;
-  getEngine(): Promise<Pick<SnapforgeEngine, "capture">>;
+  getEngine(): Promise<Pick<ScreenshotAPIEngine, "capture">>;
   prepare?(): Promise<void>;
   reserve(accountId: string, requestId: string, credits?: number): Promise<boolean>;
   settle(requestId: string, succeeded: boolean): Promise<void>;
@@ -21,7 +21,7 @@ export interface CaptureHandlerDependencies {
 }
 
 async function readBody(request: Request, requestId: string): Promise<unknown> {
-  const invalid = (message: string) => new SnapforgeError({ code: "invalid_request", message, requestId });
+  const invalid = (message: string) => new ScreenshotAPIError({ code: "invalid_request", message, requestId });
   if (Number(request.headers.get("content-length")) > MAX_CAPTURE_REQUEST_BYTES) {
     throw invalid("Capture request is too large");
   }
@@ -42,7 +42,7 @@ async function readBody(request: Request, requestId: string): Promise<unknown> {
     }
     return JSON.parse(Buffer.concat(chunks, bytes).toString("utf8"));
   } catch (error) {
-    if (error instanceof SnapforgeError) throw error;
+    if (error instanceof ScreenshotAPIError) throw error;
     throw invalid("Request body must be valid JSON");
   } finally {
     reader.releaseLock();
@@ -76,7 +76,7 @@ export function createCaptureHandler(deps: CaptureHandlerDependencies) {
       if (!accountId) return response = Response.json({ error: "unauthorized" }, { status: 401, headers });
       admission = await measure("admission", () => deps.acquire(accountId!, requestId));
       const parsed = localCaptureOptionsSchema.safeParse(await readBody(request, requestId));
-      if (!parsed.success) throw new SnapforgeError({
+      if (!parsed.success) throw new ScreenshotAPIError({
         code: "invalid_request",
         message: "Capture options are invalid",
         requestId,
@@ -85,7 +85,7 @@ export function createCaptureHandler(deps: CaptureHandlerDependencies) {
       format = parsed.data.format;
       const preparing = deps.prepare ? measure("warmup", () => deps.prepare!()).catch(() => undefined) : undefined;
       reserved = await measure("reservation", () => deps.reserve(accountId!, requestId, captureCreditCost(parsed.data)));
-      if (!reserved) throw new SnapforgeError({
+      if (!reserved) throw new ScreenshotAPIError({
         code: "quota_exceeded",
         message: "Not enough credits for this capture. Add credits or wait for your monthly reset.",
         requestId,
@@ -93,7 +93,7 @@ export function createCaptureHandler(deps: CaptureHandlerDependencies) {
       await preparing;
       const engine = await measure("engine", () => deps.getEngine());
       const { data, buffer } = await measure("render", () => engine.capture(parsed.data));
-      if (buffer.length === 0) throw new SnapforgeError({
+      if (buffer.length === 0) throw new ScreenshotAPIError({
         code: "render_incomplete",
         message: "Capture did not produce a downloadable artifact",
         requestId,
@@ -128,7 +128,7 @@ export function createCaptureHandler(deps: CaptureHandlerDependencies) {
       })).catch(() => { console.warn("Capture history write failed", { requestId }); });
       return response;
     } catch (error) {
-      const failure = error instanceof SnapforgeError
+      const failure = error instanceof ScreenshotAPIError
         ? { ...error.toEnvelope(), request_id: requestId }
         : { code: "internal_error", message: "Capture temporarily unavailable", retriable: true, request_id: requestId };
       if (reserved && !delivered) {
@@ -142,7 +142,7 @@ export function createCaptureHandler(deps: CaptureHandlerDependencies) {
         }).catch(() => { console.warn("Capture failure history write failed", { requestId }); });
       }
       const status = error instanceof CaptureAdmissionError ? error.httpStatus
-        : error instanceof SnapforgeError ? error.statusCode : 502;
+        : error instanceof ScreenshotAPIError ? error.statusCode : 502;
       if (error instanceof CaptureAdmissionError) headers.set("retry-after", String(error.retryAfterSeconds));
       return response = Response.json({ ok: false, error: failure, id, at } satisfies CaptureResult, { status, headers });
     } finally {

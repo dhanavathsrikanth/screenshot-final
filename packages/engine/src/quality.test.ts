@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import type { Page } from "playwright";
-import { captureOptionsSchema, SnapforgeError } from "@snapforge/contracts";
+import { captureOptionsSchema, ScreenshotAPIError } from "@screenshotapi/contracts";
 import { ensureCaptureQuality, ensureOutputQuality, qualityFailures } from "./quality.js";
 import { SettlementBudget } from "./settlement.js";
 
@@ -36,7 +36,7 @@ test("quality wait recovers a loading shell that finishes rendering", async () =
 test("exhausted budget rejects incomplete content with a retriable error", async () => {
   const page = { evaluate: async () => ({ text: "Loading", loadingShell: true }), url: () => "https://example.com" } as unknown as Page;
   await assert.rejects(ensureCaptureQuality(page, options({ fail_if_incomplete: true }), new SettlementBudget(0), 5000, "quality"), (error: unknown) => {
-    assert.ok(error instanceof SnapforgeError);
+    assert.ok(error instanceof ScreenshotAPIError);
     assert.equal(error.code, "render_incomplete");
     assert.equal(error.retriable, true);
     assert.deepEqual(error.details?.failures, ["loading_shell"]);
@@ -46,7 +46,7 @@ test("exhausted budget rejects incomplete content with a retriable error", async
 
 test("minimum output dimensions and size are enforced before delivery", () => {
   assert.throws(() => ensureOutputQuality({ height: 720, buffer: Buffer.alloc(20) }, options({ min_capture_height: 4000, min_capture_bytes: 40 }), "quality"), (error: unknown) => {
-    assert.ok(error instanceof SnapforgeError);
+    assert.ok(error instanceof ScreenshotAPIError);
     assert.deepEqual(error.details?.failures, ["min_capture_height", "min_capture_bytes"]);
     return true;
   });

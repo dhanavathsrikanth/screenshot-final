@@ -1,4 +1,4 @@
-# Snapforge: delivery plan for the remaining market gaps
+# ScreenshotAPI: delivery plan for the remaining market gaps
 
 Prepared: 2026-10-03. Updated: 2026-10-05. Part 1's dashboard/service migration and Part 2's automatic terminal settlement, durable enqueue recovery, request idempotency, and independent webhook delivery are implemented. Deployment, real BullMQ outage verification, the additional 80% latency target, and unchecked items remain open. [Settlement evidence](docs/automatic-capture-settlement.md), [enqueue recovery evidence](docs/durable-enqueue-recovery.md), [retry and webhook evidence](docs/request-retries-and-webhook-delivery.md).
 
@@ -75,7 +75,7 @@ Recommended implementation order: Part 1 hotfix, Part 2, Part 3, Part 4, SDK onb
 
 **Exit checks:** a successful or failed job settles without any client polling; intermediate retries do not finalize; duplicate events/replayed requests do not double-charge or double-refund; completion-before-API-response is safe; a finalizer crash recovers; a Redis cleanup outage recovers; an unreachable webhook cannot reduce renderer throughput. Proposed normal-operation target: 99% of terminal jobs settle and release their slot within five seconds, measured separately from screenshot latency.
 
-BullMQ documents `QueueEvents` and its Redis stream backing; the durable database recovery design above is Snapforge's proposed implementation. [Reference](https://docs.bullmq.io/guide/events/).
+BullMQ documents `QueueEvents` and its Redis stream backing; the durable database recovery design above is ScreenshotAPI's proposed implementation. [Reference](https://docs.bullmq.io/guide/events/).
 
 ## Part 3 — Make cached captures fast and commercially useful
 
@@ -120,7 +120,7 @@ ScreenshotOne documents quota-free cache hits, making this a concrete pricing co
 
 **Exit checks:** all deterministic quality fixtures pass, no unexplained new live failure, and the roadmap's minimum 95% eligible gate passes. Also show success across all 30 sites, including blocks, plus per-site failures. Load results remain stable within declared host capacity. The 80% goal is checked only on comparable fresh-capture results, never on acknowledgements or cache hits.
 
-The readiness approach is informed by ScreenshotOne's discussion of navigation signals and fixed waits; the measured budgets and acceptance criteria above are Snapforge's plan. [Blog reference](https://screenshotone.com/blog/puppeteer-wait-until-the-page-is-ready/).
+The readiness approach is informed by ScreenshotOne's discussion of navigation signals and fixed waits; the measured budgets and acceptance criteria above are ScreenshotAPI's plan. [Blog reference](https://screenshotone.com/blog/puppeteer-wait-until-the-page-is-ready/).
 
 ## Part 5 — Reduce integration and AI-agent setup work
 
@@ -174,7 +174,7 @@ Use the official [MCP transport](https://modelcontextprotocol.io/specification/l
 Implement as independent releases, not one large feature bundle:
 
 - [ ] Direct HTML input: define a mutually exclusive URL/HTML source contract, input-size limit, safe resource/base-URL policy, and isolated rendering path. Guard outgoing resource requests exactly as for URL captures; HTML input must not bypass network policy.
-- [ ] Markdown input: convert a bounded document with a maintained converter and deterministic template using brand tokens where Snapforge styles output. Specify HTML allowance/sanitization and test output consistency.
+- [ ] Markdown input: convert a bounded document with a maintained converter and deterministic template using brand tokens where ScreenshotAPI styles output. Specify HTML allowance/sanitization and test output consistency.
 - [ ] Authenticated-page options: support scoped cookies and authorized sessions/actions in fresh isolated contexts. Encrypt retained secrets, limit retention, isolate cache entries, redact logs, and let users revoke saved credentials. Cookies do not remove capture-network restrictions.
 - [ ] PDF controls: add validated paper size, margins, orientation, and print behavior. Deliver an actual downloadable PDF and verify multi-page output, fonts, and images.
 - [ ] Structured actions if requested: a bounded sequence of click/type/wait operations with action counts, input-size limits, and one shared deadline. Show failures at the specific action; keep arbitrary execution out of routine customer setup.
@@ -234,11 +234,11 @@ Build affected packages before running their compiled tests. Use browser fixture
 
 ## Planning references
 
-References inform the choices above; they do not prove Snapforge's performance or readiness.
+References inform the choices above; they do not prove ScreenshotAPI's performance or readiness.
 
 - [ScreenshotOne readiness blog](https://screenshotone.com/blog/puppeteer-wait-until-the-page-is-ready/): navigation events, variable page readiness, and the limitations of fixed waits.
 - [ScreenshotOne cache rules](https://screenshotone.com/docs/caching/): quota-free cache hits and reuse tradeoffs.
 - [ScreenshotOne hosted MCP](https://screenshotone.com/docs/mcp/): remote authorization and agent onboarding expectations.
 - [BullMQ events](https://docs.bullmq.io/guide/events/): completion notification mechanisms; combine them with durable reconciliation.
 - [Official MCP transports](https://modelcontextprotocol.io/specification/latest/basic/transports) and [authorization](https://modelcontextprotocol.io/specification/latest/basic/authorization): protocol requirements to verify against supported SDK/client versions.
-- [Snapforge readiness report](docs/market-readiness.md) and [latest full live report](apps/benchmark/results/latency-round2/final-gauntlet/latest.md): current implementation and measurement evidence.
+- [ScreenshotAPI readiness report](docs/market-readiness.md) and [latest full live report](apps/benchmark/results/latency-round2/final-gauntlet/latest.md): current implementation and measurement evidence.

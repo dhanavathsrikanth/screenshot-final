@@ -49,7 +49,7 @@ Queue tests exercise completion without polling, replay/concurrent polling, retr
 | Queue/database/API/worker builds and dashboard test build | Passed |
 | Next dashboard production build | Passed |
 
-For repeat verification, build packages before tests. Queue: `node --test dist/*.test.js` from `packages/queue`. Database: `node --env-file=../../.env.settlement-test.local --test dist/settlement.test.js` from `packages/database`. Set `SNAPFORGE_SETTLEMENT_TEST=1` only with an isolated database branch; tests create dedicated synthetic accounts and retain them for review. Supply an isolated Redis TCP endpoint through `TEST_REDIS_URL` to enable the BullMQ scenarios.
+For repeat verification, build packages before tests. Queue: `node --test dist/*.test.js` from `packages/queue`. Database: `node --env-file=../../.env.settlement-test.local --test dist/settlement.test.js` from `packages/database`. Set `SCREENSHOTAPI_SETTLEMENT_TEST=1` only with an isolated database branch; tests create dedicated synthetic accounts and retain them for review. Supply an isolated Redis TCP endpoint through `TEST_REDIS_URL` to enable the BullMQ scenarios.
 
 `completion.integration.test.ts` adds three real BullMQ scenarios: success, terminal failure, and success after retry, without customer polling or periodic-scan fallback. They require `TEST_REDIS_URL` or `REDIS_URL`; neither is configured here. Both these scenarios and the existing real Redis suite remain unverified live. The existing Redis integration harness also now starts the long-running worker without awaiting shutdown and uses a supported queue name.
 
@@ -68,4 +68,4 @@ The isolated test branch is retained for review and repeat verification; its com
 
 ## References
 
-The asynchronous architecture follows the resource-management direction discussed in [ScreenshotOne's screenshot API blog](https://screenshotone.com/blog/building-screenshot-api/). [BullMQ's event documentation](https://docs.bullmq.io/guide/events/) explains global QueueEvents and trimmed Redis streams, which is why events here are supplemented by durable recovery. These references do not verify Snapforge's measured speed or deployment readiness.
+The asynchronous architecture follows the resource-management direction discussed in [ScreenshotOne's screenshot API blog](https://screenshotone.com/blog/building-screenshot-api/). [BullMQ's event documentation](https://docs.bullmq.io/guide/events/) explains global QueueEvents and trimmed Redis streams, which is why events here are supplemented by durable recovery. These references do not verify ScreenshotAPI's measured speed or deployment readiness.

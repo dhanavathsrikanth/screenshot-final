@@ -1,10 +1,10 @@
 import test, { after, afterEach } from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
-import type { CaptureFinalization } from "@snapforge/queue";
+import type { CaptureFinalization } from "@screenshotapi/queue";
 import { commitCapture, getBillingState, linkReservationToJob, pool, recordDodoEvent, reserveCapture, settleCapture } from "./index.js";
 
-const enabled = process.env.SNAPFORGE_PRICING_TEST === "1";
+const enabled = process.env.SCREENSHOTAPI_PRICING_TEST === "1";
 const accounts: string[] = [];
 afterEach(async () => {
   if (accounts.length) await pool.query("DELETE FROM accounts WHERE user_id = ANY($1::text[])", [accounts.splice(0)]);

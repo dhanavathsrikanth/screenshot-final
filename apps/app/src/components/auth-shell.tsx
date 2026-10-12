@@ -6,7 +6,7 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
   return (
     <main className="sf-auth">
       <div className="sf-auth-story">
-        <Link href="/" aria-label="Snapforge home"><Brand /></Link>
+        <Link href="/" aria-label="ScreenshotAPI home"><Brand /></Link>
         <div className="sf-auth-details">
           <p className="mt-16 text-xs text-ink-3">The screenshot workspace</p>
           <h1 className="mt-4 text-[44px] leading-[1.1] font-medium tracking-[-1.8px]">Great captures.<br /><span className="sf-gradient-text">Less busywork.</span></h1>

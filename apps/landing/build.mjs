@@ -1,5 +1,5 @@
 import { mkdir, readFile, writeFile, copyFile } from "node:fs/promises";
-import { LAUNCH_PLANS, PLAN_CATALOG } from "@snapforge/contracts";
+import { LAUNCH_PLANS, PLAN_CATALOG } from "@screenshotapi/contracts";
 
 const output = new URL("./dist/", import.meta.url);
 await mkdir(output, { recursive: true });

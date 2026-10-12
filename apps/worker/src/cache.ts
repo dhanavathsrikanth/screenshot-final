@@ -1,5 +1,5 @@
-import type { CaptureCachePort } from "@snapforge/engine";
-import type { CaptureStore } from "@snapforge/storage";
+import type { CaptureCachePort } from "@screenshotapi/engine";
+import type { CaptureStore } from "@screenshotapi/storage";
 
 export function createWorkerCache(store: Pick<CaptureStore, "lookup">): CaptureCachePort {
   return {

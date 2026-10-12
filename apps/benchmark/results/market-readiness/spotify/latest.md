@@ -1,4 +1,4 @@
-# Snapforge Gauntlet - 30-Site Quality Gate
+# ScreenshotAPI Gauntlet - 30-Site Quality Gate
 
 - **Verdict**: PASS (pass rate 100% vs gate 95%)
 - **Started**: 2026-10-03T04:03:48.864Z

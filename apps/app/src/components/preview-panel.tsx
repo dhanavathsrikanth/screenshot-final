@@ -7,7 +7,7 @@ import { PdfPreview } from "./pdf-preview";
 import styles from "./preview-panel.module.css";
 import { Badge, Button } from "./ui";
 import type { CaptureResult } from "@/lib/capture";
-import { DEVICE_PRESETS } from "@snapforge/contracts";
+import { DEVICE_PRESETS } from "@screenshotapi/contracts";
 
 function PreviewContent({
   result,
@@ -148,7 +148,7 @@ export function PreviewPanel({ result, pending, device, url, localCapture = fals
               setCopyStatus("Link copied");
             } catch { setCopyStatus("Copy failed"); }
           }}><Icon name="copy" className="size-4" /><span role="status">{copyStatus}</span></Button>}
-          <a href={image.startsWith("/c/") ? `${image}?download=1` : image} download={`snapforge-${capture.metrics.width}x${capture.metrics.height}.${extension}`} aria-label="Save capture" className="inline-flex items-center gap-2 rounded-md border border-line bg-raised px-3 py-2 text-xs font-medium text-ink"><Icon name="download" className="size-4" />Save</a>
+          <a href={image.startsWith("/c/") ? `${image}?download=1` : image} download={`screenshotapi-${capture.metrics.width}x${capture.metrics.height}.${extension}`} aria-label="Save capture" className="inline-flex items-center gap-2 rounded-md border border-line bg-raised px-3 py-2 text-xs font-medium text-ink"><Icon name="download" className="size-4" />Save</a>
         </>}
         <Button variant="ghost" onClick={onReset} disabled={pending}><Icon name="refresh" className="size-4" />Reset</Button>
         <Button variant="primary" onClick={onCapture} disabled={pending}><Icon name="play" className="size-4" />{pending ? "Capturing…" : `Capture · ${creditCost} ${creditCost === 1 ? "credit" : "credits"}`}</Button>

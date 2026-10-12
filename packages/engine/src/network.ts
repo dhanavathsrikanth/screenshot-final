@@ -1,7 +1,7 @@
 import { lookup } from "node:dns/promises";
 import { isIP } from "node:net";
 import type { BrowserContext, Page } from "playwright";
-import { SnapforgeError } from "@snapforge/contracts";
+import { ScreenshotAPIError } from "@screenshotapi/contracts";
 
 export function isPublicAddress(address: string): boolean {
   const family = isIP(address);
@@ -39,10 +39,10 @@ export async function assertPublicProxyUrl(server: string, requestId: string, re
   try {
     parsed = new URL(server.includes("://") ? server : `http://${server}`);
   } catch {
-    throw new SnapforgeError({ code: "invalid_request", message: "Proxy server must be a valid public endpoint", requestId });
+    throw new ScreenshotAPIError({ code: "invalid_request", message: "Proxy server must be a valid public endpoint", requestId });
   }
   if (!["http:", "https:", "socks4:", "socks5:"].includes(parsed.protocol) || parsed.username || parsed.password) {
-    throw new SnapforgeError({ code: "invalid_request", message: "Proxy server must use HTTP, HTTPS, SOCKS4, or SOCKS5 with separate authentication fields", requestId });
+    throw new ScreenshotAPIError({ code: "invalid_request", message: "Proxy server must use HTTP, HTTPS, SOCKS4, or SOCKS5 with separate authentication fields", requestId });
   }
   await assertPublicUrl(`http://${parsed.host}/`, requestId, resolve);
 }
@@ -52,10 +52,10 @@ export async function assertPublicUrl(url: string, requestId: string, resolve: A
   try {
     parsed = new URL(url);
   } catch {
-    throw new SnapforgeError({ code: "invalid_request", message: "Capture destination must be a valid public URL", requestId });
+    throw new ScreenshotAPIError({ code: "invalid_request", message: "Capture destination must be a valid public URL", requestId });
   }
   const hostname = parsed.hostname.replace(/^\[|\]$/g, "").toLowerCase();
-  const fail = () => { throw new SnapforgeError({ code: "invalid_request", message: "Capture requests cannot access private or reserved networks", requestId }); };
+  const fail = () => { throw new ScreenshotAPIError({ code: "invalid_request", message: "Capture requests cannot access private or reserved networks", requestId }); };
   if (!["http:", "https:", "ws:", "wss:"].includes(parsed.protocol) || parsed.username || parsed.password ||
     hostname === "localhost" || hostname.endsWith(".localhost") || hostname.endsWith(".internal") || hostname.endsWith(".local")) fail();
   const addresses = isIP(hostname) ? [{ address: hostname }] : await resolve(hostname);

@@ -2,10 +2,10 @@ import test, { after } from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { EventEmitter } from "node:events";
-import { CaptureCompletionConsumer, CaptureFinalizer, CaptureService, type CaptureFinalization } from "@snapforge/queue";
+import { CaptureCompletionConsumer, CaptureFinalizer, CaptureService, type CaptureFinalization } from "@screenshotapi/queue";
 import { captureLifecycle, commitCapture, getBillingState, linkReservationToJob, pool, recordCapture, reservationForJob, reserveCapture, settleCapture } from "./index.js";
 
-const enabled = process.env.SNAPFORGE_SETTLEMENT_TEST === "1";
+const enabled = process.env.SCREENSHOTAPI_SETTLEMENT_TEST === "1";
 after(async () => { await pool.end(); });
 const billing = { reserveCapture, settleCapture, linkReservationToJob, reservationForJob, recordCapture, lifecycle: captureLifecycle };
 

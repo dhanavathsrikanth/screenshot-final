@@ -1,6 +1,6 @@
-# Snapforge database
+# ScreenshotAPI database
 
-Snapforge stores account profiles, API keys (SHA-256 hashes only), capture history, usage reservations, monthly usage, Dodo subscriptions, webhook idempotency, and prepaid capture credits in Neon Postgres.
+ScreenshotAPI stores account profiles, API keys (SHA-256 hashes only), capture history, usage reservations, monthly usage, Dodo subscriptions, webhook idempotency, and prepaid capture credits in Neon Postgres.
 
 Runtime services use the pooled `DATABASE_URL`. Set `DATABASE_URL_DIRECT` to Neon’s direct connection URL for schema migrations. Keep both values private and configure them in the deployment environment as well as local `.env`.
 
@@ -11,10 +11,10 @@ Use `sslmode=verify-full` in both Neon connection URLs to explicitly verify the 
 Edit `src/schema.ts`, then generate and review a migration:
 
 ```sh
-pnpm --filter @snapforge/database run db:generate
+pnpm --filter @screenshotapi/database run db:generate
 ```
 
-Apply migrations to an explicitly selected Neon branch using the Neon migration workflow. For local or self-managed Postgres, `pnpm --filter @snapforge/database run db:migrate` uses the configured direct URL.
+Apply migrations to an explicitly selected Neon branch using the Neon migration workflow. For local or self-managed Postgres, `pnpm --filter @screenshotapi/database run db:migrate` uses the configured direct URL.
 
 ## Capture accounting
 

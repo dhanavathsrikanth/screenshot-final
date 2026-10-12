@@ -3,7 +3,7 @@ import {
   captureOptionsSchema,
   captureSuccessDataSchema,
   errorEnvelopeSchema,
-} from "@snapforge/contracts";
+} from "@screenshotapi/contracts";
 
 export const CAPTURE_MODES = ["sync", "async"] as const;
 export type CaptureMode = (typeof CAPTURE_MODES)[number];

@@ -2,10 +2,17 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import type { QueueConfig } from "./config.js";
 import type { CaptureJobResult, WebhookTarget } from "./types.js";
 
-export const SIGNATURE_HEADER = "x-snapforge-signature";
-export const WEBHOOK_ID_HEADER = "x-snapforge-job-id";
-export const WEBHOOK_EVENT_HEADER = "x-snapforge-event";
-export const WEBHOOK_ATTEMPT_HEADER = "x-snapforge-delivery";
+export const SIGNATURE_HEADER = "x-screenshotapi-signature";
+export const WEBHOOK_ID_HEADER = "x-screenshotapi-job-id";
+export const WEBHOOK_EVENT_HEADER = "x-screenshotapi-event";
+export const WEBHOOK_ATTEMPT_HEADER = "x-screenshotapi-delivery";
+
+export function compatibleWebhookHeaders(headers: Record<string, string>) {
+  return {
+    ...headers,
+    ...Object.fromEntries(Object.entries(headers).filter(([name]) => name.startsWith("x-screenshotapi-")).map(([name, value]) => [name.replace("x-screenshotapi-", "x-snapforge-"), value])),
+  };
+}
 
 export interface WebhookDelivery {
   status: "delivered" | "failed" | "skipped";
@@ -174,13 +181,13 @@ export async function dispatchWebhook(options: DispatchWebhookOptions): Promise<
     try {
       const response = await doFetch(target.url, {
         method: "POST",
-        headers: {
+        headers: compatibleWebhookHeaders({
           "content-type": "application/json",
           [SIGNATURE_HEADER]: signPayload({ secret: target.secret, body, timestamp: Math.floor(now() / 1000) }),
           [WEBHOOK_ID_HEADER]: jobId,
           [WEBHOOK_EVENT_HEADER]: event,
           [WEBHOOK_ATTEMPT_HEADER]: String(attempt),
-        },
+        }),
         body,
         signal: controller.signal,
         redirect: "error",

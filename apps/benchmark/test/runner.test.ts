@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { SnapforgeError } from "@snapforge/contracts";
-import type { CaptureOutcome } from "@snapforge/engine";
+import { ScreenshotAPIError } from "@screenshotapi/contracts";
+import type { CaptureOutcome } from "@screenshotapi/engine";
 import {
   runSuite,
   summarizeResults,
@@ -45,7 +45,7 @@ const GOOD = (): CaptureOutcome => makeOutcome({ markdown: "Welcome to Example D
 test("reports preserve timings from a failed attempt and its successful retry", async () => {
   const failedTimings = { total_ms: 200, phases_ms: { navigation: 180, cleanup: 20 } };
   const successTimings = { total_ms: 100, phases_ms: { screenshot: 80, cleanup: 20 } };
-  const error = new SnapforgeError({
+  const error = new ScreenshotAPIError({
     code: "render_timeout", message: "timed out", requestId: "timed",
     details: { timings: failedTimings },
   });
@@ -56,7 +56,7 @@ test("reports preserve timings from a failed attempt and its successful retry", 
 
 test("blocked captures retain timing diagnostics", async () => {
   const timings = { total_ms: 400, phases_ms: { challenge_check: 350, cleanup: 50 } };
-  const error = new SnapforgeError({
+  const error = new ScreenshotAPIError({
     code: "blocked_by_target", message: "blocked", requestId: "timed",
     details: { timings },
   });
@@ -107,7 +107,7 @@ test("failing visual checks mark the site as failed", async () => {
 });
 
 test("retriable errors are retried until they succeed", async () => {
-  const timeout = new SnapforgeError({
+  const timeout = new ScreenshotAPIError({
     code: "render_timeout",
     message: "Navigation timeout of 30000 ms exceeded",
     requestId: "req_test",
@@ -121,7 +121,7 @@ test("retriable errors are retried until they succeed", async () => {
 });
 
 test("non-retriable errors are not retried", async () => {
-  const blocked = new SnapforgeError({
+  const blocked = new ScreenshotAPIError({
     code: "blocked_by_target",
     message: "Target blocked the capture",
     requestId: "req_test",
@@ -137,7 +137,7 @@ test("non-retriable errors are not retried", async () => {
 });
 
 test("an exhausted retry budget records the last error", async () => {
-  const timeout = new SnapforgeError({
+  const timeout = new ScreenshotAPIError({
     code: "render_timeout",
     message: "still timing out",
     requestId: "req_test",
@@ -152,7 +152,7 @@ test("an exhausted retry budget records the last error", async () => {
 });
 
 test("retries default to one extra attempt", async () => {
-  const crash = new SnapforgeError({
+  const crash = new ScreenshotAPIError({
     code: "render_crashed",
     message: "renderer process crashed",
     requestId: "req_test",

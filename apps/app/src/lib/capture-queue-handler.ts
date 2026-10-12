@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
-import { ERROR_HTTP_STATUS, SnapforgeError } from "@snapforge/contracts";
-import { CaptureAdmissionError, readCaptureRequest, type CaptureService, type JobSnapshot } from "@snapforge/queue";
+import { ERROR_HTTP_STATUS, ScreenshotAPIError } from "@screenshotapi/contracts";
+import { CaptureAdmissionError, readCaptureRequest, type CaptureService, type JobSnapshot } from "@screenshotapi/queue";
 import type { CaptureResult } from "./capture.js";
 import { captureArtifactPath } from "./capture-artifact.js";
 
@@ -44,10 +44,10 @@ export function createQueuedCaptureHandlers(deps: QueuedCaptureDependencies) {
       return Response.json(payload, { status: pending ? 202 : payload.ok ? 200 : ERROR_HTTP_STATUS[snapshot.result?.error?.code ?? "render_incomplete"], headers });
     } catch (error) {
       if (error instanceof CaptureAdmissionError) headers.set("retry-after", String(error.retryAfterSeconds));
-      return Response.json({ ok: false, id: requestId, at: Date.now(), error: error instanceof SnapforgeError
+      return Response.json({ ok: false, id: requestId, at: Date.now(), error: error instanceof ScreenshotAPIError
         ? { ...error.toEnvelope(), request_id: requestId }
         : { code: "internal_error", message: "Capture service temporarily unavailable", retriable: true, request_id: requestId } },
-        { status: error instanceof CaptureAdmissionError ? error.httpStatus : error instanceof SnapforgeError ? error.statusCode : 503, headers });
+        { status: error instanceof CaptureAdmissionError ? error.httpStatus : error instanceof ScreenshotAPIError ? error.statusCode : 503, headers });
     }
   };
   return { POST: (request: Request) => handle(request), GET: (request: Request, jobId: string) => handle(request, jobId),

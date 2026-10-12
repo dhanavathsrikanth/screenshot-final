@@ -1,18 +1,18 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { LAUNCH_PLANS, PLAN_CATALOG } from "@snapforge/contracts";
+import { LAUNCH_PLANS, PLAN_CATALOG } from "@screenshotapi/contracts";
 import { Card } from "@/components/ui";
 import { Icon } from "@/components/icons";
 import { CreditEstimator } from "@/components/credit-estimator";
 
-export const metadata: Metadata = { title: "Screenshot API pricing · Snapforge", description: "Screenshot API plans from $9/month. PNG, JPEG, WebP, PDF and full-page captures with clear credit pricing. Start with 50 free credits." };
+export const metadata: Metadata = { title: "Screenshot API pricing · ScreenshotAPI", description: "Screenshot API plans from $9/month. PNG, JPEG, WebP, PDF and full-page captures with clear credit pricing. Start with 50 free credits." };
 
 export default function PricingPage() {
   return (
     <main data-theme="dark" className="min-h-screen bg-canvas text-ink">
       <div className="mx-auto max-w-6xl px-5 pb-12 sm:px-8">
         <nav aria-label="Main navigation" className="flex flex-wrap items-center justify-between gap-4 border-b border-line py-6">
-          <Link href="/pricing" className="font-display text-xl font-semibold tracking-tight">Snapforge.</Link>
+          <Link href="/pricing" className="font-display text-xl font-semibold tracking-tight">ScreenshotAPI.</Link>
           <div className="flex items-center gap-5 text-sm"><Link href="/docs" className="text-ink-2 hover:text-accent-ink">Documentation</Link><Link href="/billing" className="text-ink-2 hover:text-accent-ink">Your workspace</Link><Link href="/sign-up" className="rounded-md bg-accent px-4 py-2 font-medium text-n-0 hover:bg-accent-hover">Start free</Link></div>
         </nav>
         <header className="max-w-3xl py-12 sm:py-16">

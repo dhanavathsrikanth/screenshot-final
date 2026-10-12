@@ -6,7 +6,7 @@ The public documentation lives at `/docs` in the Next.js app. It uses a dedicate
 
 Edit `src/lib/docs-content.ts` to add or update a page. Each entry supplies its slug, navigation group, title, description, and structured sections. Navigation, full-text search, page outlines, previous/next links, Markdown exports, and the `/llms.txt` index use that same source.
 
-The capture parameter reference derives defaults from `@snapforge/contracts`. Its description map covers every schema field. Device and region tables also come from the contracts package. Update the relevant guide when changing an API endpoint or capture behavior.
+The capture parameter reference derives defaults from `@screenshotapi/contracts`. Its description map covers every schema field. Device and region tables also come from the contracts package. Update the relevant guide when changing an API endpoint or capture behavior.
 
 The route `src/app/(documentation)/docs/[[...slug]]/page.tsx` prerenders the registered pages and rejects unknown slugs. `/docs/markdown/{slug}` returns their Markdown content; `/docs/markdown` returns the introduction. Only docs and the agent index are public; console and API authentication remain governed by the existing proxy and API handlers.
 
@@ -24,7 +24,7 @@ Completed images have a preview and download. `docs-pdf-preview.tsx` lazily load
 
 Console mode uses the signed-in account and existing capture service, admission, and billing. Development-only local mode supports direct captures; async jobs and callbacks require worker-backed mode. The console response shape is labeled separately from the REST API.
 
-API-key mode for other API operations forwards the documented method and path to the server-configured `SNAPFORGE_API_URL`, with the developer’s key. Set that variable to the trusted gateway origin in the app's runtime environment to enable REST execution. Keys stay in component memory and are never persisted in browser storage. The bridge accepts only the operation allowlist in `docs-operations.json`, bounds request bodies, rejects cross-origin requests, does not follow redirects, and forwards only the permitted headers. The route is excluded from proxy-level sign-in redirection so API-key callers can use it, but its handler enforces the chosen authentication mode.
+API-key mode for other API operations forwards the documented method and path to the server-configured `SCREENSHOTAPI_API_URL`, with the developer’s key. Set that variable to the trusted gateway origin in the app's runtime environment to enable REST execution. Keys stay in component memory and are never persisted in browser storage. The bridge accepts only the operation allowlist in `docs-operations.json`, bounds request bodies, rejects cross-origin requests, does not follow redirects, and forwards only the permitted headers. The route is excluded from proxy-level sign-in redirection so API-key callers can use it, but its handler enforces the chosen authentication mode.
 
 ## Capture latency
 
@@ -45,6 +45,6 @@ The 2026-10-05 browser check rendered a two-page `python.org/doc/` PDF and verif
 Build tests before running them:
 
 ```sh
-pnpm --filter @snapforge/app run test:build
-pnpm --filter @snapforge/app run test
+pnpm --filter @screenshotapi/app run test:build
+pnpm --filter @screenshotapi/app run test
 ```

@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { randomBytes } from "node:crypto";
 import type { Redis } from "ioredis";
-import { CaptureQueue, createCaptureSubmissionCodec, type CaptureDispatcher, type CaptureJobView, type CaptureJobPayload, type SealedCaptureSubmission } from "@snapforge/queue";
+import { CaptureQueue, createCaptureSubmissionCodec, type CaptureDispatcher, type CaptureJobView, type CaptureJobPayload, type SealedCaptureSubmission } from "@screenshotapi/queue";
 import { createGateway, type GatewayDependencies } from "./gateway.js";
 
 function fixture(workers = 1, paused = false) {

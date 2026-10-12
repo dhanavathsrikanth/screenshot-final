@@ -1,9 +1,9 @@
 import { Redis } from "ioredis";
-import { captureSubmissionCodecFromEnv, CaptureDispatcher, CaptureQueue, CaptureService, HotCache, RedisCaptureAdmission, createQueue, readyWorkerCount, resolveQueueConfig } from "@snapforge/queue";
-import { captureLifecycle, captureSubmissions, linkReservationToJob, recordCapture, reservationForJob, reserveCapture, settleCapture } from "@snapforge/database";
+import { captureSubmissionCodecFromEnv, CaptureDispatcher, CaptureQueue, CaptureService, HotCache, RedisCaptureAdmission, createQueue, readyWorkerCount, resolveQueueConfig } from "@screenshotapi/queue";
+import { captureLifecycle, captureSubmissions, linkReservationToJob, recordCapture, reservationForJob, reserveCapture, settleCapture } from "@screenshotapi/database";
 
 export function localCaptureEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
-  return env.NODE_ENV !== "production" && env.SNAPFORGE_LOCAL_CAPTURE === "1";
+  return env.NODE_ENV !== "production" && (env.SCREENSHOTAPI_LOCAL_CAPTURE ?? env.SNAPFORGE_LOCAL_CAPTURE) === "1";
 }
 
 async function createRuntime() {
@@ -19,7 +19,7 @@ async function createRuntime() {
   try { await redis.connect(); } catch { redis.disconnect(); throw new Error("Capture queue connection unavailable"); }
   const host = createQueue(config, redis);
   const queue = new CaptureQueue(host, config);
-  const hotCache = new HotCache({ maxEntries: Number(process.env.SNAPFORGE_HOT_CACHE_ENTRIES ?? 1024) });
+  const hotCache = new HotCache({ maxEntries: Number((process.env.SCREENSHOTAPI_HOT_CACHE_ENTRIES ?? process.env.SNAPFORGE_HOT_CACHE_ENTRIES) ?? 1024) });
   const service = new CaptureService({
     queue, dispatcher: new CaptureDispatcher(queue, config),
     admission: new RedisCaptureAdmission(redis, { leaseMs: 7_200_000 }),
@@ -38,12 +38,12 @@ async function createRuntime() {
   };
 }
 
-const globalRef = globalThis as typeof globalThis & { __snapforgeCaptureRuntime?: ReturnType<typeof createRuntime> };
+const globalRef = globalThis as typeof globalThis & { __screenshotapiCaptureRuntime?: ReturnType<typeof createRuntime> };
 
 export function getCaptureRuntime() {
-  globalRef.__snapforgeCaptureRuntime ??= createRuntime().catch((error) => {
-    globalRef.__snapforgeCaptureRuntime = undefined;
+  globalRef.__screenshotapiCaptureRuntime ??= createRuntime().catch((error) => {
+    globalRef.__screenshotapiCaptureRuntime = undefined;
     throw error;
   });
-  return globalRef.__snapforgeCaptureRuntime;
+  return globalRef.__screenshotapiCaptureRuntime;
 }

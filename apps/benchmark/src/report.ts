@@ -1,5 +1,5 @@
 import { BENCHMARK_TIERS } from "./sites.js";
-import { CAPTURE_PHASES } from "@snapforge/engine";
+import { CAPTURE_PHASES } from "@screenshotapi/engine";
 import type { BenchmarkReport, SiteResult } from "./runner.js";
 
 function statusLabel(result: SiteResult): string {
@@ -25,7 +25,7 @@ export function renderMarkdown(report: BenchmarkReport): string {
       ? `; ${summary.blocked} blocked_by_target site(s) excluded from the gate`
       : "";
   const lines: string[] = [
-    "# Snapforge Gauntlet - 30-Site Quality Gate",
+    "# ScreenshotAPI Gauntlet - 30-Site Quality Gate",
     "",
     `- **Verdict**: ${verdict} (pass rate ${summary.pass_rate}% vs gate ${summary.gate_percent}%${excluded})`,
     `- **Started**: ${report.started_at}`,

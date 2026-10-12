@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { randomBytes } from "node:crypto";
 import { EventEmitter } from "node:events";
-import { captureOptionsSchema, SnapforgeError } from "@snapforge/contracts";
+import { captureOptionsSchema, ScreenshotAPIError } from "@screenshotapi/contracts";
 import { CaptureService, type CaptureServiceDependencies } from "./service.js";
 import { CaptureCompletionConsumer } from "./settlement.js";
 import { CaptureQueue } from "./queue.js";
@@ -126,7 +126,7 @@ test("an ambiguous reservation commit returns a handle and does not release a po
   const reserve = f.submissions.reserveSubmission;
   f.submissions.reserveSubmission = async (input) => { await reserve(input); throw new Error("database acknowledgement lost"); };
   await assert.rejects(f.service.submit({ accountId: intent.accountId }, { url: intent.options.url }, "http", "async"), (error: unknown) =>
-    error instanceof SnapforgeError && error.code === "egress_unavailable" && error.details?.job_id === intent.jobId);
+    error instanceof ScreenshotAPIError && error.code === "egress_unavailable" && error.details?.job_id === intent.jobId);
   assert.deepEqual(f.calls, ["admit", "reserve"]);
   await f.recovery();
   assert.equal(f.host.added.length, 1);

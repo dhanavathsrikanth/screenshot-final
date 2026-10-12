@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import http from "node:http";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
-import { createEngine } from "@snapforge/engine";
+import { createEngine } from "@screenshotapi/engine";
 
 const output = process.argv[2];
 if (!output) throw new Error("Usage: node scripts/warm-profile.mjs <output.json>");

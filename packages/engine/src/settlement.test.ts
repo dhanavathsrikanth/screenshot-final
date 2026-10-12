@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import type { Page } from "playwright";
-import type { CaptureOptions } from "@snapforge/contracts";
+import type { CaptureOptions } from "@screenshotapi/contracts";
 import {
   RequestIdleTracker,
   SettlementBudget,

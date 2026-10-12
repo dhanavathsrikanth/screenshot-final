@@ -1,6 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
-import { captureLifecycle } from "@snapforge/database";
-import { createR2Storage, resolveStorageConfig } from "@snapforge/storage";
+import { captureLifecycle } from "@screenshotapi/database";
+import { createR2Storage, resolveStorageConfig } from "@screenshotapi/storage";
 import { createCaptureArtifactHandler } from "@/lib/capture-artifact";
 import { getCaptureRuntime } from "@/lib/capture-service";
 

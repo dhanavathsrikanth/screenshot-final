@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { SnapforgeError, type ErrorCode } from "@snapforge/contracts";
+import { ScreenshotAPIError, type ErrorCode } from "@screenshotapi/contracts";
 
 const CRASH_PATTERNS: RegExp[] = [
   /target (page|browser).*closed/i,
@@ -107,14 +107,14 @@ export function looksLikeChallenge(
   return false;
 }
 
-export function toSnapforgeError(
+export function toScreenshotAPIError(
   err: unknown,
   requestId: string,
   extraDetails?: Record<string, unknown>,
-): SnapforgeError {
-  if (err instanceof SnapforgeError) {
+): ScreenshotAPIError {
+  if (err instanceof ScreenshotAPIError) {
     if (!extraDetails) return err;
-    return new SnapforgeError({
+    return new ScreenshotAPIError({
       code: err.code,
       message: err.message,
       requestId: err.requestId,
@@ -128,7 +128,7 @@ export function toSnapforgeError(
       path: issue.path.join("."),
       message: issue.message,
     }));
-    return new SnapforgeError({
+    return new ScreenshotAPIError({
       code: "invalid_request",
       message: `Validation failed: ${issues.map((i) => `${i.path || "(root)"}: ${i.message}`).join("; ")}`,
       requestId,
@@ -140,7 +140,7 @@ export function toSnapforgeError(
   const stack = err instanceof Error ? err.stack : undefined;
   const code = classifyErrorMessage(message);
 
-  return new SnapforgeError({
+  return new ScreenshotAPIError({
     code,
     message,
     requestId,

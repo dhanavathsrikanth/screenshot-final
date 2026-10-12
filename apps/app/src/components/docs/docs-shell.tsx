@@ -46,7 +46,7 @@ export function DocsShell({ navigation, current, headings, children }: {
       <a href="#docs-content" className={styles.skip}>Skip to content</a>
       <header className={styles.header}>
         <div className={styles.headerInner}>
-          <Link href="/docs" className={styles.logo} aria-label="Snapforge documentation"><span className={styles.logoMark}><Icon name="logo" className="size-6" /></span>snapforge<span className={styles.docsLabel}>docs</span></Link>
+          <Link href="/docs" className={styles.logo} aria-label="ScreenshotAPI documentation"><span className={styles.logoMark}><Icon name="logo" className="size-6" /></span>screenshotapi<span className={styles.docsLabel}>docs</span></Link>
           <button type="button" onClick={openSearch} className={styles.searchButton}><Icon name="search" /><span>Search documentation…</span><kbd>⌘ K</kbd></button>
           <div className={styles.headerActions}><Link href="/playground">Playground<Icon name="chevron" className="size-3" /></Link><Link href="/" className={styles.consoleLink}>Open console<Icon name="chevron" className="size-3" /></Link></div>
           <button type="button" onClick={openSearch} className={styles.mobileSearch} aria-label="Search documentation"><Icon name="search" /></button>
@@ -85,7 +85,7 @@ export function DocsShell({ navigation, current, headings, children }: {
           if (event.key === "ArrowUp" && index === 0) document.getElementById("docs-search")?.focus();
           else links[Math.min(links.length - 1, index + (event.key === "ArrowDown" ? 1 : -1))]?.focus();
         }}><p className={styles.searchCaption}>{terms.length ? `${results.length} matching pages` : "Popular pages"}</p>{results.length ? results.map((page) => <Link key={page.slug} href={href(page.slug)} onClick={closeSearch}><Icon name={page.icon} /><span><small>{page.group}</small><strong>{page.title}</strong><span>{page.description}</span></span><Icon name="chevron" className="size-3" /></Link>) : <div className={styles.searchEmpty} role="status">No pages match “{query}”. Try a parameter such as full_page, or a topic such as webhooks.</div>}</div>
-        <div className={styles.searchFooter}>Search the complete Snapforge reference<span>↑ ↓ Navigate · Enter to open · Esc to close</span></div>
+        <div className={styles.searchFooter}>Search the complete ScreenshotAPI reference<span>↑ ↓ Navigate · Enter to open · Esc to close</span></div>
       </dialog>
     </div>
   );

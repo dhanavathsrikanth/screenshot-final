@@ -1,7 +1,16 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { captureOptionsSchema, ERROR_CODES } from "@snapforge/contracts";
+import { captureOptionsSchema, ERROR_CODES } from "@screenshotapi/contracts";
 import { CAPTURE_CODE, CAPTURE_EXAMPLE, DOC_FIELDS, DOC_PAGES, docMarkdown, getDoc } from "./docs-content.js";
+
+test("public documentation uses the domain-based brand and local MCP entry point", () => {
+  const markdown = DOC_PAGES.map(docMarkdown).join("\n");
+  assert.doesNotMatch(markdown, /snapforge/i);
+  assert.match(markdown, /ScreenshotAPI/);
+  assert.match(markdown, /SCREENSHOTAPI_API_KEY/);
+  assert.match(markdown, /@screenshotapi\/mcp/);
+  assert.doesNotMatch(markdown, /api\.screenshotapi\.tech/);
+});
 
 test("the parameter reference covers the capture schema and its actual defaults", () => {
   assert.deepEqual(DOC_FIELDS.map((field) => field.name).sort(), Object.keys(captureOptionsSchema.shape).sort());

@@ -99,7 +99,7 @@ test("the API-key bridge fixes the destination and forwards only documented requ
     return Response.json({ ok: true }, { status: 202, headers: { etag: '"3"', "set-cookie": "must-not-forward" } });
   } });
   const response = await handler(request({ operation: "redeliver", authentication: "api-key", handle: "job-a", ifMatch: '"2"', url: "https://attacker.example", headers: { cookie: "fake" } }, { authorization: "Bearer sf_live_abcdefghijklmnopqrstuvwx" }));
-  assert.equal(calls, 1); assert.equal(response.status, 202); assert.equal(response.headers.get("set-cookie"), null); assert.equal(response.headers.get("x-snapforge-interface"), "rest-api");
+  assert.equal(calls, 1); assert.equal(response.status, 202); assert.equal(response.headers.get("set-cookie"), null); assert.equal(response.headers.get("x-screenshotapi-interface"), "rest-api");
 });
 
 test("invalid paths, ETags, capture bodies, and oversized envelopes fail before dispatch", async () => {

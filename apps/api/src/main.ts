@@ -1,7 +1,7 @@
 import { serve } from "@hono/node-server";
-import { WebhookDeliveryConsumer, captureSubmissionCodecFromEnv, createQueue, createQueueConnection, createQueueEvents, createQueueEventsWaiter, CaptureCompletionConsumer, RedisCaptureAdmission, CaptureDispatcher, CaptureQueue, HotCache, resolveQueueConfig, readyWorkerCount } from "@snapforge/queue";
+import { WebhookDeliveryConsumer, captureSubmissionCodecFromEnv, createQueue, createQueueConnection, createQueueEvents, createQueueEventsWaiter, CaptureCompletionConsumer, RedisCaptureAdmission, CaptureDispatcher, CaptureQueue, HotCache, resolveQueueConfig, readyWorkerCount } from "@screenshotapi/queue";
 import { createGateway } from "./gateway.js";
-import { webhookDeliveries, captureLifecycle, captureSubmissions, findApiKeyByHash, linkReservationToJob, pool, recordCapture, reservationForJob, reserveCapture, settleCapture } from "@snapforge/database";
+import { webhookDeliveries, captureLifecycle, captureSubmissions, findApiKeyByHash, linkReservationToJob, pool, recordCapture, reservationForJob, reserveCapture, settleCapture } from "@screenshotapi/database";
 
 const config = resolveQueueConfig();
 const submissionCodec = captureSubmissionCodecFromEnv();
@@ -13,7 +13,7 @@ const queue = new CaptureQueue(queueHost, config);
 const events = await createQueueEvents(config, connection.producer);
 const dispatcher = new CaptureDispatcher(queue, config, createQueueEventsWaiter(events, queue));
 const billing = { reserveCapture, settleCapture, linkReservationToJob, reservationForJob, recordCapture, lifecycle: captureLifecycle, submissions: captureSubmissions };
-const hotCache = new HotCache({ maxEntries: Number(process.env.SNAPFORGE_HOT_CACHE_ENTRIES ?? 4096) });
+const hotCache = new HotCache({ maxEntries: Number((process.env.SCREENSHOTAPI_HOT_CACHE_ENTRIES ?? process.env.SNAPFORGE_HOT_CACHE_ENTRIES) ?? 4096) });
 const completion = new CaptureCompletionConsumer({ queue, events, billing, dispatcher, submissionCodec, hotCache,
   admission: new RedisCaptureAdmission(connection.producer, { leaseMs: 7_200_000 }),
   retentionSeconds: Math.max(config.resultTtlSeconds, config.failedTtlSeconds),
@@ -39,7 +39,7 @@ const app = createGateway({ redis: connection.producer, queue, dispatcher, submi
 }, hotCache });
 
 const server = serve({ fetch: app.fetch, port, hostname: process.env.HOST ?? "0.0.0.0" }, (info) => {
-  process.stdout.write(`Snapforge API listening on ${info.address}:${info.port}\n`);
+  process.stdout.write(`ScreenshotAPI API listening on ${info.address}:${info.port}\n`);
 });
 
 const shutdown = async () => {

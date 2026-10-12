@@ -1,4 +1,4 @@
-# Snapforge pricing research and provisional launch proposal
+# ScreenshotAPI pricing research and provisional launch proposal
 
 Research date: 11 October 2026. Currency: USD, before customer taxes. Status: proposal; no live billing or hosting changes made.
 

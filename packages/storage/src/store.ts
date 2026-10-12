@@ -1,4 +1,4 @@
-import { renderDiagnosticsSchema, type CaptureOptions, type CaptureSuccessData } from "@snapforge/contracts";
+import { renderDiagnosticsSchema, type CaptureOptions, type CaptureSuccessData } from "@screenshotapi/contracts";
 import { CaptureCache, type CacheEntry } from "./cache.js";
 import type { StorageClient } from "./r2.js";
 

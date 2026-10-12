@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { LAUNCH_PLANS, PLAN_CATALOG } from "@snapforge/contracts";
+import { LAUNCH_PLANS, PLAN_CATALOG } from "@screenshotapi/contracts";
 import { Card, CardHeader } from "./ui";
 
 export function CreditEstimator() {

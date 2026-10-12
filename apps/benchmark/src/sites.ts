@@ -1,4 +1,4 @@
-import type { CaptureOptionsInput } from "@snapforge/contracts";
+import type { CaptureOptionsInput } from "@screenshotapi/contracts";
 
 export const BENCHMARK_TIERS = ["easy", "moderate", "hard"] as const;
 export type BenchmarkTier = (typeof BENCHMARK_TIERS)[number];

@@ -1,4 +1,4 @@
-# Snapforge workspace redesign
+# ScreenshotAPI workspace redesign
 
 Implemented and verified: 2026-10-05.
 
@@ -6,7 +6,7 @@ Implemented and verified: 2026-10-05.
 
 The reference is the local Xem frontend at `C:\Users\ratho\Desktop\xem\mail\client`. Reviewed its current `components/app-shell.tsx`, `components/workspace-shell.module.css`, global typography, dashboard design-system notes, and the saved desktop dashboard reference. Xem was read only.
 
-Snapforge adopts the reference's compact navigation, inset workspace, quiet dividers, restrained headings, Geist typography, and consistent spacing. Its colours come entirely from `packages/brand`; Xem's lime and charcoal literals were not copied. The default theme stays dark. Primary actions use Hostinger purple with white text, and the existing brand gradient is limited to hero text and a thin accent rule.
+ScreenshotAPI adopts the reference's compact navigation, inset workspace, quiet dividers, restrained headings, Geist typography, and consistent spacing. Its colours come entirely from `packages/brand`; Xem's lime and charcoal literals were not copied. The default theme stays dark. Primary actions use Hostinger purple with white text, and the existing brand gradient is limited to hero text and a thin accent rule.
 
 ## Delivered
 

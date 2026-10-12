@@ -1,4 +1,4 @@
-import type { CaptureFormat, RenderDiagnostics } from "@snapforge/contracts";
+import type { CaptureFormat, RenderDiagnostics } from "@screenshotapi/contracts";
 
 export interface CaptureMetrics {
   url: string;
@@ -81,4 +81,4 @@ export interface EngineHealthPayload {
   } | null;
 }
 
-export { CAPTURE_MIME_TYPES as MIME_BY_FORMAT } from "@snapforge/contracts";
+export { CAPTURE_MIME_TYPES as MIME_BY_FORMAT } from "@screenshotapi/contracts";

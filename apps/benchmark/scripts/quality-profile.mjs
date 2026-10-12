@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import http from "node:http";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { buildBannerRemovalScript, createEngine, createLauncher } from "@snapforge/engine";
+import { buildBannerRemovalScript, createEngine, createLauncher } from "@screenshotapi/engine";
 
 const output = process.argv[2];
 const reference = process.argv[3];
@@ -69,7 +69,7 @@ try {
     await page.evaluate(buildBannerRemovalScript(undefined, 60_000));
     const sweep = await page.evaluate(() => {
       const start = performance.now();
-      for (let i = 0; i < 20; i++) window.__snapforgeBannerSweep.run();
+      for (let i = 0; i < 20; i++) window.__screenshotapiBannerSweep.run();
       return (performance.now() - start) / 20;
     });
     rows.push({ name: "banner-sweep-12000-elements", average_sweep_ms: sweep });

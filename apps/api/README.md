@@ -1,4 +1,4 @@
-# Snapforge API Gateway
+# ScreenshotAPI API Gateway
 
 The Hono gateway listens on `0.0.0.0:8787` by default. Configure `PORT`, `HOST`, `DATABASE_URL`, and `REDIS_URL` for deployment. The gateway uses Neon Postgres as the source of truth for API keys, account ownership, capture history, monthly usage, prepaid credits, and capture reservations. Runtime queries use Neon’s pooled URL.
 

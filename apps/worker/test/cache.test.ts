@@ -1,8 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { captureOptionsSchema, type CaptureSuccessData } from "@snapforge/contracts";
-import { createEngine } from "@snapforge/engine";
-import { CaptureCache, CaptureStore, MemoryCacheBackend, type StorageClient } from "@snapforge/storage";
+import { captureOptionsSchema, type CaptureSuccessData } from "@screenshotapi/contracts";
+import { createEngine } from "@screenshotapi/engine";
+import { CaptureCache, CaptureStore, MemoryCacheBackend, type StorageClient } from "@screenshotapi/storage";
 import { createWorkerCache } from "../src/cache.js";
 
 const options = captureOptionsSchema.parse({ url: "https://example.com", cache_ttl: 60 });

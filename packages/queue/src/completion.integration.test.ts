@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
-import { SnapforgeError } from "@snapforge/contracts";
+import { ScreenshotAPIError } from "@screenshotapi/contracts";
 import { CaptureCompletionConsumer, type CaptureFinalization, type CaptureLifecycleRepository } from "./settlement.js";
 import { CaptureService, type CaptureBilling } from "./service.js";
 import { CaptureQueue } from "./queue.js";
@@ -52,7 +52,7 @@ for (const outcome of ["success", "failure", "retry"] as const) {
     const worker = createCaptureWorker(config, async (options) => {
       attempts++;
       if (outcome === "failure" || (outcome === "retry" && attempts === 1)) {
-        throw new SnapforgeError({ code: "render_timeout", message: "Test timeout", requestId: suffix });
+        throw new ScreenshotAPIError({ code: "render_timeout", message: "Test timeout", requestId: suffix });
       }
       return { data: { url: options.url, final_url: options.url, format: "png", width: 1280, height: 720, bytes: 123,
         duration_ms: 100, cached: false, blocked_requests: 0, cdn_url: "https://cdn.example.com/capture.png" } };

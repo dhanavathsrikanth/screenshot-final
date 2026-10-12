@@ -1,5 +1,5 @@
-import { SnapforgeError } from "@snapforge/contracts";
-import { CAPTURE_PHASES, type CaptureOutcome, type CaptureTimings } from "@snapforge/engine";
+import { ScreenshotAPIError } from "@screenshotapi/contracts";
+import { CAPTURE_PHASES, type CaptureOutcome, type CaptureTimings } from "@screenshotapi/engine";
 import { evaluateCapture, type CheckFailure } from "./checks.js";
 import { percentile, round } from "./stats.js";
 import { BENCHMARK_TIERS, type BenchmarkSite, type BenchmarkTier } from "./sites.js";
@@ -79,7 +79,7 @@ export const DEFAULT_RETRIES = 1;
 export const DEFAULT_GATE_PERCENT = 95;
 
 function errorInfo(err: unknown): { code: string; message: string } {
-  if (err instanceof SnapforgeError) {
+  if (err instanceof ScreenshotAPIError) {
     return { code: err.code, message: err.message };
   }
   return {
@@ -89,7 +89,7 @@ function errorInfo(err: unknown): { code: string; message: string } {
 }
 
 function isRetriable(err: unknown): boolean {
-  return !(err instanceof SnapforgeError) || err.retriable;
+  return !(err instanceof ScreenshotAPIError) || err.retriable;
 }
 
 async function runSite(
@@ -134,7 +134,7 @@ async function runSite(
         text_checks_skipped: !inspectText,
       };
     } catch (err) {
-      const timings = err instanceof SnapforgeError ? err.details?.timings : undefined;
+      const timings = err instanceof ScreenshotAPIError ? err.details?.timings : undefined;
       if (isCaptureTimings(timings)) attemptTimings.push(timings);
       lastError = errorInfo(err);
       if (!isRetriable(err) || attempt > retries) break;

@@ -14,6 +14,13 @@ test("only the account attached by checkout can receive payment benefits", () =>
   assert.throws(() => verifyBillingOwner({ ...payment, metadata: {} }, "user-1"));
 });
 
+test("renamed checkout metadata preserves legacy owners and rejects conflicting identities", () => {
+  verifyBillingOwner({ ...payment, metadata: { screenshotapi_user_id: "user-1" } }, "user-1");
+  verifyBillingOwner({ ...payment, metadata: { screenshotapi_user_id: "user-1", snapforge_user_id: "user-1" } }, "user-1");
+  assert.throws(() => verifyBillingOwner({ ...payment, metadata: { screenshotapi_user_id: "user-2", snapforge_user_id: "user-1" } }, "user-1"));
+  assert.throws(() => verifyBillingOwner({ ...payment, metadata: { screenshotapi_user_id: 1 } }, "user-1"));
+});
+
 test("credits require a paid cart and exact pre-tax price", () => {
   assert.equal(verifiedCreditPayment(payment, "pack-1", 12), 1);
   for (const change of [{ status: "failed" }, { status: "processing" }, { total_amount: 120 }, { tax: -1 }, { currency: "EUR" },

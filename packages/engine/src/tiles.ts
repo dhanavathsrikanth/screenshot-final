@@ -1,7 +1,7 @@
 import type { Page } from "playwright";
 import sharp from "sharp";
 import { PDFDocument, PDFName, PDFNumber } from "pdf-lib";
-import { CAPTURE_RENDER_VERSION, SnapforgeError, type CaptureOptions } from "@snapforge/contracts";
+import { CAPTURE_RENDER_VERSION, ScreenshotAPIError, type CaptureOptions } from "@screenshotapi/contracts";
 import { scrollThrough, type FullPageConfig, type ScrollStats } from "./fullpage.js";
 import type { CaptureOutput } from "./formats.js";
 import { freezeViewportMotion, waitForViewportStability } from "./motion.js";
@@ -9,7 +9,7 @@ import { drawLosslessStrip } from "./pdf-strip.js";
 
 export function assertCompleteScroll(stats: ScrollStats, requestId: string): void {
   if (!["timeout", "max_steps", "scroll_blocked"].includes(stats.stopped_reason)) return;
-  throw new SnapforgeError({
+  throw new ScreenshotAPIError({
     code: stats.stopped_reason === "timeout" ? "render_timeout" : "render_incomplete",
     message: `Full-page scrolling stopped before reaching the bottom (${stats.stopped_reason})`,
     requestId,
@@ -27,7 +27,7 @@ export async function captureTiles(
 ): Promise<CaptureOutput> {
   const deadline = Date.now() + config.timeoutMs;
   const checkDeadline = () => {
-    if (Date.now() >= deadline) throw new SnapforgeError({ code: "render_timeout", message: "Full-page capture exhausted its rendering budget", requestId });
+    if (Date.now() >= deadline) throw new ScreenshotAPIError({ code: "render_timeout", message: "Full-page capture exhausted its rendering budget", requestId });
   };
   const tiles: { y: number; viewportHeight: number; buffer: Buffer }[] = [];
   const pinned = await page.evaluateHandle(() => ({
@@ -135,7 +135,7 @@ export async function captureTiles(
   }
   assertCompleteScroll(stats, requestId);
   if (!tiles.length) {
-    throw new SnapforgeError({ code: "render_timeout", message: "No viewport could be captured within the full-page budget", requestId });
+    throw new ScreenshotAPIError({ code: "render_timeout", message: "No viewport could be captured within the full-page budget", requestId });
   }
   await beforeEncode?.();
   checkDeadline();
@@ -186,7 +186,7 @@ export async function captureTiles(
     return { buffer, width: Math.round(cssWidth), height: Math.round(cssHeight), diagnostics };
   }
   if (width * height > 268_402_689) {
-    throw new SnapforgeError({
+    throw new ScreenshotAPIError({
       code: "unsupported_option",
       message: "Full-page image exceeds the pixel limit; reduce viewport width, deviceScaleFactor, or maximum page height",
       requestId,

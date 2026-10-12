@@ -1,11 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { z } from "zod";
-import { SnapforgeError } from "@snapforge/contracts";
+import { ScreenshotAPIError } from "@screenshotapi/contracts";
 import {
   classifyErrorMessage,
   looksLikeChallenge,
-  toSnapforgeError,
+  toScreenshotAPIError,
 } from "./errors.js";
 
 test("classifyErrorMessage maps crash messages", () => {
@@ -68,55 +68,55 @@ test("looksLikeChallenge flags bot walls in 200-status bodies", () => {
   assert.equal(looksLikeChallenge(200, "Docs", "a guide to human centered design"), false);
 });
 
-test("toSnapforgeError maps ZodError to invalid_request", () => {
+test("toScreenshotAPIError maps ZodError to invalid_request", () => {
   const schema = z.object({ url: z.string().min(1) });
   const parsed = schema.safeParse({});
   assert.ok(!parsed.success);
-  const error = toSnapforgeError(parsed.error, "req_1");
+  const error = toScreenshotAPIError(parsed.error, "req_1");
   assert.equal(error.code, "invalid_request");
   assert.equal(error.requestId, "req_1");
   const details = error.details as { issues: { path: string }[] };
   assert.equal(details.issues[0]?.path, "url");
 });
 
-test("toSnapforgeError passes SnapforgeError through", () => {
-  const original = new SnapforgeError({
+test("toScreenshotAPIError passes ScreenshotAPIError through", () => {
+  const original = new ScreenshotAPIError({
     code: "blocked_by_target",
     message: "blocked",
     requestId: "req_2",
   });
-  const result = toSnapforgeError(original, "req_other");
+  const result = toScreenshotAPIError(original, "req_other");
   assert.equal(result, original);
 });
 
-test("toSnapforgeError merges extraDetails into SnapforgeError", () => {
-  const original = new SnapforgeError({
+test("toScreenshotAPIError merges extraDetails into ScreenshotAPIError", () => {
+  const original = new ScreenshotAPIError({
     code: "render_crashed",
     message: "boom",
     requestId: "req_3",
     details: { attempt: 1 },
   });
-  const result = toSnapforgeError(original, "req_3", { artifacts: { dom: "<html/>" } });
+  const result = toScreenshotAPIError(original, "req_3", { artifacts: { dom: "<html/>" } });
   assert.notEqual(result, original);
   assert.equal(result.code, "render_crashed");
   assert.deepEqual(result.details, { attempt: 1, artifacts: { dom: "<html/>" } });
 });
 
-test("toSnapforgeError classifies raw playwright errors", () => {
-  const nav = toSnapforgeError(new Error("net::ERR_NAME_NOT_RESOLVED"), "req_4");
+test("toScreenshotAPIError classifies raw playwright errors", () => {
+  const nav = toScreenshotAPIError(new Error("net::ERR_NAME_NOT_RESOLVED"), "req_4");
   assert.equal(nav.code, "navigation_failed");
   assert.equal(nav.retriable, true);
 
-  const crash = toSnapforgeError(new Error("Target page, browser or context has been closed"), "req_5");
+  const crash = toScreenshotAPIError(new Error("Target page, browser or context has been closed"), "req_5");
   assert.equal(crash.code, "render_crashed");
 
-  const unknown = toSnapforgeError("plain string failure", "req_6");
+  const unknown = toScreenshotAPIError("plain string failure", "req_6");
   assert.equal(unknown.code, "internal_error");
   assert.equal(unknown.message, "plain string failure");
 });
 
-test("toSnapforgeError keeps extra details and stack", () => {
-  const error = toSnapforgeError(new Error("weird"), "req_7", { stage: "nav" });
+test("toScreenshotAPIError keeps extra details and stack", () => {
+  const error = toScreenshotAPIError(new Error("weird"), "req_7", { stage: "nav" });
   assert.equal(error.details?.stage, "nav");
   assert.ok(typeof error.details?.stack === "string");
 });

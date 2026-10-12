@@ -1,5 +1,5 @@
 {
-  "name": "@snapforge/api",
+  "name": "@screenshotapi/api",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -12,9 +12,9 @@
   },
   "dependencies": {
     "@hono/node-server": "^2.1.3",
-    "@snapforge/contracts": "workspace:*",
-    "@snapforge/database": "workspace:*",
-    "@snapforge/queue": "workspace:*",
+    "@screenshotapi/contracts": "workspace:*",
+    "@screenshotapi/database": "workspace:*",
+    "@screenshotapi/queue": "workspace:*",
     "hono": "^4.7.2",
     "ioredis": "^5.4.1"
   },

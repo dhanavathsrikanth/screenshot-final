@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { SnapforgeError } from "@snapforge/contracts";
+import { ScreenshotAPIError } from "@screenshotapi/contracts";
 
 export function idempotentJobId(accountId: string, key: string): string {
   return `idem-${createHash("sha256").update(JSON.stringify([accountId, key])).digest("hex")}`;
@@ -16,7 +16,7 @@ export function captureRequestFingerprint(value: unknown): string {
   return createHash("sha256").update(JSON.stringify(canonical(value))).digest("hex");
 }
 
-export class CaptureRequestConflictError extends SnapforgeError {
+export class CaptureRequestConflictError extends ScreenshotAPIError {
   constructor(requestId: string) {
     super({ code: "idempotency_conflict", message: "This Idempotency-Key was already used for another capture request or credential", requestId });
   }

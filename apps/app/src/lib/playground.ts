@@ -1,5 +1,5 @@
-import { DEVICE_PRESETS } from "@snapforge/contracts";
-import type { CaptureOptionsInput } from "@snapforge/contracts";
+import { DEVICE_PRESETS } from "@screenshotapi/contracts";
+import type { CaptureOptionsInput } from "@screenshotapi/contracts";
 
 export interface PlaygroundState {
   url: string;
@@ -133,13 +133,13 @@ function toQuery(options: Record<string, unknown>): string {
   return search.toString();
 }
 
-const API_BASE = "https://api.snapforge.dev";
+const API_BASE = "$SCREENSHOTAPI_API_URL";
 
 export function buildCurl(state: PlaygroundState): string {
   const options = toCaptureOptions(state) as Record<string, unknown>;
   return [
     `curl -X POST ${API_BASE}/v1/screenshot \\`,
-    `  -H "Authorization: Bearer $SNAPFORGE_API_KEY" \\`,
+    `  -H "Authorization: Bearer $SCREENSHOTAPI_API_KEY" \\`,
     `  -H "Content-Type: application/json" \\`,
     `  -d '${JSON.stringify(options, null, 2)}'`,
   ].join("\n");
@@ -151,35 +151,34 @@ export function buildTypeScript(state: PlaygroundState): string {
     .map((line) => `  ${line}`)
     .join("\n");
 
-  return `import { Snapforge } from "@snapforge/sdk";
-
-const snapforge = new Snapforge({ apiKey: process.env.SNAPFORGE_API_KEY! });
-
-const job = await snapforge.screenshot({
+  return `const response = await fetch(process.env.SCREENSHOTAPI_API_URL + "/v1/screenshot", {
+  method: "POST",
+  headers: {
+    Authorization: "Bearer " + process.env.SCREENSHOTAPI_API_KEY,
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify(
 ${options}
+  ),
 });
 
-console.log(job.url, job.width + "x" + job.height, job.duration_ms + "ms");`;
+const payload = await response.json();
+if (!response.ok || !payload.ok) throw new Error(payload.error?.message ?? "Capture failed");
+console.log(payload.data);`;
 }
 
 export function buildPython(state: PlaygroundState): string {
-  const options = JSON.stringify(toCaptureOptions(state), null, 2)
-    .split("\n")
-    .map((line) => `    ${line}`)
-    .join("\n");
-
-  return `import os
+  return `import json
+import os
 import requests
 
 response = requests.post(
-    "${API_BASE}/v1/screenshot",
+    os.environ["SCREENSHOTAPI_API_URL"] + "/v1/screenshot",
     headers={
-        "Authorization": f"Bearer {os.environ['SNAPFORGE_API_KEY']}",
+        "Authorization": f"Bearer {os.environ['SCREENSHOTAPI_API_KEY']}",
         "Content-Type": "application/json",
     },
-    json={
-${options}
-    },
+    json=json.loads(${JSON.stringify(JSON.stringify(toCaptureOptions(state)))}),
     timeout=60,
 )
 
@@ -189,22 +188,20 @@ print(payload["data"]["url"], payload["data"]["duration_ms"], "ms")`;
 
 export function buildQueryCurl(state: PlaygroundState): string {
   return `curl -G ${API_BASE}/v1/screenshot \\
-  -H "Authorization: Bearer $SNAPFORGE_API_KEY" \\
+  -H "Authorization: Bearer $SCREENSHOTAPI_API_KEY" \\
   --data-urlencode "url=${state.url}"${state.format === "png" ? "" : ` \\
   --data-urlencode "format=${state.format}"`}`;
 }
 
-export function buildMcpConfig(state: PlaygroundState): string {
-  const options = toCaptureOptions(state);
+export function buildMcpConfig(): string {
   return JSON.stringify(
     {
       mcpServers: {
-        snapforge: {
-          command: "npx",
-          args: ["-y", "@snapforge/mcp"],
+        screenshotapi: {
+          command: "node",
+          args: ["/absolute/path/to/screenshotapi/packages/mcp/dist/main.js"],
           env: {
-            SNAPFORGE_API_KEY: "<your-api-key>",
-            SNAPFORGE_DEFAULT_OPTIONS: JSON.stringify(options),
+            SCREENSHOTAPI_MCP_CONCURRENCY: "2",
           },
         },
       },

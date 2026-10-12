@@ -15,7 +15,7 @@ test("CMP selectors cover the major consent platforms", () => {
 test("banner removal script embeds selectors, lifetime, and bridge", () => {
   const script = buildBannerRemovalScript();
   assert.ok(script.includes("#onetrust-banner-sdk"));
-  assert.ok(script.includes("__snapforgeBannerSweep"));
+  assert.ok(script.includes("__screenshotapiBannerSweep"));
   assert.ok(script.includes("30000"));
   assert.ok(script.includes("MutationObserver"));
   assert.ok(script.includes("shadowRoot"));

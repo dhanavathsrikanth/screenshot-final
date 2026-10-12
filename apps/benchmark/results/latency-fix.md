@@ -27,8 +27,8 @@ Evidence:
 Reproduce:
 
 ```sh
-pnpm --filter @snapforge/engine run build
-pnpm --filter @snapforge/benchmark run build
+pnpm --filter @screenshotapi/engine run build
+pnpm --filter @screenshotapi/benchmark run build
 node apps/benchmark/scripts/profile.mjs apps/benchmark/results/profile-check.json
 node apps/benchmark/dist/src/cli.js --out apps/benchmark/results/verification
 ```

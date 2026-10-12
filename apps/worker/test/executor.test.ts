@@ -1,9 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { SnapforgeError, type CaptureOptions, type CaptureSuccessData } from "@snapforge/contracts";
+import { ScreenshotAPIError, type CaptureOptions, type CaptureSuccessData } from "@screenshotapi/contracts";
 import { createWorkerExecutor } from "../src/executor.js";
 
-/** Minimal stand-in for `SnapforgeEngine.capture`. Only the surface the executor touches. */
+/** Minimal stand-in for `ScreenshotAPIEngine.capture`. Only the surface the executor touches. */
 class FakeEngine {
   readonly calls: Array<{ input: unknown; options?: unknown }> = [];
   readonly errors: Error[] = [];
@@ -225,19 +225,19 @@ test("a cached capture is delivered without uploading it again", async () => {
 test("an incomplete render is never persisted", async () => {
   const engine = new FakeEngine();
   const store = new FakeStore();
-  engine.setErrors([new SnapforgeError({ code: "render_incomplete", message: "Loading shell", requestId: "quality" })]);
+  engine.setErrors([new ScreenshotAPIError({ code: "render_incomplete", message: "Loading shell", requestId: "quality" })]);
   const executor = createWorkerExecutor({ engine: engine as never, store: store as never });
-  await assert.rejects(executor(OPTIONS, { workerId: "quality-worker", attempt: 1, signal: new AbortController().signal, updateProgress: async () => {} }), (error: unknown) => error instanceof SnapforgeError && error.code === "render_incomplete");
+  await assert.rejects(executor(OPTIONS, { workerId: "quality-worker", attempt: 1, signal: new AbortController().signal, updateProgress: async () => {} }), (error: unknown) => error instanceof ScreenshotAPIError && error.code === "render_incomplete");
   assert.equal(store.calls.length, 0);
 });
 
 test("an exhausted rendering budget is terminal instead of repeating a minute-long render", async () => {
   const engine = new FakeEngine();
   const store = new FakeStore();
-  engine.setErrors([new SnapforgeError({ code: "render_timeout", message: "Budget exhausted", requestId: "timeout" })]);
+  engine.setErrors([new ScreenshotAPIError({ code: "render_timeout", message: "Budget exhausted", requestId: "timeout" })]);
   const executor = createWorkerExecutor({ engine: engine as never, store: store as never });
   await assert.rejects(executor(OPTIONS, { workerId: "timeout-worker", attempt: 1, signal: new AbortController().signal, updateProgress: async () => {} }),
-    (error: unknown) => error instanceof SnapforgeError && error.code === "render_timeout" && error.retriable === false);
+    (error: unknown) => error instanceof ScreenshotAPIError && error.code === "render_timeout" && error.retriable === false);
   assert.equal(store.calls.length, 0);
 });
 

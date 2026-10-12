@@ -1,11 +1,11 @@
 {
-  "name": "@snapforge/landing",
+  "name": "@screenshotapi/landing",
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "pnpm --filter @snapforge/contracts run build && node build.mjs"
+    "build": "pnpm --filter @screenshotapi/contracts run build && node build.mjs"
   },
   "dependencies": {
-    "@snapforge/contracts": "workspace:*"
+    "@screenshotapi/contracts": "workspace:*"
   }
 }

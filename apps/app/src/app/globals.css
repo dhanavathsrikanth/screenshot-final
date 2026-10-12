@@ -1,5 +1,5 @@
 @import "tailwindcss";
-@import "@snapforge/brand/tokens.css";
+@import "@screenshotapi/brand/tokens.css";
 
 @theme inline {
   --color-canvas: var(--sf-bg-canvas);

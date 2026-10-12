@@ -7,7 +7,7 @@ import { join } from "node:path";
 import sharp from "sharp";
 import { PDFDict, PDFDocument, PDFName, PDFNumber, PDFRawStream } from "pdf-lib";
 import { chromium } from "playwright";
-import { captureOptionsSchema, SnapforgeError } from "@snapforge/contracts";
+import { captureOptionsSchema, ScreenshotAPIError } from "@screenshotapi/contracts";
 import { createEngine } from "./engine.js";
 import { scrollThrough } from "./fullpage.js";
 import { captureTiles } from "./tiles.js";
@@ -78,10 +78,10 @@ test("scroll capture preserves reveal animations, lazy media, and delayed growth
     assert.ok(image instanceof PDFRawStream);
     assert.equal(image.dict.lookup(PDFName.of("Width"), PDFNumber).asNumber(), 1600);
   }
-  if (process.env.SNAPFORGE_PDF_QA_DIR) {
-    await mkdir(process.env.SNAPFORGE_PDF_QA_DIR, { recursive: true });
-    await writeFile(join(process.env.SNAPFORGE_PDF_QA_DIR, "scroll-quality.png"), png.buffer);
-    await writeFile(join(process.env.SNAPFORGE_PDF_QA_DIR, "scroll-quality.pdf"), pdf.buffer);
+  if (process.env.SCREENSHOTAPI_PDF_QA_DIR) {
+    await mkdir(process.env.SCREENSHOTAPI_PDF_QA_DIR, { recursive: true });
+    await writeFile(join(process.env.SCREENSHOTAPI_PDF_QA_DIR, "scroll-quality.png"), png.buffer);
+    await writeFile(join(process.env.SCREENSHOTAPI_PDF_QA_DIR, "scroll-quality.pdf"), pdf.buffer);
   }
 });
 
@@ -98,7 +98,7 @@ test("scroll capture bounds, cleanup, and fractional device scaling", { timeout:
   assert.equal(output.diagnostics?.truncated, true);
   assert.equal(await page.evaluate(() => scrollY), 0);
   assert.equal(await page.evaluate(() => getComputedStyle(document.documentElement).scrollBehavior), "smooth");
-  await assert.rejects(captureTiles(page, options, { ...config, maxScrollSteps: 1 }, 2.625, "bounded"), (error: unknown) => error instanceof SnapforgeError && error.code === "render_incomplete");
+  await assert.rejects(captureTiles(page, options, { ...config, maxScrollSteps: 1 }, 2.625, "bounded"), (error: unknown) => error instanceof ScreenshotAPIError && error.code === "render_incomplete");
   const timedOut = await scrollThrough(page, { ...config, timeoutMs: 0 });
   assert.equal(timedOut.stopped_reason, "timeout");
   assert.equal(await page.evaluate(() => scrollY), 0);

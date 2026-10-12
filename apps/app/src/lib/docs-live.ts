@@ -92,7 +92,7 @@ export async function runDocInvocation(input: DocInvocation, apiKey: string, opt
     let body: unknown;
     try { body = JSON.parse(raw); } catch { body = raw; }
     const result: DocResponse = { operation: invocation.operation, status: response.status, elapsed: Math.round(performance.now() - started), body,
-      headers: Object.fromEntries(["content-type", "x-request-id", "etag", "retry-after", "server-timing", "x-snapforge-interface"].flatMap((name) => { const value = response.headers.get(name); return value ? [[name, value]] : []; })) };
+      headers: Object.fromEntries(["content-type", "x-request-id", "etag", "retry-after", "server-timing", "x-screenshotapi-interface"].flatMap((name) => { const value = response.headers.get(name); return value ? [[name, value]] : []; })) };
     options.onResponse(result);
     return result;
   };
@@ -154,7 +154,7 @@ export function responseCapture(body: unknown): { artifact: string; format: stri
   const inline = /^data:(image\/(png|jpeg|webp)|application\/pdf);base64,[A-Za-z0-9+/=]+$/.test(artifact);
   try {
     const local = /^\/c\/[uij][A-Za-z0-9_-]{1,255}$/.test(artifact);
-    const url = new URL(artifact, local ? "https://snapforge.invalid" : undefined);
+    const url = new URL(artifact, local ? "https://screenshotapi.invalid" : undefined);
     if (!inline && (url.username || url.password || !["https:", "http:"].includes(url.protocol))) return null;
   } catch { return null; }
   return { artifact, format, jobId: typeof data.id === "string" ? data.id : undefined };

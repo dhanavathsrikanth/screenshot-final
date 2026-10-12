@@ -1,5 +1,5 @@
 {
-  "name": "@snapforge/queue",
+  "name": "@screenshotapi/queue",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -18,8 +18,8 @@
     "test": "node --test dist/**/*.test.js"
   },
   "dependencies": {
-    "@snapforge/contracts": "workspace:*",
-    "@snapforge/storage": "workspace:*",
+    "@screenshotapi/contracts": "workspace:*",
+    "@screenshotapi/storage": "workspace:*",
     "bullmq": "^5.34.0",
     "ioredis": "^5.4.1",
     "zod": "^3.24.2"

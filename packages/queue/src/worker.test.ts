@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { captureOptionsSchema, SnapforgeError } from "@snapforge/contracts";
+import { captureOptionsSchema, ScreenshotAPIError } from "@screenshotapi/contracts";
 import { UnrecoverableError } from "bullmq";
 import { resolveQueueConfig } from "./config.js";
 import {
@@ -162,14 +162,14 @@ describe("CaptureWorker happy path", () => {
 });
 
 describe("CaptureWorker retries", () => {
-  it("throws a retriable SnapforgeError so BullMQ backs off and retries", async () => {
+  it("throws a retriable ScreenshotAPIError so BullMQ backs off and retries", async () => {
     const executor: CaptureExecutor = async () => {
-      throw new SnapforgeError({ code: "render_timeout", message: "too slow", requestId: "req_1" });
+      throw new ScreenshotAPIError({ code: "render_timeout", message: "too slow", requestId: "req_1" });
     };
     const { job, worker } = build(executor);
 
     await assert.rejects(worker.process(job as never), (error: unknown) => {
-      assert.ok(error instanceof SnapforgeError);
+      assert.ok(error instanceof ScreenshotAPIError);
       assert.equal(error.code, "render_timeout");
       assert.ok(!(error instanceof UnrecoverableError));
       return true;
@@ -179,7 +179,7 @@ describe("CaptureWorker retries", () => {
 
   it("does not send a webhook for an intermediate retryable failure", async () => {
     const executor: CaptureExecutor = async () => {
-      throw new SnapforgeError({ code: "navigation_failed", message: "slow", requestId: "req_1" });
+      throw new ScreenshotAPIError({ code: "navigation_failed", message: "slow", requestId: "req_1" });
     };
     const { job, worker, calls } = build(executor, { webhook });
 
@@ -189,7 +189,7 @@ describe("CaptureWorker retries", () => {
 
   it("exhausted captures finish without calling a webhook endpoint", async () => {
     const executor: CaptureExecutor = async () => {
-      throw new SnapforgeError({ code: "render_timeout", message: "too slow", requestId: "req_1" });
+      throw new ScreenshotAPIError({ code: "render_timeout", message: "too slow", requestId: "req_1" });
     };
     const { job, worker, calls } = build(executor, { webhook });
     job.attemptsMade = 2;
@@ -201,7 +201,7 @@ describe("CaptureWorker retries", () => {
 
   it("permanent capture failures finish without waiting on webhooks", async () => {
     const executor: CaptureExecutor = async () => {
-      throw new SnapforgeError({ code: "blocked_by_target", message: "blocked", requestId: "req_1" });
+      throw new ScreenshotAPIError({ code: "blocked_by_target", message: "blocked", requestId: "req_1" });
     };
     const { job, worker, calls } = build(executor, { webhook });
 
@@ -216,7 +216,7 @@ describe("CaptureWorker retries", () => {
     const { job, worker } = build(executor);
 
     await assert.rejects(worker.process(job as never), (error: unknown) => {
-      assert.ok(error instanceof SnapforgeError);
+      assert.ok(error instanceof ScreenshotAPIError);
       assert.equal(error.code, "internal_error");
       return true;
     });
@@ -323,7 +323,7 @@ describe("error classification", () => {
       retriable: true,
       request_id: "req_1",
     });
-    assert.ok(error instanceof SnapforgeError);
+    assert.ok(error instanceof ScreenshotAPIError);
     assert.ok(!(error instanceof UnrecoverableError));
   });
 

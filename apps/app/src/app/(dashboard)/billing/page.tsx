@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
-import { CREDIT_PACKS, LAUNCH_PLANS, PLAN_CATALOG } from "@snapforge/contracts";
-import { getBillingState } from "@snapforge/database";
+import { CREDIT_PACKS, LAUNCH_PLANS, PLAN_CATALOG } from "@screenshotapi/contracts";
+import { getBillingState } from "@screenshotapi/database";
 import { Card, CardHeader, Meter, PageHeader, Stat } from "@/components/ui";
 import { Icon } from "@/components/icons";
 import { BillingButton, CustomerPortalButton } from "@/components/billing-actions";

@@ -1,1 +1,1 @@
-export { captureStats, clearCaptures, listCaptures, recordCapture } from "@snapforge/database";
+export { captureStats, clearCaptures, listCaptures, recordCapture } from "@screenshotapi/database";

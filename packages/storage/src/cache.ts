@@ -1,4 +1,4 @@
-import type { CaptureOptions, CaptureSuccessData } from "@snapforge/contracts";
+import type { CaptureOptions, CaptureSuccessData } from "@screenshotapi/contracts";
 import { cacheKey, cacheKeyParts, objectKeyFor } from "./canonical.js";
 
 /**

@@ -1,6 +1,6 @@
 import { clerkClient } from "@clerk/nextjs/server";
 import { verifyWebhook } from "@clerk/nextjs/webhooks";
-import { syncClerkAccount } from "@snapforge/database";
+import { syncClerkAccount } from "@screenshotapi/database";
 import type { NextRequest } from "next/server";
 
 export async function POST(request: NextRequest) {

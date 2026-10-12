@@ -25,7 +25,7 @@ export const DEFAULT_QUEUE_PREFIX = "snapforge";
 export const DEFAULT_SYNC_TIMEOUT_MS = 2_000;
 
 const envNumber = (name: string): number | undefined => {
-  const raw = process.env[name];
+  const raw = process.env[name] ?? process.env[name.replace("SCREENSHOTAPI_", "SNAPFORGE_")];
   if (raw === undefined || raw.trim() === "") {
     return undefined;
   }
@@ -34,7 +34,7 @@ const envNumber = (name: string): number | undefined => {
 };
 
 const envBoolean = (name: string): boolean | undefined => {
-  const raw = process.env[name];
+  const raw = process.env[name] ?? process.env[name.replace("SCREENSHOTAPI_", "SNAPFORGE_")];
   if (raw === undefined || raw.trim() === "") {
     return undefined;
   }
@@ -66,7 +66,7 @@ export const QUEUE_DEFAULTS = {
  * gateway never holds an HTTP connection open past its own SLO.
  */
 const resolveSyncTimeoutMs = (input: QueueConfigInput): number => {
-  const requested = input.syncTimeoutMs ?? envNumber("SNAPFORGE_SYNC_TIMEOUT_MS");
+  const requested = input.syncTimeoutMs ?? envNumber("SCREENSHOTAPI_SYNC_TIMEOUT_MS");
   if (requested === undefined) {
     return QUEUE_DEFAULTS.syncTimeoutMs;
   }
@@ -84,12 +84,12 @@ export function resolveQueueConfig(input: QueueConfigInput = {}): QueueConfig {
     throw new TypeError("redisUrl must be a non-empty connection string");
   }
 
-  const concurrency = input.concurrency ?? envNumber("SNAPFORGE_QUEUE_CONCURRENCY") ?? QUEUE_DEFAULTS.concurrency;
+  const concurrency = input.concurrency ?? envNumber("SCREENSHOTAPI_QUEUE_CONCURRENCY") ?? QUEUE_DEFAULTS.concurrency;
   if (!Number.isInteger(concurrency) || concurrency < 1) {
     throw new RangeError(`concurrency must be an integer >= 1, received ${concurrency}`);
   }
 
-  const attempts = input.attempts ?? envNumber("SNAPFORGE_QUEUE_ATTEMPTS") ?? QUEUE_DEFAULTS.attempts;
+  const attempts = input.attempts ?? envNumber("SCREENSHOTAPI_QUEUE_ATTEMPTS") ?? QUEUE_DEFAULTS.attempts;
   if (!Number.isInteger(attempts) || attempts < 1) {
     throw new RangeError(`attempts must be an integer >= 1, received ${attempts}`);
   }
@@ -113,7 +113,7 @@ export function resolveQueueConfig(input: QueueConfigInput = {}): QueueConfig {
     webhookBackoffMs: input.webhookBackoffMs ?? QUEUE_DEFAULTS.webhookBackoffMs,
     webhookAllowPrivateHosts:
       input.webhookAllowPrivateHosts ??
-      envBoolean("SNAPFORGE_WEBHOOK_ALLOW_PRIVATE_HOSTS") ??
+      envBoolean("SCREENSHOTAPI_WEBHOOK_ALLOW_PRIVATE_HOSTS") ??
       QUEUE_DEFAULTS.webhookAllowPrivateHosts,
   };
 }

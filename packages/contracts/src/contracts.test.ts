@@ -1,7 +1,7 @@
 ﻿import assert from "node:assert/strict";
 import test from "node:test";
 import { captureOptionsSchema } from "./options.js";
-import { SnapforgeError, ERROR_HTTP_STATUS } from "./errors.js";
+import { ScreenshotAPIError, ERROR_HTTP_STATUS } from "./errors.js";
 import { DEVICE_PRESETS } from "./presets.js";
 
 test("captureOptionsSchema normalizes URLs without protocol", () => {
@@ -54,8 +54,8 @@ test("captureOptionsSchema rejects invalid URLs", () => {
   });
 });
 
-test("SnapforgeError generates standard error envelope", () => {
-  const err = new SnapforgeError({
+test("ScreenshotAPIError generates standard error envelope", () => {
+  const err = new ScreenshotAPIError({
     code: "render_timeout",
     message: "Page took longer than 30s to settle",
     requestId: "req_test_123",
@@ -86,7 +86,7 @@ test("capture quality requirements are bounded and incomplete renders are retria
   assert.equal(options.fail_if_incomplete, false);
   assert.throws(() => captureOptionsSchema.parse({ url: "https://example.com", fail_if_content_missing: [""] }));
   assert.throws(() => captureOptionsSchema.parse({ url: "https://example.com", min_capture_bytes: -1 }));
-  const error = new SnapforgeError({ code: "render_incomplete", message: "Loading shell", requestId: "quality" });
+  const error = new ScreenshotAPIError({ code: "render_incomplete", message: "Loading shell", requestId: "quality" });
   assert.equal(error.statusCode, 502);
   assert.equal(error.retriable, true);
 });

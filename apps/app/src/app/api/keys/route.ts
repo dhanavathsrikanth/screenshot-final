@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 import { auth } from "@clerk/nextjs/server";
-import { ApiKeyLimitError, createApiKey, listApiKeys, revokeApiKey, rotateApiKey } from "@snapforge/database";
+import { ApiKeyLimitError, createApiKey, listApiKeys, revokeApiKey, rotateApiKey } from "@screenshotapi/database";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

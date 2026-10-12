@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { captureOptionsSchema, SnapforgeError } from "@snapforge/contracts";
-import type { JobSnapshot } from "@snapforge/queue";
+import { captureOptionsSchema, ScreenshotAPIError } from "@screenshotapi/contracts";
+import type { JobSnapshot } from "@screenshotapi/queue";
 import { createQueuedCaptureHandlers, dashboardCaptureResult } from "./capture-queue-handler.js";
 
 const snapshot: JobSnapshot = { id: "job", state: "waiting", mode: "async", request_id: "job", progress: 0,
@@ -48,7 +48,7 @@ test("ownership failure is safely returned by the dashboard polling route", asyn
   const handlers = createQueuedCaptureHandlers({ authenticate: async () => "other-account", getService: async () => ({
     submit: async () => snapshot, lookup: async (identity, id, requestId) => {
       assert.equal(identity.accountId, "other-account"); assert.equal(id, "victim-job");
-      throw new SnapforgeError({ code: "invalid_request", message: "Job not found", requestId });
+      throw new ScreenshotAPIError({ code: "invalid_request", message: "Job not found", requestId });
     },
   }) });
   const response = await handlers.GET(new Request("https://app.test"), "victim-job");

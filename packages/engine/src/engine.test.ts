@@ -2,8 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import http from "node:http";
 import type { AddressInfo } from "node:net";
-import { captureOptionsSchema } from "@snapforge/contracts";
-import { createEngine, resolveViewport, SnapforgeEngine } from "./index.js";
+import { captureOptionsSchema } from "@screenshotapi/contracts";
+import { createEngine, resolveViewport, ScreenshotAPIEngine } from "./index.js";
 import { resolveConfig } from "./types.js";
 
 function options(input: Record<string, unknown>) {
@@ -145,7 +145,7 @@ test("capture rejects invalid urls without launching a browser", async () => {
 });
 
 test("capture rejects completely malformed payloads", async () => {
-  const engine: SnapforgeEngine = createEngine({ stealth: false });
+  const engine: ScreenshotAPIEngine = createEngine({ stealth: false });
   try {
     await assert.rejects(engine.capture(null), (err: unknown) => {
       const error = err as { code?: string };

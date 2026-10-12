@@ -1,7 +1,7 @@
 import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
 import localFont from "next/font/local";
-import { BRAND_NEUTRAL, BRAND_PRIMARY, BRAND_SURFACE_LIGHT } from "@snapforge/brand";
+import { BRAND_NEUTRAL, BRAND_PRIMARY, BRAND_SURFACE_LIGHT } from "@screenshotapi/brand";
 import "./globals.css";
 
 const geist = localFont({
@@ -20,7 +20,8 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Snapforge Console",
+  metadataBase: new URL("https://app.screenshotapi.tech"),
+  title: "ScreenshotAPI Console",
   description: "Capture anything. Ship screenshots at scale.",
 };
 

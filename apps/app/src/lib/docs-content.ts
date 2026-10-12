@@ -1,5 +1,5 @@
-import { captureOptionsSchema, DEVICE_PRESETS, ERROR_CODES, ERROR_HTTP_STATUS, ERROR_RETRIABILITY, REGION_PRESETS, PLAN_CATALOG, CREDIT_PACKS } from "@snapforge/contracts";
-import type { CaptureOptionsInput } from "@snapforge/contracts";
+import { captureOptionsSchema, DEVICE_PRESETS, ERROR_CODES, ERROR_HTTP_STATUS, ERROR_RETRIABILITY, REGION_PRESETS, PLAN_CATALOG, CREDIT_PACKS } from "@screenshotapi/contracts";
+import type { CaptureOptionsInput } from "@screenshotapi/contracts";
 
 export interface DocCode { label: string; language: string; code: string }
 export interface DocSection {
@@ -78,19 +78,19 @@ export const DOC_FIELDS = Object.entries(DOC_FIELD_HELP).map(([name, [type, desc
 const json = (value: unknown): DocCode[] => [{ label: "JSON", language: "json", code: JSON.stringify(value, null, 2) }];
 const command = (code: string): DocCode[] => [{ label: "cURL", language: "bash", code }];
 export const CAPTURE_EXAMPLE = { url: "https://example.com", format: "png", full_page: true } as const;
-const captureCurl = `curl -X POST "$SNAPFORGE_API_URL/v1/screenshot" \\
-  -H "Authorization: Bearer $SNAPFORGE_API_KEY" \\
+const captureCurl = `curl -X POST "$SCREENSHOTAPI_API_URL/v1/screenshot" \\
+  -H "Authorization: Bearer $SCREENSHOTAPI_API_KEY" \\
   -H "Content-Type: application/json" \\
   -H "Idempotency-Key: example-capture-001" \\
   -d '${JSON.stringify(CAPTURE_EXAMPLE, null, 2)}'`;
 export const CAPTURE_CODE: DocCode[] = [
   { label: "cURL", language: "bash", code: captureCurl },
   { label: "Node.js", language: "javascript", code: `const response = await fetch(
-  process.env.SNAPFORGE_API_URL + "/v1/screenshot",
+  process.env.SCREENSHOTAPI_API_URL + "/v1/screenshot",
   {
     method: "POST",
     headers: {
-      Authorization: "Bearer " + process.env.SNAPFORGE_API_KEY,
+      Authorization: "Bearer " + process.env.SCREENSHOTAPI_API_KEY,
       "Content-Type": "application/json",
       "Idempotency-Key": "example-capture-001",
     },
@@ -114,14 +114,14 @@ from urllib.request import Request, urlopen
 from urllib.error import HTTPError
 
 request = Request(
-    os.environ["SNAPFORGE_API_URL"] + "/v1/screenshot",
+    os.environ["SCREENSHOTAPI_API_URL"] + "/v1/screenshot",
     data=json.dumps({
         "url": "https://example.com",
         "format": "png",
         "full_page": True,
     }).encode(),
     headers={
-        "Authorization": "Bearer " + os.environ["SNAPFORGE_API_KEY"],
+        "Authorization": "Bearer " + os.environ["SCREENSHOTAPI_API_KEY"],
         "Content-Type": "application/json",
         "Idempotency-Key": "example-capture-001",
     },
@@ -149,7 +149,7 @@ export const DOC_PAGES: DocPage[] = [
     slug: "", title: "Introduction", group: "Get started", icon: "book",
     description: "Capture websites as images and PDFs. Integrate through the REST API, explore rendering options, or connect your AI agent with MCP.",
     sections: [
-      { id: "what-is-snapforge", title: "What is Snapforge?", paragraphs: ["Snapforge renders websites in a real Chromium browser and turns them into PNG, JPEG, WebP, or PDF output. Capture a viewport, an entire page, or one element, with controls for devices, timing, filtering, and localization.", "Use the REST API in your application, explore options in the playground, or give an AI agent visual access through the local MCP server. Captures run in isolated browser contexts so one request does not inherit another request’s cookies or storage."], note: { title: "Only successful captures consume credits", text: "A capture reserves credit while it runs. Successful completion commits the charge; terminal failures release the reservation. Safe HTTP retries can reuse one capture with an Idempotency-Key." } },
+      { id: "what-is-screenshotapi", title: "What is ScreenshotAPI?", paragraphs: ["ScreenshotAPI renders websites in a real Chromium browser and turns them into PNG, JPEG, WebP, or PDF output. Capture a viewport, an entire page, or one element, with controls for devices, timing, filtering, and localization.", "Use the REST API in your application, explore options in the playground, or give an AI agent visual access through the local MCP server. Captures run in isolated browser contexts so one request does not inherit another request’s cookies or storage."], note: { title: "Only successful captures consume credits", text: "A capture reserves credit while it runs. Successful completion commits the charge; terminal failures release the reservation. Safe HTTP retries can reuse one capture with an Idempotency-Key." } },
       { id: "start-building", title: "Start building", cards: [
         { title: "Your first screenshot", description: "Create a key, make a request, and download the result.", href: "/docs/quickstart", icon: "bolt" },
         { title: "API reference", description: "Endpoints, response shapes, and every capture parameter.", href: "/docs/api/screenshot", icon: "book" },
@@ -170,8 +170,8 @@ export const DOC_PAGES: DocPage[] = [
     description: "Go from an API key to a downloadable capture with one request.",
     sections: [
       { id: "create-key", title: "1. Create an API key", paragraphs: ["Open [API keys](/api-keys) in your console. Create a key with screenshot:write and jobs:read permissions. Copy the secret immediately: it is shown once. Keep it in your backend environment, never in browser code or a public repository."] },
-      { id: "configure-environment", title: "2. Set your connection details", paragraphs: ["Use the base URL of your deployed Snapforge gateway. The URL below is a placeholder; replace it with the API address provided for your environment. The console’s /api/capture route uses session authentication and is not the public REST API."], code: [{ label: "Terminal", language: "bash", code: `export SNAPFORGE_API_URL="https://your-snapforge-api.example"
-export SNAPFORGE_API_KEY="sf_live_replace_with_your_key"` }], note: { title: "Trying it locally?", text: "The API gateway defaults to port 8787 and requires Redis TCP, a running worker, storage, and database configuration. The console also supports explicit local capture mode. See [Local development](/docs/local-development)." } },
+      { id: "configure-environment", title: "2. Set your connection details", paragraphs: ["Use the base URL of your deployed ScreenshotAPI gateway. The URL below is a placeholder; replace it with the API address provided for your environment. The console’s /api/capture route uses session authentication and is not the public REST API."], code: [{ label: "Terminal", language: "bash", code: `export SCREENSHOTAPI_API_URL="https://your-screenshotapi-api.example"
+export SCREENSHOTAPI_API_KEY="sf_live_replace_with_your_key"` }], note: { title: "Trying it locally?", text: "The API gateway defaults to port 8787 and requires Redis TCP, a running worker, storage, and database configuration. The console also supports explicit local capture mode. See [Local development](/docs/local-development)." } },
       { id: "make-request", title: "3. Capture a page", paragraphs: ["This request captures the full page as a PNG. Use a unique Idempotency-Key for each intended capture, and reuse the same key only when retrying that exact request."], code: CAPTURE_CODE },
       { id: "read-response", title: "4. Read the response", paragraphs: ["A completed request returns HTTP 200 with capture metadata and an artifact URL. data.url is the original target URL; download the image from data.cdn_url. The example below illustrates the response shape; measurements and URLs vary per request."], code: json(completedResponse) },
       { id: "handle-accepted", title: "5. Handle accepted jobs", paragraphs: ["HTTP 202 means your capture was accepted and is still running. Follow data.poll_url using the same API base URL and a key with jobs:read. Poll until data.state is completed or failed. On completion, the artifact is in data.result.data.cdn_url; on failure, inspect data.result.error."], code: json({ ok: true, request_id: "req_example", data: { job_id: "job_example", state: "waiting", poll_url: "/v1/jobs/job_example" } }), note: { title: "Always handle both 200 and 202", text: "A sync request can still return a job handle. See [Async captures](/docs/api/jobs) for the full job response and polling example." } },
@@ -181,8 +181,8 @@ export SNAPFORGE_API_KEY="sf_live_replace_with_your_key"` }], note: { title: "Tr
     slug: "authentication", title: "Authentication", group: "Get started", icon: "key",
     description: "Create scoped API keys and keep capture access on your server.",
     sections: [
-      { id: "bearer-key", title: "Bearer authentication", paragraphs: ["Send your key in the Authorization header for protected /v1 endpoints. The current gateway accepts keys beginning with sf_live_. Missing, invalid, or revoked keys return unauthorized (401). The health endpoint is public."], code: command(`curl "$SNAPFORGE_API_URL/v1/jobs/job_example" \\
-  -H "Authorization: Bearer $SNAPFORGE_API_KEY"`) },
+      { id: "bearer-key", title: "Bearer authentication", paragraphs: ["Send your key in the Authorization header for protected /v1 endpoints. The current gateway accepts keys beginning with sf_live_. Missing, invalid, or revoked keys return unauthorized (401). The health endpoint is public."], code: command(`curl "$SCREENSHOTAPI_API_URL/v1/jobs/job_example" \\
+  -H "Authorization: Bearer $SCREENSHOTAPI_API_KEY"`) },
       { id: "permissions", title: "Permissions by endpoint", table: { headers: ["Action", "Required scope"], rows: [["POST /v1/screenshot", "screenshot:write"], ["GET /v1/jobs/{id}", "jobs:read"], ["GET /v1/requests/{key}", "jobs:read"], ["GET /v1/jobs/{id}/webhook", "jobs:read"], ["POST /v1/jobs/{id}/webhook/redeliver", "screenshot:write"], ["GET /v1/health", "No API key"]] }, paragraphs: ["Keys can also contain screenshot:read and webhooks:write scopes, but those scopes do not replace the permissions above. Job and delivery lookup are checked against the owning account and API key."] },
       { id: "key-lifecycle", title: "Key lifecycle", bullets: ["Give each integration a descriptive label and only the permissions it needs.", "Store the secret in your backend environment or secrets manager.", "Rotate a key by creating a replacement, updating your integration, and revoking the old key.", "The gateway caches authentication briefly (five seconds by default), so revocation may not be visible immediately.", "Free accounts support up to three active API keys."] },
       { id: "account-limits", title: "One account, shared capacity", paragraphs: ["Multiple keys do not multiply your account’s capture quota or pending-job capacity. See [Usage and limits](/docs/billing) for credit and rate-limit behavior."] },
@@ -213,8 +213,8 @@ export SNAPFORGE_API_KEY="sf_live_replace_with_your_key"` }], note: { title: "Tr
     slug: "api/jobs", title: "Async captures & jobs", group: "API reference", icon: "clock", method: "GET", endpoint: "/v1/jobs/{id}",
     description: "Submit without waiting, track rendering, and retrieve the final result.",
     sections: [
-      { id: "submit", title: "Submit an async capture", paragraphs: ["Use ?mode=async or sync: false on the capture endpoint. Store the returned job_id before leaving the page or acknowledging your own workflow."], code: command(`curl -X POST "$SNAPFORGE_API_URL/v1/screenshot?mode=async" \\
-  -H "Authorization: Bearer $SNAPFORGE_API_KEY" \\
+      { id: "submit", title: "Submit an async capture", paragraphs: ["Use ?mode=async or sync: false on the capture endpoint. Store the returned job_id before leaving the page or acknowledging your own workflow."], code: command(`curl -X POST "$SCREENSHOTAPI_API_URL/v1/screenshot?mode=async" \\
+  -H "Authorization: Bearer $SCREENSHOTAPI_API_KEY" \\
   -H "Content-Type: application/json" \\
   -H "Idempotency-Key: async-example-001" \\
   -d '{"url":"https://example.com","full_page":true}'`) },
@@ -223,8 +223,8 @@ export SNAPFORGE_API_KEY="sf_live_replace_with_your_key"` }], note: { title: "Tr
   while (true) {
     signal.throwIfAborted();
     const response = await fetch(
-      process.env.SNAPFORGE_API_URL + "/v1/jobs/" + encodeURIComponent(jobId),
-      { headers: { Authorization: "Bearer " + process.env.SNAPFORGE_API_KEY }, signal },
+      process.env.SCREENSHOTAPI_API_URL + "/v1/jobs/" + encodeURIComponent(jobId),
+      { headers: { Authorization: "Bearer " + process.env.SCREENSHOTAPI_API_KEY }, signal },
     );
     if (response.status === 429 || response.status === 503) {
       const seconds = Number(response.headers.get("Retry-After")) || 3;
@@ -251,8 +251,8 @@ console.log(result.data.cdn_url);` }] },
     description: "Recover lost responses and retry safely without creating a second capture.",
     sections: [
       { id: "use-a-key", title: "Choose one key per capture", paragraphs: ["Send Idempotency-Key with the first POST. Keys accept 1–128 letters, numbers, periods, underscores, and hyphens. Generate a new key for a new intended capture; reuse the original key only for HTTP retries of the same capture.", "Matching requests reuse the original job and credit reservation. Changing capture options, execution mode, webhook details, or key ownership produces idempotency_conflict (409). A completed retry returns the original result while it remains retained."], code: command(captureCurl) },
-      { id: "lost-response", title: "Recover a lost response", paragraphs: ["If a POST times out or its response is lost, look up the request by its saved key. This requires jobs:read and returns a job snapshot with the same shape as GET /v1/jobs/{id}. Do not generate a new key to resolve an uncertain submission."], code: command(`curl "$SNAPFORGE_API_URL/v1/requests/example-capture-001" \\
-  -H "Authorization: Bearer $SNAPFORGE_API_KEY"`) },
+      { id: "lost-response", title: "Recover a lost response", paragraphs: ["If a POST times out or its response is lost, look up the request by its saved key. This requires jobs:read and returns a job snapshot with the same shape as GET /v1/jobs/{id}. Do not generate a new key to resolve an uncertain submission."], code: command(`curl "$SCREENSHOTAPI_API_URL/v1/requests/example-capture-001" \\
+  -H "Authorization: Bearer $SCREENSHOTAPI_API_KEY"`) },
       { id: "recovery-handle", title: "Use recovery handles", paragraphs: ["An egress_unavailable response can include error.details.job_id when the submission outcome is being recovered. Save that handle and poll its status. Do not assume every HTTP failure means nothing was accepted."], note: { title: "Separate retrying HTTP from rendering again", text: "The same idempotency key reuses the original capture, including its terminal failure. To intentionally render again after a failed capture, use a new key after checking the original job." } },
       { id: "backoff", title: "Retry with backoff", bullets: ["Honor Retry-After for rate limits.", "Use bounded exponential backoff with jitter for transient network and service errors.", "Do not retry invalid requests, permission failures, or idempotency conflicts unchanged.", "Check error.retriable and any job handle before deciding what to repeat."] },
     ],
@@ -262,12 +262,12 @@ console.log(result.data.cdn_url);` }] },
     description: "Receive signed capture results without polling or holding a connection open.",
     sections: [
       { id: "when-to-use", title: "When to use a webhook", paragraphs: ["Use a callback when captures run asynchronously, take longer than the HTTP acceptance window, or feed a backend workflow. Your endpoint can store the result, attach the artifact to a report, or notify your user as soon as the capture reaches a terminal state. For an occasional capture where the response completes immediately, the response itself may be enough. Local inline capture mode does not run the durable webhook delivery service."], bullets: ["Submit asynchronously and let your application continue doing other work.", "Avoid frequent status polling for batches or long-running captures.", "Handle terminal failures through the same integration path as successes."] },
-      { id: "subscribe", title: "Attach a completion callback", paragraphs: ["Add webhook to POST /v1/screenshot. Use a public HTTPS endpoint on port 443 and a secret of 16–256 characters. Keep the secret in server-side configuration. Prefer an Idempotency-Key so a lost HTTP response can be recovered without creating another capture; resend the same request and key if you retry acceptance."], code: command(`curl -X POST "$SNAPFORGE_API_URL/v1/screenshot?mode=async" \\
-  -H "Authorization: Bearer $SNAPFORGE_API_KEY" \\
+      { id: "subscribe", title: "Attach a completion callback", paragraphs: ["Add webhook to POST /v1/screenshot. Use a public HTTPS endpoint on port 443 and a secret of 16–256 characters. Keep the secret in server-side configuration. Prefer an Idempotency-Key so a lost HTTP response can be recovered without creating another capture; resend the same request and key if you retry acceptance."], code: command(`curl -X POST "$SCREENSHOTAPI_API_URL/v1/screenshot?mode=async" \\
+  -H "Authorization: Bearer $SCREENSHOTAPI_API_KEY" \\
   -H "Content-Type: application/json" \\
   -H "Idempotency-Key: monthly-report-2026-10" \\
-  -d '{"url":"https://example.com","full_page":true,"webhook":{"url":"https://your-app.example/webhooks/snapforge","secret":"replace-with-a-long-random-secret"}}'`) },
-      { id: "events", title: "Events and delivery", paragraphs: ["The event is capture.completed when rendering succeeds and capture.failed when the capture reaches a terminal failure. Intermediate renderer retries do not send callbacks. The signed JSON body includes id and job_id, request_id, ok, data or error, timing and attempt metadata, plus delivery_id and delivery_generation.", "Delivery is at least once. Retry attempts for one generation keep the same delivery_id and generation but have a fresh signature timestamp and an increasing X-Snapforge-Delivery attempt number. Deduplicate by the pair (delivery_id, delivery_generation), persist that decision, and return a 2xx response only after your receiver has safely accepted the event. If your handler triggers work in another system, record an inbox/deduplication row and your own outbox entry in one database transaction, then process that outbox asynchronously.", "The delivery service retries network errors, HTTP 429, and HTTP 5xx up to five attempts by default, with exponential delay and jitter. Other non-2xx statuses fail without repeated attempts. Redirects are not followed; configure the final HTTPS URL. Callback failure does not change capture success, rerender the page, or charge again."], code: json({ event: "capture.completed", id: "job_example", job_id: "job_example", request_id: "req_example", mode: "async", ok: true, data: { url: "https://example.com", cdn_url: "https://artifacts.example/capture.png", format: "png", width: 2560, height: 1440, bytes: 48210, duration_ms: 1840 }, error: null, duration_ms: 1840, attempts_made: 1, enqueued_at: 1791158400000, completed_at: 1791158401840, delivery_id: "wh-job_example", delivery_generation: 0 }), table: { headers: ["Header", "Meaning"], rows: [["X-Snapforge-Signature", "t=<Unix timestamp>,v1=<HMAC-SHA256 hex digest>"], ["X-Snapforge-Job-Id", "Capture job ID"], ["X-Snapforge-Event", "capture.completed or capture.failed"], ["X-Snapforge-Delivery-Id", "Stable delivery identifier across automatic retries"], ["X-Snapforge-Generation", "Redelivery generation; changes after manual redelivery"], ["X-Snapforge-Delivery", "Attempt number within the generation"]] } },
+  -d '{"url":"https://example.com","full_page":true,"webhook":{"url":"https://your-app.example/webhooks/screenshotapi","secret":"replace-with-a-long-random-secret"}}'`) },
+      { id: "events", title: "Events and delivery", paragraphs: ["The event is capture.completed when rendering succeeds and capture.failed when the capture reaches a terminal failure. Intermediate renderer retries do not send callbacks. The signed JSON body includes id and job_id, request_id, ok, data or error, timing and attempt metadata, plus delivery_id and delivery_generation.", "Delivery is at least once. Retry attempts for one generation keep the same delivery_id and generation but have a fresh signature timestamp and an increasing X-ScreenshotAPI-Delivery attempt number. Deduplicate by the pair (delivery_id, delivery_generation), persist that decision, and return a 2xx response only after your receiver has safely accepted the event. If your handler triggers work in another system, record an inbox/deduplication row and your own outbox entry in one database transaction, then process that outbox asynchronously.", "The delivery service retries network errors, HTTP 429, and HTTP 5xx up to five attempts by default, with exponential delay and jitter. Other non-2xx statuses fail without repeated attempts. Redirects are not followed; configure the final HTTPS URL. Callback failure does not change capture success, rerender the page, or charge again."], code: json({ event: "capture.completed", id: "job_example", job_id: "job_example", request_id: "req_example", mode: "async", ok: true, data: { url: "https://example.com", cdn_url: "https://artifacts.example/capture.png", format: "png", width: 2560, height: 1440, bytes: 48210, duration_ms: 1840 }, error: null, duration_ms: 1840, attempts_made: 1, enqueued_at: 1791158400000, completed_at: 1791158401840, delivery_id: "wh-job_example", delivery_generation: 0 }), table: { headers: ["Header", "Meaning"], rows: [["X-ScreenshotAPI-Signature", "t=<Unix timestamp>,v1=<HMAC-SHA256 hex digest>"], ["X-ScreenshotAPI-Job-Id", "Capture job ID"], ["X-ScreenshotAPI-Event", "capture.completed or capture.failed"], ["X-ScreenshotAPI-Delivery-Id", "Stable delivery identifier across automatic retries"], ["X-ScreenshotAPI-Generation", "Redelivery generation; changes after manual redelivery"], ["X-ScreenshotAPI-Delivery", "Attempt number within the generation"]] } },
       { id: "verify-signature", title: "Verify the signature", paragraphs: ["Verify the raw request body before parsing JSON. Compute HMAC-SHA256 over timestamp + '.' + rawBody, using your webhook secret. Compare digests in constant time and reject timestamps outside your chosen tolerance. This Node.js example uses five minutes."], code: [{ label: "Node.js", language: "javascript", code: `import { createHmac, timingSafeEqual } from "node:crypto";
 
 export function verifyWebhook(rawBody, signature, secret) {
@@ -283,8 +283,8 @@ export function verifyWebhook(rawBody, signature, secret) {
 }` }] },
       { id: "receive-once", title: "Accept each delivery once", paragraphs: ["After verifying the signature, parse the JSON and persist the notification before acknowledging it. The delivery pair is the idempotency key: automatic retries share it, while an explicit manual redelivery uses a new generation. Back this insert with a unique database constraint. If handling the event triggers slow work or another service, atomically insert both an inbox row and your own outbox row, then return 204 and process the outbox asynchronously. A duplicate insert is already accepted and should also return 2xx."], code: [{ label: "Node.js handler", language: "javascript", code: `export async function POST(request) {
   const rawBody = await request.text();
-  const signature = request.headers.get("x-snapforge-signature");
-  const secret = process.env.SNAPFORGE_WEBHOOK_SECRET;
+  const signature = request.headers.get("x-screenshotapi-signature");
+  const secret = process.env.SCREENSHOTAPI_WEBHOOK_SECRET;
   if (!secret || !verifyWebhook(rawBody, signature, secret)) {
     return new Response("Invalid signature", { status: 401 });
   }
@@ -308,12 +308,12 @@ export function verifyWebhook(rawBody, signature, secret) {
   await persistInboxAndOutboxOnce(key, event);
   return new Response(null, { status: 204 });
 }` }] },
-      { id: "delivery-status", title: "Inspect and redeliver", paragraphs: ["GET /v1/jobs/{id}/webhook requires jobs:read and returns pending, delivered, or failed, with attempts and generation. Use it to investigate a callback that did not reach your service; the callback URL and secret are never returned. Its ETag represents the current generation. POST /v1/jobs/{id}/webhook/redeliver requires screenshot:write and an If-Match header containing that exact ETag, including quotes. Redelivery is available after a delivery reaches delivered or failed, returns 202, and does not render or bill again. A stale generation or an already-pending delivery returns 409; up to three manual redeliveries are allowed."], code: command(`curl -i "$SNAPFORGE_API_URL/v1/jobs/job_example/webhook" \\
-  -H "Authorization: Bearer $SNAPFORGE_API_KEY"
+      { id: "delivery-status", title: "Inspect and redeliver", paragraphs: ["GET /v1/jobs/{id}/webhook requires jobs:read and returns pending, delivered, or failed, with attempts and generation. Use it to investigate a callback that did not reach your service; the callback URL and secret are never returned. Its ETag represents the current generation. POST /v1/jobs/{id}/webhook/redeliver requires screenshot:write and an If-Match header containing that exact ETag, including quotes. Redelivery is available after a delivery reaches delivered or failed, returns 202, and does not render or bill again. A stale generation or an already-pending delivery returns 409; up to three manual redeliveries are allowed."], code: command(`curl -i "$SCREENSHOTAPI_API_URL/v1/jobs/job_example/webhook" \\
+  -H "Authorization: Bearer $SCREENSHOTAPI_API_KEY"
 
 # Use the ETag returned above, including its quotes.
-curl -X POST "$SNAPFORGE_API_URL/v1/jobs/job_example/webhook/redeliver" \\
-  -H "Authorization: Bearer $SNAPFORGE_API_KEY" \\
+curl -X POST "$SCREENSHOTAPI_API_URL/v1/jobs/job_example/webhook/redeliver" \\
+  -H "Authorization: Bearer $SCREENSHOTAPI_API_KEY" \\
   -H 'If-Match: "0"'`) },
     ],
   },
@@ -321,7 +321,7 @@ curl -X POST "$SNAPFORGE_API_URL/v1/jobs/job_example/webhook/redeliver" \\
     slug: "api/health", title: "Service health", group: "API reference", icon: "shield", method: "GET", endpoint: "/v1/health",
     description: "Check whether the API’s capture dependencies are ready.",
     sections: [
-      { id: "check-health", title: "Readiness check", paragraphs: ["This public endpoint returns 200 when Redis, the configured database, and at least one recently initialized worker are ready and the queue is unpaused. It returns 503 otherwise. No API key is required."], code: command(`curl "$SNAPFORGE_API_URL/v1/health"`) },
+      { id: "check-health", title: "Readiness check", paragraphs: ["This public endpoint returns 200 when Redis, the configured database, and at least one recently initialized worker are ready and the queue is unpaused. It returns 503 otherwise. No API key is required."], code: command(`curl "$SCREENSHOTAPI_API_URL/v1/health"`) },
       { id: "diagnostics", title: "Response fields", table: { headers: ["Field", "Description"], rows: [["ok", "Overall readiness."], ["data.redis", "ready or unavailable."], ["data.database", "Configured database readiness, when available."], ["data.worker_ready", "A ready worker is available and the queue is unpaused."], ["data.ready_workers", "Number of recent ready worker heartbeats."], ["data.queue", "Queue counts and paused status."], ["data.settlement / data.webhooks", "Background settlement and callback counters when configured."]] } },
       { id: "unavailable", title: "When captures are unavailable", paragraphs: ["Check database connectivity and migrations, Redis TCP credentials, storage configuration, and running workers. A Redis REST URL alone cannot run the job queue. For the console’s explicit local mode, see [Local development](/docs/local-development)."] },
     ],
@@ -398,7 +398,7 @@ curl -X POST "$SNAPFORGE_API_URL/v1/jobs/job_example/webhook/redeliver" \\
     slug: "guides/regions", title: "Regions & proxies", group: "Capture guides", icon: "device",
     description: "Use consistent locale emulation with a proxy in the region you need.",
     sections: [
-      { id: "region-targeting", title: "A region needs the right egress", paragraphs: ["region chooses a locale, timezone, and expected country. It does not move the renderer’s network connection by itself. Supply a proxy in that country when your renderer’s own egress differs. Snapforge accepts your proxy configuration; a managed proxy subscription is not bundled here."], code: json({ url: "https://example.com", region: "us", proxy: { server: "http://proxy.your-provider.example:8000", username: "your-proxy-user", password: "your-proxy-password" }, verify_egress: true }) },
+      { id: "region-targeting", title: "A region needs the right egress", paragraphs: ["region chooses a locale, timezone, and expected country. It does not move the renderer’s network connection by itself. Supply a proxy in that country when your renderer’s own egress differs. ScreenshotAPI accepts your proxy configuration; a managed proxy subscription is not bundled here."], code: json({ url: "https://example.com", region: "us", proxy: { server: "http://proxy.your-provider.example:8000", username: "your-proxy-user", password: "your-proxy-password" }, verify_egress: true }) },
       { id: "supported-regions", title: "Supported regions", table: { headers: ["Region", "Country", "Locale", "Timezone"], rows: Object.entries(REGION_PRESETS).map(([id, region]) => [id, region.name, region.locale, region.timezone]) } },
       { id: "verification", title: "Egress verification", paragraphs: ["verify_egress defaults to true. A mismatch can return egress_mismatch; an unreachable egress check can return egress_unavailable. Choose a matching proxy or remove the region requirement. A proxy can also be supplied without a region."] },
       { id: "network-policy", title: "Public-network destinations", paragraphs: ["Hosted workers restrict target, redirect, resource, WebSocket, and proxy destinations to public networks. Loopback URLs, private services, and metadata endpoints are not valid hosted capture targets. A proxy does not bypass this policy or guarantee access to a target’s bot protections."] },
@@ -427,14 +427,14 @@ curl -X POST "$SNAPFORGE_API_URL/v1/jobs/job_example/webhook/redeliver" \\
     slug: "mcp", title: "MCP for AI agents", group: "Resources", icon: "sparkles",
     description: "Give an MCP client screenshots, readable page content, and precise element captures.",
     sections: [
-      { id: "tools", title: "Available tools", table: { headers: ["Tool", "Returns"], rows: [["take_screenshot", "An MCP image block and compact capture metadata."], ["inspect_page", "An image, readable Markdown, and a bounded accessibility snapshot."], ["capture_element", "An element image and its CSS-pixel viewport bounding box."]] }, paragraphs: ["The current @snapforge/mcp server runs locally over stdio and uses the capture engine directly. It does not call the hosted REST gateway or use its API key. Supported MCP image formats are PNG, JPEG, and WebP."] },
-      { id: "build", title: "Build from the repository", paragraphs: ["Run these commands from your Snapforge checkout. The package publication status is not assumed; this setup uses the repository’s built entry point."], code: [{ label: "Terminal", language: "bash", code: `pnpm install
-pnpm --filter @snapforge/contracts run build
-pnpm --filter @snapforge/engine run build
-pnpm --filter @snapforge/mcp run build
-pnpm --filter @snapforge/engine exec playwright install chromium` }] },
-      { id: "connect", title: "Connect an MCP client", paragraphs: ["Add this configuration to a stdio-compatible MCP client. Replace the file path with the absolute path to your checkout and use an available Node executable."], code: json({ mcpServers: { snapforge: { command: "node", args: ["/absolute/path/to/snapforge/packages/mcp/dist/main.js"], env: { SNAPFORGE_MCP_CONCURRENCY: "2" } } } }) },
-      { id: "tool-inputs", title: "Capture inputs", paragraphs: ["Common tool inputs include url, width, height, full_page, format, quality, timeout, delay, and dark_mode. capture_element additionally takes selector. The local MCP default allows two concurrent captures; SNAPFORGE_MCP_CONCURRENCY changes that limit. Errors return a stable code and a short suggested next step."], code: json({ url: "https://example.com", selector: "main", format: "png" }) },
+      { id: "tools", title: "Available tools", table: { headers: ["Tool", "Returns"], rows: [["take_screenshot", "An MCP image block and compact capture metadata."], ["inspect_page", "An image, readable Markdown, and a bounded accessibility snapshot."], ["capture_element", "An element image and its CSS-pixel viewport bounding box."]] }, paragraphs: ["The current @screenshotapi/mcp server runs locally over stdio and uses the capture engine directly. It does not call the hosted REST gateway or use its API key. Supported MCP image formats are PNG, JPEG, and WebP."] },
+      { id: "build", title: "Build from the repository", paragraphs: ["Run these commands from your ScreenshotAPI checkout. The package publication status is not assumed; this setup uses the repository’s built entry point."], code: [{ label: "Terminal", language: "bash", code: `pnpm install
+pnpm --filter @screenshotapi/contracts run build
+pnpm --filter @screenshotapi/engine run build
+pnpm --filter @screenshotapi/mcp run build
+pnpm --filter @screenshotapi/engine exec playwright install chromium` }] },
+      { id: "connect", title: "Connect an MCP client", paragraphs: ["Add this configuration to a stdio-compatible MCP client. Replace the file path with the absolute path to your checkout and use an available Node executable."], code: json({ mcpServers: { screenshotapi: { command: "node", args: ["/absolute/path/to/screenshotapi/packages/mcp/dist/main.js"], env: { SCREENSHOTAPI_MCP_CONCURRENCY: "2" } } } }) },
+      { id: "tool-inputs", title: "Capture inputs", paragraphs: ["Common tool inputs include url, width, height, full_page, format, quality, timeout, delay, and dark_mode. capture_element additionally takes selector. The local MCP default allows two concurrent captures; SCREENSHOTAPI_MCP_CONCURRENCY changes that limit. Errors return a stable code and a short suggested next step."], code: json({ url: "https://example.com", selector: "main", format: "png" }) },
       { id: "agent-docs", title: "Docs for agents", paragraphs: ["Use [llms.txt](/llms.txt) for the compact product index. Each documentation page also has a Markdown version linked above its title, so agents can read the same source content without parsing the interface."] },
     ],
   },
@@ -442,18 +442,18 @@ pnpm --filter @snapforge/engine exec playwright install chromium` }] },
     slug: "local-development", title: "Local development", group: "Resources", icon: "gear",
     description: "Choose local inline rendering or the complete worker-backed API stack.",
     sections: [
-      { id: "console-mode", title: "Console with local capture", paragraphs: ["For an explicit development-only workflow, set SNAPFORGE_LOCAL_CAPTURE=1 in apps/app/.env.local, then start the console. This uses the local engine and returns inline image data. It still requires the configured database and its migrations for account credit accounting. A production runtime ignores this switch."], code: [{ label: "Terminal", language: "bash", code: `# apps/app/.env.local
-SNAPFORGE_LOCAL_CAPTURE=1
+      { id: "console-mode", title: "Console with local capture", paragraphs: ["For an explicit development-only workflow, set SCREENSHOTAPI_LOCAL_CAPTURE=1 in apps/app/.env.local, then start the console. This uses the local engine and returns inline image data. It still requires the configured database and its migrations for account credit accounting. A production runtime ignores this switch."], code: [{ label: "Terminal", language: "bash", code: `# apps/app/.env.local
+SCREENSHOTAPI_LOCAL_CAPTURE=1
 
 # From the repository root
-pnpm --filter @snapforge/app dev` }], note: { title: "Local captures are direct requests", text: "Keep the playground open while a local capture completes. Durable job polling, idempotent queue recovery, and webhook delivery belong to worker-backed mode." } },
+pnpm --filter @screenshotapi/app dev` }], note: { title: "Local captures are direct requests", text: "Keep the playground open while a local capture completes. Durable job polling, idempotent queue recovery, and webhook delivery belong to worker-backed mode." } },
       { id: "worker-stack", title: "Worker-backed API", paragraphs: ["Configure a PostgreSQL DATABASE_URL, a direct migration URL, Redis TCP, encrypted capture-intent settings, and worker object storage. REST-only Redis credentials cannot run BullMQ. Use the same queue name, prefix, database, and Redis instance across the API, dashboard, and worker."], bullets: ["DATABASE_URL for runtime queries and DATABASE_URL_DIRECT for reviewed migrations.", "REDIS_URL or UPSTASH_REDIS_URL for Redis TCP connectivity.", "CAPTURE_INTENT_ENCRYPTION_KEY for persisted encrypted submission data.", "STORAGE_BUCKET, STORAGE_ACCESS_KEY_ID, and STORAGE_SECRET_ACCESS_KEY for worker storage; configure endpoint/account/region as appropriate.", "Playwright Chromium installed for the renderer."], code: [{ label: "Terminal", language: "bash", code: `pnpm -r run build
 
 # In separate terminals, with runtime environment loaded:
-pnpm --filter @snapforge/worker run start
-pnpm --filter @snapforge/api run start
-pnpm --filter @snapforge/app dev` }] },
-      { id: "addresses", title: "Local addresses", table: { headers: ["Service", "Default address"], rows: [["Console and playground", "http://localhost:3000"], ["Public API gateway", "http://localhost:8787"], ["Gateway readiness", "http://localhost:8787/v1/health"]] }, paragraphs: ["Set SNAPFORGE_API_URL to the gateway URL for local REST examples. Your capture target must still be a public website; the worker’s network policy rejects private and loopback targets."] },
+pnpm --filter @screenshotapi/worker run start
+pnpm --filter @screenshotapi/api run start
+pnpm --filter @screenshotapi/app dev` }] },
+      { id: "addresses", title: "Local addresses", table: { headers: ["Service", "Default address"], rows: [["Console and playground", "http://localhost:3000"], ["Public API gateway", "http://localhost:8787"], ["Gateway readiness", "http://localhost:8787/v1/health"]] }, paragraphs: ["Set SCREENSHOTAPI_API_URL to the gateway URL for local REST examples. Your capture target must still be a public website; the worker’s network policy rejects private and loopback targets."] },
       { id: "troubleshoot", title: "Troubleshoot service unavailable", bullets: ["Check whether your console is in explicit local mode or queue mode.", "Apply reviewed repository migrations to the intended database before starting capture services.", "Check Redis TCP connectivity and a running, initialized worker.", "Check storage delivery URLs and credentials.", "Call the health endpoint and inspect server logs with the request ID."] },
     ],
   },

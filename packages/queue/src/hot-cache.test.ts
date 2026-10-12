@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { captureOptionsSchema } from "@snapforge/contracts";
+import { captureOptionsSchema } from "@screenshotapi/contracts";
 import { HotCache } from "./hot-cache.js";
 
 const withTtl = (ttl: number) => captureOptionsSchema.parse({ url: "https://example.com/a", cache_ttl: ttl });

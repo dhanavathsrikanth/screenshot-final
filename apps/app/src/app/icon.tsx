@@ -1,5 +1,5 @@
 import { ImageResponse } from "next/og";
-import { BRAND_NEUTRAL, BRAND_PRIMARY } from "@snapforge/brand";
+import { BRAND_NEUTRAL, BRAND_PRIMARY } from "@screenshotapi/brand";
 
 export const size = { width: 48, height: 48 };
 export const contentType = "image/png";

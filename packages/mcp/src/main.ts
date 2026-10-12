@@ -1,17 +1,17 @@
 #!/usr/bin/env node
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { createEngine } from "@snapforge/engine";
-import { createSnapforgeMcpServer } from "./index.js";
+import { createEngine } from "@screenshotapi/engine";
+import { createScreenshotAPIMcpServer } from "./index.js";
 
-const concurrency = Number(process.env.SNAPFORGE_MCP_CONCURRENCY ?? 2);
+const concurrency = Number((process.env.SCREENSHOTAPI_MCP_CONCURRENCY ?? process.env.SNAPFORGE_MCP_CONCURRENCY) ?? 2);
 if (!Number.isInteger(concurrency) || concurrency < 1 || concurrency > 12) {
-  throw new Error("SNAPFORGE_MCP_CONCURRENCY must be an integer from 1 to 12");
+  throw new Error("SCREENSHOTAPI_MCP_CONCURRENCY must be an integer from 1 to 12");
 }
 
 const engine = createEngine({
   maxConcurrentCaptures: concurrency,
 });
-const server = createSnapforgeMcpServer(engine);
+const server = createScreenshotAPIMcpServer(engine);
 const transport = new StdioServerTransport();
 
 await server.connect(transport);

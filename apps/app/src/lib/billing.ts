@@ -1,5 +1,5 @@
-import type { PaidProduct, PlanName } from "@snapforge/database";
-import { CREDIT_PACKS, PLAN_CATALOG } from "@snapforge/contracts";
+import type { PaidProduct, PlanName } from "@screenshotapi/database";
+import { CREDIT_PACKS, PLAN_CATALOG } from "@screenshotapi/contracts";
 
 type ProductDefinition = Omit<PaidProduct, "id"> & { id: string | undefined; priceUsd: number };
 

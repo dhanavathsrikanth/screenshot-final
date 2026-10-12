@@ -4,10 +4,10 @@ import {
   captureOptionsSchema,
   CAPTURE_RENDER_VERSION,
   DEVICE_PRESETS,
-  SnapforgeError,
+  ScreenshotAPIError,
   type CaptureOptions,
   type CaptureSuccessData,
-} from "@snapforge/contracts";
+} from "@screenshotapi/contracts";
 import type {
   CaptureOutcome,
   EngineConfig,
@@ -16,7 +16,7 @@ import type {
 } from "./types.js";
 import { resolveConfig } from "./types.js";
 import { BrowserPool } from "./pool.js";
-import { looksLikeChallenge, toSnapforgeError } from "./errors.js";
+import { looksLikeChallenge, toScreenshotAPIError } from "./errors.js";
 import { contextOptionsFor, createSession, resolveViewport, type EngineSession } from "./context.js";
 import { buildUserAgent } from "./stealth.js";
 import {
@@ -138,7 +138,7 @@ async function applyDomTweaks(
       { hide: options.hide_selectors, remove: options.remove_selectors },
     );
     if (invalid.length > 0) {
-      throw new SnapforgeError({
+      throw new ScreenshotAPIError({
         code: "invalid_request",
         message: `Invalid selector(s): ${invalid.join(", ")}`,
         requestId,
@@ -149,7 +149,7 @@ async function applyDomTweaks(
 
   if (options.custom_css) {
     await page.addStyleTag({ content: options.custom_css }).catch((err: unknown) => {
-      throw new SnapforgeError({
+      throw new ScreenshotAPIError({
         code: "invalid_request",
         message: `custom_css could not be applied: ${err instanceof Error ? err.message : String(err)}`,
         requestId,
@@ -161,7 +161,7 @@ async function applyDomTweaks(
     try {
       await page.evaluate(options.custom_js);
     } catch (err) {
-      throw new SnapforgeError({
+      throw new ScreenshotAPIError({
         code: "invalid_request",
         message: `custom_js failed: ${err instanceof Error ? err.message : String(err)}`,
         requestId,
@@ -170,7 +170,7 @@ async function applyDomTweaks(
   }
 }
 
-export class SnapforgeEngine {
+export class ScreenshotAPIEngine {
   private readonly config: ResolvedEngineConfig;
   private readonly pool: BrowserPool;
   private readonly settleDeps: SettleDeps;
@@ -201,7 +201,7 @@ export class SnapforgeEngine {
 
   async warm(): Promise<void> {
     if (this.warmChain) return this.warmChain;
-    const options = captureOptionsSchema.parse({ url: "https://snapforge.invalid/" });
+    const options = captureOptionsSchema.parse({ url: "https://screenshotapi.invalid/" });
     const viewport = resolveViewport(options, "warmup");
     const chain = this.pool.warm(async (slot) => {
       const browser = await slot.ensureBrowser(false);
@@ -226,7 +226,7 @@ export class SnapforgeEngine {
       this.config.logger("debug", "capture timings", { request_id: requestId, ...timings });
       return { ...outcome, timings };
     } catch (err) {
-      throw toSnapforgeError(err, requestId, { timings: timer.snapshot() });
+      throw toScreenshotAPIError(err, requestId, { timings: timer.snapshot() });
     }
   }
 
@@ -238,7 +238,7 @@ export class SnapforgeEngine {
   ): Promise<CaptureOutcome> {
     const parsed = captureOptionsSchema.safeParse(input);
     if (!parsed.success) {
-      throw toSnapforgeError(parsed.error, requestId);
+      throw toScreenshotAPIError(parsed.error, requestId);
     }
     const options = parsed.data;
     if (!this.config.allowPrivateNetwork) {
@@ -265,14 +265,14 @@ export class SnapforgeEngine {
     const slot = await timer.measure("pool_wait", () => this.pool.acquire(requestId));
     const budget = new SettlementBudget(options.timeout);
     try {
-      let lastError: SnapforgeError | null = null;
+      let lastError: ScreenshotAPIError | null = null;
       for (let attempt = 0; attempt <= this.config.retries; attempt++) {
         try {
           const outcome = await this.runAttempt(options, requestId, slot.id, mode, timer, budget);
           if (mode.inspectPage) return outcome;
           return { data: await timer.measure("cache_save", () => this.cache.save(options, outcome.data, outcome.buffer)), buffer: outcome.buffer };
         } catch (err) {
-          const error = toSnapforgeError(err, requestId);
+          const error = toScreenshotAPIError(err, requestId);
           lastError = error;
           const canRetry =
             attempt < this.config.retries && error.code === "render_crashed" && !budget.expired();
@@ -291,7 +291,7 @@ export class SnapforgeEngine {
       }
       throw (
         lastError ??
-        new SnapforgeError({
+        new ScreenshotAPIError({
           code: "internal_error",
           message: "Capture failed without a recorded error",
           requestId,
@@ -338,14 +338,14 @@ export class SnapforgeEngine {
       ));
       return await this.pipeline(session, options, requestId, viewport, started, slotId, mode, timer, budget);
     } catch (err) {
-      if (budget.expired()) throw new SnapforgeError({ code: "render_timeout", message: "Capture exhausted its rendering budget", requestId, retriable: false });
+      if (budget.expired()) throw new ScreenshotAPIError({ code: "render_timeout", message: "Capture exhausted its rendering budget", requestId, retriable: false });
       try {
         session.artifacts.notePage(session.page.url());
       } catch {
         // page may already be unreachable
       }
       await timer.measure("failure_artifacts", () => session.artifacts.collectDom());
-      throw toSnapforgeError(err, requestId, {
+      throw toScreenshotAPIError(err, requestId, {
         slot: slotId,
         artifacts: session.artifacts.snapshot(),
       });
@@ -426,7 +426,7 @@ export class SnapforgeEngine {
       ));
       const check2 = await timer.measure("challenge_check", () => detectChallenge(page, lastStatus));
       if (check2.challenged) {
-        throw new SnapforgeError({
+        throw new ScreenshotAPIError({
           code: "blocked_by_target",
           message: `Target blocked the capture (status ${lastStatus || "n/a"}): ${check2.title || "anti-bot challenge"}`,
           requestId,
@@ -441,7 +441,7 @@ export class SnapforgeEngine {
     }
 
     if (lastStatus >= 500) {
-      throw new SnapforgeError({
+      throw new ScreenshotAPIError({
         code: "target_error",
         message: `Target returned HTTP ${lastStatus}`,
         requestId,
@@ -458,7 +458,7 @@ export class SnapforgeEngine {
 
     const finalTitle = await timer.measure("challenge_check", () => safeTitle(page));
     if (looksLikeChallenge(0, finalTitle, "")) {
-      throw new SnapforgeError({
+      throw new ScreenshotAPIError({
         code: "blocked_by_target",
         message: `Target blocked the capture: ${finalTitle}`,
         requestId,
@@ -480,7 +480,7 @@ export class SnapforgeEngine {
 
     if (options.selector) {
       if (options.format === "pdf") {
-        throw new SnapforgeError({
+        throw new ScreenshotAPIError({
           code: "unsupported_option",
           message: "pdf format cannot be combined with selector element targeting",
           requestId,
@@ -490,7 +490,7 @@ export class SnapforgeEngine {
       const visible = await locator.isVisible().catch(() => false);
       const box = visible ? await locator.boundingBox().catch(() => null) : null;
       if (!box) {
-        throw new SnapforgeError({
+        throw new ScreenshotAPIError({
           code: "invalid_request",
           message: `Selector "${options.selector}" matched no visible element`,
           requestId,
@@ -674,6 +674,6 @@ export class SnapforgeEngine {
   }
 }
 
-export function createEngine(config: EngineConfig = {}, cache: CaptureCachePort = nullCaptureCache): SnapforgeEngine {
-  return new SnapforgeEngine(config, cache);
+export function createEngine(config: EngineConfig = {}, cache: CaptureCachePort = nullCaptureCache): ScreenshotAPIEngine {
+  return new ScreenshotAPIEngine(config, cache);
 }

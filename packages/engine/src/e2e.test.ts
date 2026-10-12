@@ -8,7 +8,7 @@ function page(title: string, body: string, head = ""): string {
   return `<!doctype html><html><head><meta charset="utf-8"><title>${title}</title>${head}</head><body>${body}</body></html>`;
 }
 
-const HEADING = '<h1 id="heading">Snapforge Fixture</h1><p>Body copy for capture.</p>';
+const HEADING = '<h1 id="heading">ScreenshotAPI Fixture</h1><p>Body copy for capture.</p>';
 
 function route(pathname: string): { status: number; body: string } {
   switch (pathname) {
@@ -413,9 +413,9 @@ test("engine end-to-end capture suite", async (t) => {
         url: `${base}/`, timeout: 15000,
         viewport: { width: 640, height: 480 },
         locale: "fr-FR",
-        user_agent: "Snapforge-quality-fixture",
+        user_agent: "ScreenshotAPI-quality-fixture",
         block_cookie_banners: false,
-        custom_js: 'if (window.innerWidth !== 640 || navigator.language !== "fr-FR" || navigator.userAgent !== "Snapforge-quality-fixture") throw new Error("Capture options leaked");',
+        custom_js: 'if (window.innerWidth !== 640 || navigator.language !== "fr-FR" || navigator.userAgent !== "ScreenshotAPI-quality-fixture") throw new Error("Capture options leaked");',
         selector: "#heading",
       });
       assert.ok(changed.buffer.length > 300);

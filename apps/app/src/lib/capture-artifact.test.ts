@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { captureArtifactPath, captureArtifactJobId, captureObjectKey, createCaptureArtifactHandler } from "./capture-artifact.js";
-import type { JobSnapshot } from "@snapforge/queue";
+import type { JobSnapshot } from "@screenshotapi/queue";
 
 const config = { bucket: "private", endpoint: "https://storage.example", region: "iad", accessKeyId: "test", secretAccessKey: "test" };
 const key = `captures/ab/cd/${"abcd" + "0".repeat(60)}.pdf`;

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useClerk } from "@clerk/nextjs";
 import { Button, Card, CardHeader, Label, PageHeader, Select, Toggle } from "@/components/ui";
 import { Icon } from "@/components/icons";
-import { DEVICE_PRESETS } from "@snapforge/contracts";
+import { DEVICE_PRESETS } from "@screenshotapi/contracts";
 import { DEFAULT_PREFS, preferenceSnapshot, readPreferences, savePreferences, subscribePreferences, type ConsolePrefs } from "@/lib/console-preferences";
 
 export default function SettingsPage() {

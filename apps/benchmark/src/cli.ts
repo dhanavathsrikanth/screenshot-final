@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { createEngine } from "@snapforge/engine";
+import { createEngine } from "@screenshotapi/engine";
 import {
   BENCHMARK_TIERS,
   SITE_SUITE,
@@ -30,7 +30,7 @@ interface CliArgs {
   help: boolean;
 }
 
-const HELP = `snapforge gauntlet — the 30-site benchmark quality gate
+const HELP = `screenshotapi gauntlet — the 30-site benchmark quality gate
 
 Usage: node dist/src/cli.js [options]
 

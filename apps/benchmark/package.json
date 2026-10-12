@@ -1,5 +1,5 @@
 {
-  "name": "@snapforge/benchmark",
+  "name": "@screenshotapi/benchmark",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -12,8 +12,8 @@
     "start": "node dist/src/cli.js"
   },
   "dependencies": {
-    "@snapforge/contracts": "workspace:*",
-    "@snapforge/engine": "workspace:*"
+    "@screenshotapi/contracts": "workspace:*",
+    "@screenshotapi/engine": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.13.1",

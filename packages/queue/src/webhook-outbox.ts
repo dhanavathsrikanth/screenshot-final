@@ -1,10 +1,10 @@
 import { Resolver } from "node:dns/promises";
 import { request } from "node:https";
 import { BlockList, isIP } from "node:net";
-import { captureWebhookSchema, type CaptureWebhook } from "@snapforge/contracts";
+import { captureWebhookSchema, type CaptureWebhook } from "@screenshotapi/contracts";
 import type { CaptureJobResult } from "./types.js";
 import type { CaptureSubmissionCodec } from "./submission.js";
-import { eventForResult, signPayload, webhookBody } from "./webhook.js";
+import { compatibleWebhookHeaders, eventForResult, signPayload, webhookBody } from "./webhook.js";
 
 export interface WebhookClaim {
   id: string; jobId: string; accountId: string; ciphertext: string; result: CaptureJobResult;
@@ -74,12 +74,12 @@ export async function sendWebhookAttempt(claim: WebhookClaim, target: CaptureWeb
   signal.throwIfAborted();
   const event = eventForResult(claim.result);
   const body = JSON.stringify({ ...JSON.parse(webhookBody(event, claim.jobId, claim.result)), delivery_id: claim.id, delivery_generation: claim.generation });
-  const statusCode = await client.send(url, addresses[0], body, {
+  const statusCode = await client.send(url, addresses[0], body, compatibleWebhookHeaders({
     "content-type": "application/json", "content-length": String(Buffer.byteLength(body)),
-    "x-snapforge-signature": signPayload({ secret: target.secret, body }), "x-snapforge-job-id": claim.jobId,
-    "x-snapforge-event": event, "x-snapforge-delivery-id": claim.id,
-    "x-snapforge-generation": String(claim.generation), "x-snapforge-delivery": String(claim.attempt),
-  }, signal);
+    "x-screenshotapi-signature": signPayload({ secret: target.secret, body }), "x-screenshotapi-job-id": claim.jobId,
+    "x-screenshotapi-event": event, "x-screenshotapi-delivery-id": claim.id,
+    "x-screenshotapi-generation": String(claim.generation), "x-screenshotapi-delivery": String(claim.attempt),
+  }), signal);
   return { delivered: statusCode >= 200 && statusCode < 300, retry: statusCode === 429 || statusCode >= 500 || statusCode === 0, statusCode };
 }
 

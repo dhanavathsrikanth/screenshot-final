@@ -1,7 +1,7 @@
 import { QueueEvents } from "bullmq";
 import type { Job } from "bullmq";
 import type { Redis } from "ioredis";
-import { SnapforgeError } from "@snapforge/contracts";
+import { ScreenshotAPIError } from "@screenshotapi/contracts";
 import type { QueueConfig } from "./config.js";
 import type { CaptureJobView, CaptureQueue } from "./queue.js";
 import { normalizeState } from "./queue.js";
@@ -80,7 +80,7 @@ export class CaptureDispatcher {
    */
   async waitForResult(jobId: string, requestId: string): Promise<DispatchResult> {
     if (!this.waiter) {
-      throw new SnapforgeError({
+      throw new ScreenshotAPIError({
         code: "internal_error",
         message: "sync dispatch requires a queue events waiter",
         requestId,
@@ -89,7 +89,7 @@ export class CaptureDispatcher {
 
     const job = await this.queue.getJob(jobId);
     if (!job) {
-      throw new SnapforgeError({
+      throw new ScreenshotAPIError({
         code: "internal_error",
         message: `job ${jobId} vanished immediately after enqueue`,
         requestId,
@@ -153,7 +153,7 @@ export function isTimeout(error: unknown): boolean {
 }
 
 export function toEnvelope(error: unknown, jobId: string) {
-  if (error instanceof SnapforgeError) {
+  if (error instanceof ScreenshotAPIError) {
     return error.toEnvelope();
   }
   const message = error instanceof Error ? error.message : String(error);
@@ -162,7 +162,7 @@ export function toEnvelope(error: unknown, jobId: string) {
     message,
     retriable: true,
     request_id: jobId,
-    docs_url: "https://snapforge.dev/docs/errors#internal_error",
+    docs_url: "https://app.screenshotapi.tech/docs/errors#internal_error",
   };
 }
 
@@ -185,7 +185,7 @@ export function createQueueEventsWaiter(events: QueueEvents, queue: CaptureQueue
     async waitUntilFinished(view, ttl) {
       const id = view.id;
       if (id === undefined) {
-        throw new SnapforgeError({
+        throw new ScreenshotAPIError({
           code: "internal_error",
           message: "cannot wait on a job without an id",
           requestId: view.data.request_id,
@@ -193,7 +193,7 @@ export function createQueueEventsWaiter(events: QueueEvents, queue: CaptureQueue
       }
       const job = await queue.getJob(id);
       if (!job || typeof (job as { waitUntilFinished?: unknown }).waitUntilFinished !== "function") {
-        throw new SnapforgeError({
+        throw new ScreenshotAPIError({
           code: "internal_error",
           message: `job ${id} cannot be awaited without a queue events subscription`,
           requestId: view.data.request_id,

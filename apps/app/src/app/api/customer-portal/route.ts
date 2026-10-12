@@ -1,7 +1,7 @@
 import { CustomerPortal } from "@dodopayments/nextjs";
 import { auth } from "@clerk/nextjs/server";
 import { NextRequest } from "next/server";
-import { getBillingState } from "@snapforge/database";
+import { getBillingState } from "@screenshotapi/database";
 
 const portal = CustomerPortal({
   bearerToken: process.env.DODO_PAYMENTS_API_KEY ?? "",

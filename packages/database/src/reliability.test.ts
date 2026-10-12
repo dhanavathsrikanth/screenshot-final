@@ -2,10 +2,10 @@ import test, { after, afterEach } from "node:test";
 import assert from "node:assert/strict";
 import { randomBytes, randomUUID } from "node:crypto";
 import { CaptureRequestConflictError, captureJobPayloadSchema, captureRequestFingerprint, createCaptureSubmissionCodec,
-  idempotentJobId, type CaptureFinalization, type SealedCaptureSubmission } from "@snapforge/queue";
+  idempotentJobId, type CaptureFinalization, type SealedCaptureSubmission } from "@screenshotapi/queue";
 import { captureSubmissions, commitCapture, getBillingState, pool, webhookDeliveries } from "./index.js";
 
-const enabled = process.env.SNAPFORGE_SETTLEMENT_TEST === "1";
+const enabled = process.env.SCREENSHOTAPI_SETTLEMENT_TEST === "1";
 const codec = createCaptureSubmissionCodec(randomBytes(32).toString("base64"));
 const accounts: string[] = [];
 afterEach(async () => {

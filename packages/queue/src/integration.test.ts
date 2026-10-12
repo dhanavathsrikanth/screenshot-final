@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { after, describe, it } from "node:test";
-import { captureOptionsSchema, SnapforgeError } from "@snapforge/contracts";
+import { captureOptionsSchema, ScreenshotAPIError } from "@screenshotapi/contracts";
 import { resolveQueueConfig, type QueueConfig } from "./config.js";
 import { createQueueConnection, createQueueHost } from "./connection.js";
 import { CaptureQueue } from "./queue.js";
@@ -164,7 +164,7 @@ run("queue integration against Redis", () => {
 
   it("surfaces a non-retriable failure as a settled failure on the first attempt", async () => {
     const { dispatcher } = await fleet(async () => {
-      throw new SnapforgeError({ code: "blocked_by_target", message: "nope", requestId: "x" });
+      throw new ScreenshotAPIError({ code: "blocked_by_target", message: "nope", requestId: "x" });
     });
 
     const requestId = `req_${unique()}`;
@@ -186,7 +186,7 @@ run("queue integration against Redis", () => {
     let calls = 0;
     const { dispatcher } = await fleet(async () => {
       calls += 1;
-      throw new SnapforgeError({ code: "render_timeout", message: "slow", requestId: "x" });
+      throw new ScreenshotAPIError({ code: "render_timeout", message: "slow", requestId: "x" });
     });
 
     const result = await dispatcher.dispatch({

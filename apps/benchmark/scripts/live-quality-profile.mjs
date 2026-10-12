@@ -1,6 +1,6 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { createEngine } from "@snapforge/engine";
+import { createEngine } from "@screenshotapi/engine";
 import { SITE_SUITE } from "../dist/src/sites.js";
 import { evaluateCapture } from "../dist/src/checks.js";
 

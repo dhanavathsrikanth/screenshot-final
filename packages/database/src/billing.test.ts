@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { getBillingState, pool, recordDodoEvent, reserveCapture, settleCapture } from "./index.js";
 
-const enabled = process.env.SNAPFORGE_BILLING_TEST === "1";
+const enabled = process.env.SCREENSHOTAPI_BILLING_TEST === "1";
 const users: string[] = [];
 const events: string[] = [];
 function user() { const id = `billing-test-${randomUUID()}`; users.push(id); return id; }

@@ -1,7 +1,7 @@
 import http from "node:http";
 import { writeFileSync, mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
-import { createEngine } from "@snapforge/engine";
+import { createEngine } from "@screenshotapi/engine";
 
 const output = process.argv[2];
 if (!output) throw new Error("Usage: node scripts/profile.mjs <output.json> [url ...]");

@@ -17,8 +17,16 @@ export type DodoResource = {
   refunds?: Array<{ status: string; amount?: number | null }>;
 };
 
+export function billingUserId(data: DodoResource) {
+  const current = data.metadata?.screenshotapi_user_id;
+  const legacy = data.metadata?.snapforge_user_id;
+  if (current !== undefined && legacy !== undefined && current !== legacy) throw new Error("Conflicting payment account metadata");
+  const value = current ?? legacy;
+  return typeof value === "string" && value.length > 0 ? value : undefined;
+}
+
 export function verifyBillingOwner(data: DodoResource, userId: string) {
-  if (data.metadata?.snapforge_user_id !== userId || !data.customer?.customer_id) {
+  if (billingUserId(data) !== userId || !data.customer?.customer_id) {
     throw new Error("Payment account could not be verified");
   }
 }

@@ -76,7 +76,7 @@ test("acquireJob without httpRate still uses the original CLAIM Lua", async () =
 });
 
 test("live Redis recovery restores expired leases without bypassing concurrency or repeating request rate charges", {
-  skip: process.env.SNAPFORGE_ADMISSION_REST_TEST !== "1" || !process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN,
+  skip: process.env.SCREENSHOTAPI_ADMISSION_REST_TEST !== "1" || !process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN,
 }, async () => {
   const prefix = `snapforge:test:enqueue:${randomUUID()}`;
   const command = async (...args: Array<string | number>): Promise<unknown> => {

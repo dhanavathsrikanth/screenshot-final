@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { Icon } from "@/components/icons";
-import { captureCreditCost } from "@snapforge/contracts";
+import { captureCreditCost } from "@screenshotapi/contracts";
 import {
   Button,
   Card,
@@ -103,7 +103,7 @@ export function Playground({ localCapture = false }: { localCapture?: boolean })
       case "python":
         return buildPython(state);
       case "mcp":
-        return buildMcpConfig(state);
+        return buildMcpConfig();
     }
   }, [snippet, state]);
 

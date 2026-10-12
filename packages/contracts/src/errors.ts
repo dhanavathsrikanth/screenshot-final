@@ -75,7 +75,7 @@ export const errorEnvelopeSchema = z.object({
 
 export type ErrorEnvelope = z.infer<typeof errorEnvelopeSchema>;
 
-export class SnapforgeError extends Error {
+export class ScreenshotAPIError extends Error {
   readonly code: ErrorCode;
   readonly retriable: boolean;
   readonly statusCode: number;
@@ -90,7 +90,7 @@ export class SnapforgeError extends Error {
     details?: Record<string, unknown>;
   }) {
     super(options.message);
-    this.name = "SnapforgeError";
+    this.name = "ScreenshotAPIError";
     this.code = options.code;
     this.requestId = options.requestId;
     this.retriable = options.retriable ?? ERROR_RETRIABILITY[options.code];
@@ -104,7 +104,7 @@ export class SnapforgeError extends Error {
       message: this.message,
       retriable: this.retriable,
       request_id: this.requestId,
-      docs_url: `https://snapforge.dev/docs/errors#${this.code}`,
+      docs_url: `https://app.screenshotapi.tech/docs/errors#${this.code}`,
       details: this.details,
     };
   }

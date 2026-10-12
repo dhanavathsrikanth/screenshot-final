@@ -6,7 +6,7 @@ import { createLauncher } from "./stealth.js";
 import { FreshPageStandby } from "./standby.js";
 import { deriveConcurrency, sampleCpu } from "./cpu.js";
 
-const MARKER_PREFIX = "--snapforge-engine=";
+const MARKER_PREFIX = "--screenshotapi-engine=";
 
 function execShell(command: string, timeoutMs: number): Promise<void> {
   return new Promise((resolve) => {

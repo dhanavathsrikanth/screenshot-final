@@ -1,6 +1,6 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
 import { z } from "zod";
-import { captureOptionsSchema, captureWebhookSchema, type CaptureWebhook } from "@snapforge/contracts";
+import { captureOptionsSchema, captureWebhookSchema, type CaptureWebhook } from "@screenshotapi/contracts";
 import type { CaptureDispatcher } from "./dispatcher.js";
 import type { CaptureQueue } from "./queue.js";
 import type { CaptureLifecycleJob } from "./settlement.js";

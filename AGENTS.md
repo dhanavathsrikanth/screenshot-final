@@ -45,8 +45,8 @@ Before adding a new colour, check whether an existing token already covers it.
 
 ```bash
 pnpm install
-pnpm --filter @snapforge/<pkg> run build   # tsc
-pnpm --filter @snapforge/<pkg> run test    # node --test, requires a prior build
+pnpm --filter @screenshotapi/<pkg> run build   # tsc
+pnpm --filter @screenshotapi/<pkg> run test    # node --test, requires a prior build
 ```
 
 `pnpm -r run build` from the root builds every package. Tests run against

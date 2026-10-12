@@ -2,10 +2,10 @@ import type { Browser, BrowserContext, BrowserContextOptions, Page } from "playw
 import {
   DEVICE_PRESETS,
   REGION_PRESETS,
-  SnapforgeError,
+  ScreenshotAPIError,
   type CaptureOptions,
   type ViewportOptions,
-} from "@snapforge/contracts";
+} from "@screenshotapi/contracts";
 import type { ResolvedEngineConfig } from "./types.js";
 import type { ResolvedRegion } from "./region.js";
 import { CaptureTimer } from "./timings.js";
@@ -38,7 +38,7 @@ export function resolveViewport(
   if (options.device) {
     const preset = DEVICE_PRESETS[options.device];
     if (!preset) {
-      throw new SnapforgeError({
+      throw new ScreenshotAPIError({
         code: "unsupported_option",
         message: `Unknown device preset "${options.device}". Valid presets: ${Object.keys(DEVICE_PRESETS).join(", ")}`,
         requestId,
@@ -206,7 +206,7 @@ export async function createSession(
       await context.addInitScript(buildBannerRemovalScript(undefined, options.timeout + 5000));
     }
     if (options.block_chats) {
-      await context.addInitScript(buildBannerRemovalScript(CHAT_WIDGET_SELECTORS, options.timeout + 5000, "__snapforgeChatSweep", false));
+      await context.addInitScript(buildBannerRemovalScript(CHAT_WIDGET_SELECTORS, options.timeout + 5000, "__screenshotapiChatSweep", false));
     }
   });
 
@@ -240,10 +240,10 @@ export async function createSession(
       await page.evaluate(({ cookies, chats }) => {
         const bridge = (
           window as unknown as {
-            __snapforgeBannerSweep?: { run: () => number };
+            __screenshotapiBannerSweep?: { run: () => number };
           }
-        ).__snapforgeBannerSweep;
-        const chatBridge = (window as unknown as { __snapforgeChatSweep?: { run: () => number } }).__snapforgeChatSweep;
+        ).__screenshotapiBannerSweep;
+        const chatBridge = (window as unknown as { __screenshotapiChatSweep?: { run: () => number } }).__screenshotapiChatSweep;
         if (cookies && bridge) bridge.run();
         if (chats && chatBridge) chatBridge.run();
       }, { cookies: options.block_cookie_banners, chats: options.block_chats });
@@ -261,9 +261,9 @@ export async function createSession(
       return await page.evaluate(() => {
         const bridge = (
           window as unknown as {
-            __snapforgeBannerSweep?: { count: () => number };
+            __screenshotapiBannerSweep?: { count: () => number };
           }
-        ).__snapforgeBannerSweep;
+        ).__screenshotapiBannerSweep;
         return bridge ? bridge.count() : 0;
       });
     } catch {

@@ -5,12 +5,12 @@ import { createWorker as createBullWorker } from "./connection.js";
 import type { CaptureJobName } from "./types.js";
 import {
   ERROR_RETRIABILITY,
-  SnapforgeError,
+  ScreenshotAPIError,
   type CaptureOptions,
   type CaptureSuccessData,
   type ErrorCode,
   type ErrorEnvelope,
-} from "@snapforge/contracts";
+} from "@screenshotapi/contracts";
 import type { QueueConfig } from "./config.js";
 import type { CaptureJobView } from "./queue.js";
 import type { CaptureJobPayload, CaptureJobResult } from "./types.js";
@@ -47,7 +47,7 @@ export interface CaptureWorkerStats {
 }
 
 export function errorEnvelopeFor(error: unknown, payload: CaptureJobPayload): ErrorEnvelope {
-  if (error instanceof SnapforgeError) {
+  if (error instanceof ScreenshotAPIError) {
     return error.toEnvelope();
   }
 
@@ -57,7 +57,7 @@ export function errorEnvelopeFor(error: unknown, payload: CaptureJobPayload): Er
     message,
     retriable: true,
     request_id: payload.request_id,
-    docs_url: "https://snapforge.dev/docs/errors#internal_error",
+    docs_url: "https://app.screenshotapi.tech/docs/errors#internal_error",
   };
 }
 
@@ -73,7 +73,7 @@ export function isRetriableCode(code: string): boolean {
 
 export function classifyFailure(envelope: ErrorEnvelope): Error {
   if (isRetriableCode(envelope.code) && envelope.retriable) {
-    return new SnapforgeError({
+    return new ScreenshotAPIError({
       code: envelope.code,
       message: envelope.message,
       requestId: envelope.request_id,

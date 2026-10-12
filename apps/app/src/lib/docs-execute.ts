@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
-import { captureRequestSchema, idempotencyKeySchema, SnapforgeError } from "@snapforge/contracts";
-import { readCaptureRequest } from "@snapforge/queue";
+import { captureRequestSchema, idempotencyKeySchema, ScreenshotAPIError } from "@screenshotapi/contracts";
+import { readCaptureRequest } from "@screenshotapi/queue";
 import type { DocInvocation } from "./docs-live.js";
 import operationInfo from "./docs-operations.json";
 
@@ -12,7 +12,7 @@ export interface DocsExecuteDependencies {
 }
 
 export function parseDocInvocation(value: unknown, requestId: string): DocInvocation {
-  const invalid = (message: string): never => { throw new SnapforgeError({ code: "invalid_request", message, requestId }); };
+  const invalid = (message: string): never => { throw new ScreenshotAPIError({ code: "invalid_request", message, requestId }); };
   if (!value || typeof value !== "object" || Array.isArray(value)) return invalid("Request must be an object");
   const input = value as Record<string, unknown>;
   if (typeof input.operation !== "string" || !Object.keys(operationInfo).includes(input.operation)) return invalid("Choose a documented operation");
@@ -46,7 +46,7 @@ export function createDocsExecuteHandler(deps: DocsExecuteDependencies) {
       const origin = request.headers.get("origin");
       if (origin && origin !== new URL(request.url).origin) return Response.json({ ok: false, error: { code: "forbidden", message: "Send live requests from the documentation site" } }, { status: 403, headers });
       const input = parseDocInvocation(await readCaptureRequest(request, requestId), requestId);
-      headers.set("x-snapforge-interface", input.authentication === "api-key" ? "rest-api" : "console");
+      headers.set("x-screenshotapi-interface", input.authentication === "api-key" ? "rest-api" : "console");
       if (input.authentication === "console") {
         const accountId = await deps.authenticate();
         if (!accountId) return Response.json({ ok: false, error: { code: "unauthorized", message: "Sign in to run with your console account, or use an API key" } }, { status: 401, headers });
@@ -63,10 +63,10 @@ export function createDocsExecuteHandler(deps: DocsExecuteDependencies) {
                 try { body = JSON.parse(raw); } catch { body = raw; }
                 emit({ type: "response", status: response.status, headers: { ...Object.fromEntries(["content-type", "x-request-id", "etag", "retry-after", "server-timing"].flatMap((name) => {
                   const value = response.headers.get(name); return value ? [[name, value]] : [];
-                })), "x-snapforge-interface": "console" }, body });
+                })), "x-screenshotapi-interface": "console" }, body });
               }).catch((error: unknown) => {
-                const known = error instanceof SnapforgeError;
-                emit({ type: "response", status: known ? error.statusCode : 503, headers: { "x-request-id": requestId, "x-snapforge-interface": "console" }, body: { ok: false,
+                const known = error instanceof ScreenshotAPIError;
+                emit({ type: "response", status: known ? error.statusCode : 503, headers: { "x-request-id": requestId, "x-screenshotapi-interface": "console" }, body: { ok: false,
                   error: known ? error.toEnvelope() : { code: "internal_error", message: "Capture temporarily unavailable", retriable: true } } });
               }).finally(() => { if (!closed) { closed = true; controller.close(); } });
             },
@@ -81,7 +81,7 @@ export function createDocsExecuteHandler(deps: DocsExecuteDependencies) {
         const resultHeaders = new Headers(response.headers);
         resultHeaders.set("cache-control", "no-store");
         if (!resultHeaders.has("x-request-id")) resultHeaders.set("x-request-id", requestId);
-        resultHeaders.set("x-snapforge-interface", "console");
+        resultHeaders.set("x-screenshotapi-interface", "console");
         return new Response(response.body, { status: response.status, headers: resultHeaders });
       }
       const authorization = request.headers.get("authorization") ?? "";
@@ -89,7 +89,7 @@ export function createDocsExecuteHandler(deps: DocsExecuteDependencies) {
         return Response.json({ ok: false, error: { code: "unauthorized", message: "Enter a valid sf_live_ API key" } }, { status: 401, headers });
       }
       const configured = deps.gatewayBaseUrl?.trim();
-      if (!configured) return Response.json({ ok: false, error: { code: "internal_error", message: "API-key testing requires a configured SNAPFORGE_API_URL. Use your console session to try captures here.", retriable: false } }, { status: 503, headers });
+      if (!configured) return Response.json({ ok: false, error: { code: "internal_error", message: "API-key testing requires a configured SCREENSHOTAPI_API_URL. Use your console session to try captures here.", retriable: false } }, { status: 503, headers });
       const base = new URL(configured);
       if (!["https:", "http:"].includes(base.protocol) || base.username || base.password || base.search || base.hash) throw new Error("Invalid gateway configuration");
       const endpoint = operationInfo[input.operation].endpoint.replace("{id}", encodeURIComponent(input.handle ?? "")).replace("{key}", encodeURIComponent(input.handle ?? ""));
@@ -104,10 +104,10 @@ export function createDocsExecuteHandler(deps: DocsExecuteDependencies) {
         const value = response.headers.get(name);
         if (value) headers.set(name, value);
       }
-      headers.set("x-snapforge-interface", "rest-api");
+      headers.set("x-screenshotapi-interface", "rest-api");
       return new Response(response.body, { status: response.status, headers });
     } catch (error) {
-      const known = error instanceof SnapforgeError;
+      const known = error instanceof ScreenshotAPIError;
       return Response.json({ ok: false, request_id: requestId, error: known ? error.toEnvelope() : { code: "internal_error", message: "Live request could not reach the capture service. Check service health before retrying.", retriable: true } }, { status: known ? error.statusCode : 503, headers });
     }
   };

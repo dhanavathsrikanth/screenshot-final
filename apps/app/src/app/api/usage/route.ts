@@ -1,5 +1,5 @@
 import { auth } from "@clerk/nextjs/server";
-import { getBillingState } from "@snapforge/database";
+import { getBillingState } from "@screenshotapi/database";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

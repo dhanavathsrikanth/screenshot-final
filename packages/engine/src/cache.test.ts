@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { captureOptionsSchema, type CaptureSuccessData } from "@snapforge/contracts";
+import { captureOptionsSchema, type CaptureSuccessData } from "@screenshotapi/contracts";
 import { InProcessCaptureCache, nullCaptureCache, type CaptureCachePort } from "./cache.js";
 
 const options = (patch: Record<string, unknown> = {}) =>

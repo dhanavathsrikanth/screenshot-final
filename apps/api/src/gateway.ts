@@ -1,8 +1,8 @@
 import { createHash, randomUUID } from "node:crypto";
 import { Hono } from "hono";
-import { SnapforgeError, type ErrorCode } from "@snapforge/contracts";
-import { CaptureService, CaptureAdmissionError, HotCache, RedisCaptureAdmission, createRedisCaptureBilling, readCaptureRequest } from "@snapforge/queue";
-import type { CaptureBilling, CaptureDispatcher, CaptureQueue, CaptureSubmissionCodec, WebhookOutboxRepository } from "@snapforge/queue";
+import { ScreenshotAPIError, type ErrorCode } from "@screenshotapi/contracts";
+import { CaptureService, CaptureAdmissionError, HotCache, RedisCaptureAdmission, createRedisCaptureBilling, readCaptureRequest } from "@screenshotapi/queue";
+import type { CaptureBilling, CaptureDispatcher, CaptureQueue, CaptureSubmissionCodec, WebhookOutboxRepository } from "@screenshotapi/queue";
 import type { Redis } from "ioredis";
 
 export interface ApiKeyRecord {
@@ -36,7 +36,7 @@ type Variables = { requestId: string; apiKey: ApiKeyRecord };
 const rateScript = "redis.call('ZREMRANGEBYSCORE', KEYS[1], 0, ARGV[1]-ARGV[2]); local n=redis.call('ZCARD', KEYS[1]); if n>=tonumber(ARGV[3]) then local first=redis.call('ZRANGE', KEYS[1], 0, 0, 'WITHSCORES'); return {0, first[2] or ARGV[1]} end; redis.call('ZADD', KEYS[1], ARGV[1], ARGV[4]); redis.call('PEXPIRE', KEYS[1], ARGV[2]); return {1, 0}";
 
 function fail(code: ErrorCode, message: string, requestId: string): never {
-  throw new SnapforgeError({ code, message, requestId });
+  throw new ScreenshotAPIError({ code, message, requestId });
 }
 
 export function createGateway(deps: GatewayDependencies) {
@@ -59,7 +59,7 @@ export function createGateway(deps: GatewayDependencies) {
 
   app.onError((error, c) => {
     const requestId = c.get("requestId") ?? randomUUID();
-    const known = error instanceof SnapforgeError;
+    const known = error instanceof ScreenshotAPIError;
     if (error instanceof CaptureAdmissionError) c.header("retry-after", String(error.retryAfterSeconds));
     deps.logger?.("request failed", { request_id: requestId, code: known ? error.code : "internal_error" });
     return c.json({ ok: false, request_id: requestId, error: known ? { ...error.toEnvelope(), request_id: requestId }
@@ -129,7 +129,7 @@ export function createGateway(deps: GatewayDependencies) {
       { httpKey: apiKey.id, windowMs: rate.windowMs, max: rate.requests });
     if (snapshot.result && (snapshot.state === "completed" || snapshot.state === "failed")) {
       if (snapshot.result.ok) return c.json({ ok: true, request_id: requestId, data: snapshot.result.data }, 200);
-      throw new SnapforgeError({ ...snapshot.result.error!, requestId });
+      throw new ScreenshotAPIError({ ...snapshot.result.error!, requestId });
     }
     return c.json({ ok: true, request_id: requestId, data: { job_id: snapshot.id, state: snapshot.state,
       poll_url: `/v1/jobs/${encodeURIComponent(snapshot.id)}` } }, 202);

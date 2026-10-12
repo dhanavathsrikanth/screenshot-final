@@ -1,6 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { SnapforgeError } from "@snapforge/contracts";
-import { createEngine, type SnapforgeEngine } from "@snapforge/engine";
+import { ScreenshotAPIError } from "@screenshotapi/contracts";
+import { createEngine, type ScreenshotAPIEngine } from "@screenshotapi/engine";
 import { z } from "zod";
 
 const imageFormatSchema = z.enum(["png", "jpeg", "webp"]);
@@ -50,7 +50,7 @@ const remediation: Record<string, string> = {
 };
 
 function errorResult(error: unknown) {
-  if (error instanceof SnapforgeError) {
+  if (error instanceof ScreenshotAPIError) {
     const envelope = error.toEnvelope();
     const nextStep = remediation[envelope.code] ?? "Check the request and retry if appropriate.";
     return {
@@ -75,7 +75,7 @@ function imageContent(buffer: Buffer, format: "png" | "jpeg" | "webp") {
   };
 }
 
-function captureSummary(outcome: Awaited<ReturnType<SnapforgeEngine["capture"]>>) {
+function captureSummary(outcome: Awaited<ReturnType<ScreenshotAPIEngine["capture"]>>) {
   const { data } = outcome;
   return JSON.stringify({
     url: data.url,
@@ -89,8 +89,8 @@ function captureSummary(outcome: Awaited<ReturnType<SnapforgeEngine["capture"]>>
   });
 }
 
-export function createSnapforgeMcpServer(engine: SnapforgeEngine = createEngine()) {
-  const server = new McpServer({ name: "snapforge", version: "0.1.0" });
+export function createScreenshotAPIMcpServer(engine: ScreenshotAPIEngine = createEngine()) {
+  const server = new McpServer({ name: "screenshotapi", version: "0.1.0" });
 
   server.registerTool("take_screenshot", {
     description: "Capture a web page and return the image plus compact capture metadata.",

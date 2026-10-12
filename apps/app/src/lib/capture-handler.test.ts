@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { SnapforgeError } from "@snapforge/contracts";
-import type { CaptureOutcome } from "@snapforge/engine";
+import { ScreenshotAPIError } from "@screenshotapi/contracts";
+import type { CaptureOutcome } from "@screenshotapi/engine";
 import { createCaptureHandler, MAX_CAPTURE_REQUEST_BYTES, type CaptureHandlerDependencies } from "./capture-handler.js";
 import { CaptureAdmissionError, MemoryCaptureAdmission } from "./capture-admission.js";
 
@@ -27,7 +27,7 @@ function harness(overrides: Partial<CaptureHandlerDependencies> = {}) {
 }
 
 function request(body: unknown = { url: "https://example.com" }): Request {
-  return new Request("https://snapforge.test/api/capture", { method: "POST", body: JSON.stringify(body) });
+  return new Request("https://screenshotapi.test/api/capture", { method: "POST", body: JSON.stringify(body) });
 }
 
 test("unauthenticated captures never reach admission, credits, or rendering", async () => {
@@ -38,7 +38,7 @@ test("unauthenticated captures never reach admission, credits, or rendering", as
 
 for (const limited of [true, false]) test(`admission ${limited ? "limit" : "outage"} returns retry advice before body or billing`, async () => {
   const { POST, calls } = harness({ acquire: async (_, id) => { throw new CaptureAdmissionError(id, limited, 7); } });
-  const response = await POST(new Request("https://snapforge.test", { method: "POST", body: "invalid JSON" }));
+  const response = await POST(new Request("https://screenshotapi.test", { method: "POST", body: "invalid JSON" }));
   assert.equal(response.status, limited ? 429 : 503);
   assert.equal(response.headers.get("retry-after"), "7");
   assert.equal(response.headers.get("cache-control"), "no-store");
@@ -49,7 +49,7 @@ for (const limited of [true, false]) test(`admission ${limited ? "limit" : "outa
 for (const body of ["invalid JSON", JSON.stringify({ url: "https://example.com", format: "bad" }), "x".repeat(MAX_CAPTURE_REQUEST_BYTES + 1)]) {
   test(`invalid input (${body.length} bytes) releases admission without reserving credits`, async () => {
     const { POST, calls } = harness();
-    const response = await POST(new Request("https://snapforge.test", { method: "POST", body }));
+    const response = await POST(new Request("https://screenshotapi.test", { method: "POST", body }));
     assert.equal(response.status, 400);
     assert.deepEqual(calls.map((call) => call.name), ["acquire", "release"]);
   });
@@ -122,7 +122,7 @@ test("optional preparation failure does not discard a successful capture or bypa
 
 for (const code of ["invalid_request", "render_incomplete", "render_timeout"] as const) {
   test(`${code} refunds reserved credits and releases admission`, async () => {
-    const { POST, calls } = harness({ getEngine: async () => ({ capture: async () => { throw new SnapforgeError({ code, message: "Capture rejected", requestId: "engine-id" }); } }) });
+    const { POST, calls } = harness({ getEngine: async () => ({ capture: async () => { throw new ScreenshotAPIError({ code, message: "Capture rejected", requestId: "engine-id" }); } }) });
     const response = await POST(request());
     assert.equal(response.status, code === "invalid_request" ? 400 : code === "render_timeout" ? 504 : 502);
     assert.equal((await response.json()).error.request_id, response.headers.get("x-request-id"));

@@ -4,20 +4,20 @@ import { Pool } from "pg";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { config as loadEnv } from "dotenv";
-import type { CaptureFinalization, CaptureLifecycleRepository, CaptureSubmissionRepository, JobSnapshot, SealedCaptureSubmission } from "@snapforge/queue";
-import { CaptureRequestConflictError, type WebhookOutboxRepository, type WebhookClaim } from "@snapforge/queue";
-import { PLAN_CATALOG, allocateCaptureCredits, type PlanName } from "@snapforge/queue";
+import type { CaptureFinalization, CaptureLifecycleRepository, CaptureSubmissionRepository, JobSnapshot, SealedCaptureSubmission } from "@screenshotapi/queue";
+import { CaptureRequestConflictError, type WebhookOutboxRepository, type WebhookClaim } from "@screenshotapi/queue";
+import { PLAN_CATALOG, allocateCaptureCredits, type PlanName } from "@screenshotapi/queue";
 import { accounts, apiKeys, captureLogs, captureReservations, webhookOutbox, dodoWebhookEvents, dodoCreditPayments, monthlyUsage, schema, subscriptions } from "./schema.js";
 import { retryBillingConnection } from "./connection-retry.js";
 
 const moduleDirectory = path.dirname(fileURLToPath(import.meta.url));
 loadEnv({ path: path.resolve(moduleDirectory, "../../../.env") });
 
-const globalDatabase = globalThis as typeof globalThis & { __snapforgePool?: Pool; __snapforgeDb?: ReturnType<typeof drizzle<typeof schema>> };
+const globalDatabase = globalThis as typeof globalThis & { __screenshotapiPool?: Pool; __screenshotapiDb?: ReturnType<typeof drizzle<typeof schema>> };
 const connectionString = process.env.DATABASE_URL;
-if (!connectionString) throw new Error("DATABASE_URL must be configured for @snapforge/database");
+if (!connectionString) throw new Error("DATABASE_URL must be configured for @screenshotapi/database");
 
-export const pool = globalDatabase.__snapforgePool ??= new Pool({
+export const pool = globalDatabase.__screenshotapiPool ??= new Pool({
   connectionString,
   max: Number(process.env.DATABASE_POOL_MAX ?? 5),
   idleTimeoutMillis: Number(process.env.DATABASE_POOL_IDLE_TIMEOUT_MS ?? 30_000),
@@ -26,7 +26,7 @@ export const pool = globalDatabase.__snapforgePool ??= new Pool({
   allowExitOnIdle: process.env.NODE_ENV !== "production",
 });
 if (pool.listenerCount("error") === 0) pool.on("error", () => { console.warn("Database idle connection closed; the pool will reconnect on demand"); });
-export const db = globalDatabase.__snapforgeDb ??= drizzle(pool, { schema });
+export const db = globalDatabase.__screenshotapiDb ??= drizzle(pool, { schema });
 
 export interface ApiKeyRow {
   id: string;
@@ -127,7 +127,7 @@ export async function findApiKeyByHash(keyHash: string) {
   return { id: key.id, billing_account_id: key.userId, scopes: key.scopes, active: true };
 }
 
-export type { PlanName } from "@snapforge/queue";
+export type { PlanName } from "@screenshotapi/queue";
 
 function currentPeriodStart(now = new Date()) {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));

@@ -1,5 +1,5 @@
 import type { Page } from "playwright";
-import { SnapforgeError, type CaptureOptions } from "@snapforge/contracts";
+import { ScreenshotAPIError, type CaptureOptions } from "@screenshotapi/contracts";
 import type { SettlementBudget } from "./settlement.js";
 import { sleep } from "./util.js";
 
@@ -71,7 +71,7 @@ export async function ensureCaptureQuality(
     if (remaining <= 0) break;
     await sleep(Math.min(250, remaining));
   } while (true);
-  throw new SnapforgeError({
+  throw new ScreenshotAPIError({
     code: "render_incomplete",
     message: "Page did not satisfy capture quality requirements",
     requestId,
@@ -84,7 +84,7 @@ export function ensureOutputQuality(output: { height: number; buffer: Buffer }, 
     ...(options.min_capture_height && output.height < options.min_capture_height ? ["min_capture_height"] : []),
     ...(options.min_capture_bytes && output.buffer.length < options.min_capture_bytes ? ["min_capture_bytes"] : []),
   ];
-  if (failures.length) throw new SnapforgeError({
+  if (failures.length) throw new ScreenshotAPIError({
     code: "render_incomplete",
     message: "Capture output did not satisfy minimum dimensions or size",
     requestId,

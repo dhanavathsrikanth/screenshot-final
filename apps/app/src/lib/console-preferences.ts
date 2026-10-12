@@ -1,4 +1,4 @@
-import { DEVICE_PRESETS } from "@snapforge/contracts";
+import { DEVICE_PRESETS } from "@screenshotapi/contracts";
 import type { PlaygroundState } from "./playground";
 
 export interface ConsolePrefs {

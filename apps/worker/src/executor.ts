@@ -1,7 +1,7 @@
-import { SnapforgeError, type CaptureOptions } from "@snapforge/contracts";
-import type { SnapforgeEngine, CaptureOutcome } from "@snapforge/engine";
-import type { CaptureStore } from "@snapforge/storage";
-import type { CaptureContext, CaptureExecutor } from "@snapforge/queue";
+import { ScreenshotAPIError, type CaptureOptions } from "@screenshotapi/contracts";
+import type { ScreenshotAPIEngine, CaptureOutcome } from "@screenshotapi/engine";
+import type { CaptureStore } from "@screenshotapi/storage";
+import type { CaptureContext, CaptureExecutor } from "@screenshotapi/queue";
 
 /**
  * Wires the headless capture engine to the byte store so a BullMQ job turns into
@@ -12,7 +12,7 @@ import type { CaptureContext, CaptureExecutor } from "@snapforge/queue";
  * swap the engine or the store independently.
  */
 export function createWorkerExecutor(deps: {
-  engine: SnapforgeEngine;
+  engine: ScreenshotAPIEngine;
   store: CaptureStore;
   logger?: (level: "debug" | "info" | "warn" | "error", message: string, fields?: Record<string, unknown>) => void;
 }): CaptureExecutor {
@@ -36,20 +36,20 @@ export function createWorkerExecutor(deps: {
         duration_ms: Date.now() - started,
         url: options.url,
         reason,
-        ...(error instanceof SnapforgeError ? {
+        ...(error instanceof ScreenshotAPIError ? {
           code: error.code,
           phases_ms: (error.details?.timings as { phases_ms?: Record<string, number> } | undefined)?.phases_ms,
         } : {}),
       });
-      if (error instanceof SnapforgeError && error.code === "render_timeout") {
-        throw new SnapforgeError({ code: error.code, message: error.message, requestId: error.requestId, retriable: false, details: error.details });
+      if (error instanceof ScreenshotAPIError && error.code === "render_timeout") {
+        throw new ScreenshotAPIError({ code: error.code, message: error.message, requestId: error.requestId, retriable: false, details: error.details });
       }
       throw error;
     }
 
     const renderedAt = Date.now();
     const stored = outcome.data.cached ? outcome.data : await deps.store.save(options, outcome.data, outcome.buffer);
-    if (!stored.cdn_url) throw new SnapforgeError({
+    if (!stored.cdn_url) throw new ScreenshotAPIError({
       code: "internal_error",
       message: "Screenshot delivery URL is unavailable; capture was not delivered",
       requestId: context.workerId,

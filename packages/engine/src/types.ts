@@ -1,4 +1,4 @@
-import type { CaptureSuccessData } from "@snapforge/contracts";
+import type { CaptureSuccessData } from "@screenshotapi/contracts";
 import { resolvePolicy, type ConcurrencyPolicy } from "./cpu.js";
 import type { PoolBudget, PoolHealth } from "./pool.js";
 import type { CaptureTimings } from "./timings.js";
