@@ -1,0 +1,90 @@
+---
+title: "Make your first capture"
+description: "Send a capture request, handle its result, and download the generated file."
+---
+
+## Before you start
+
+Create a key in the [dashboard](https://app.screenshotapi.tech) with `screenshot:write` and `jobs:read` scopes. Your account needs enough available credits for the requested output.
+
+Set your private API key in your server or terminal:
+
+```bash
+export SCREENSHOTAPI_API_KEY="YOUR_SECRET_API_KEY"
+```
+
+The hosted REST API base URL is `https://api.screenshotapi.tech`. The requests below already include it. Replace `YOUR_SECRET_API_KEY` with your own key; never commit it or expose it in browser code. On PowerShell, set `$env:SCREENSHOTAPI_API_KEY="YOUR_SECRET_API_KEY"` and use `curl.exe` for cURL commands.
+
+## Submit a URL
+
+```bash
+curl --request POST "https://api.screenshotapi.tech/v1/screenshot" \
+  --header "Authorization: Bearer $SCREENSHOTAPI_API_KEY" \
+  --header "Content-Type: application/json" \
+  --header "Idempotency-Key: first-capture-001" \
+  --data '{"url":"https://example.com","format":"png"}'
+```
+
+This captures the initial viewport. The default viewport is 1280 × 720 CSS pixels at a scale factor of 2, so the default image is 2560 × 1440 output pixels. PNG is lossless. If you omit `format`, the default is WebP.
+
+Use a new idempotency key for each new capture; reuse the same key only to retry this exact request with the same API key.
+
+## Handle both successful HTTP responses
+
+**`200 OK`** means the capture is complete. An illustrative response looks like:
+
+```json
+{
+  "ok": true,
+  "request_id": "request-example",
+  "data": {
+    "url": "https://example.com",
+    "final_url": "https://example.com/",
+    "format": "png",
+    "width": 2560,
+    "height": 1440,
+    "bytes": 84210,
+    "duration_ms": 1240,
+    "cached": false,
+    "blocked_requests": 0,
+    "cdn_url": "https://YOUR_ARTIFACT_HOST/capture.png"
+  }
+}
+```
+
+The actual URL, timing, and byte count vary. Download `data.cdn_url`; `data.url` is the original target, not the screenshot file.
+
+**`202 Accepted`** means the service accepted the request and has not yet returned its terminal result:
+
+```json
+{
+  "ok": true,
+  "request_id": "request-example",
+  "data": {
+    "job_id": "job-example",
+    "state": "waiting",
+    "poll_url": "/v1/jobs/job-example"
+  }
+}
+```
+
+Poll the returned path on the same API origin:
+
+```bash
+curl "https://api.screenshotapi.tech/v1/jobs/job-example" \
+  --header "Authorization: Bearer $SCREENSHOTAPI_API_KEY"
+```
+
+Wait until `data.state` is `completed` or `failed`. For a completed job, read `data.result.data.cdn_url`. For a failed job, read `data.result.error`. The outer `ok` on a job lookup describes the lookup, not whether the capture succeeded.
+
+## Download the capture
+
+```bash
+curl --fail --location "ARTIFACT_URL_FROM_RESPONSE" --output capture.png
+```
+
+Use the artifact URL returned by the API. Do not send your ScreenshotAPI authorization header to the artifact host. Save the file in your own storage if you need long-term access; capture caching is not an archival guarantee.
+
+## Next steps
+
+Use the complete [Node.js](/integration/node) or [Python](/integration/python) example to automate polling and download. Learn how to [capture full pages](/capture/full-page), [wait for application content](/capture/readiness), and [receive completion webhooks](/integration/webhooks).

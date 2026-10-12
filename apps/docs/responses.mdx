@@ -1,0 +1,46 @@
+---
+title: "Responses and artifact delivery"
+description: "Distinguish HTTP success, capture completion, and downloadable output."
+---
+
+The capture API returns JSON. It does not return raw image or PDF bytes from `POST /v1/screenshot`.
+
+## Three outcomes for a submission
+
+| HTTP response | Meaning | Your next action |
+| --- | --- | --- |
+| `200`, `ok: true` | A completed capture is available in `data`. | Download `data.cdn_url`. |
+| `202`, `ok: true` | Work is accepted; `data` contains `job_id`, `state`, and `poll_url`. | Poll or await a webhook. |
+| Error status, `ok: false` | Submission or rendering failed, or the submission outcome needs recovery. | Inspect `error.code`, `error.retriable`, and `error.details`. |
+
+With a job lookup, HTTP `200` and outer `ok: true` mean the job was retrieved. Inspect `data.state` and `data.result.ok` to determine the capture outcome.
+
+## Capture metadata
+
+| Field | Meaning |
+| --- | --- |
+| `url` | Requested target URL. |
+| `final_url` | Target URL after navigation and redirects. |
+| `cdn_url` | Downloadable artifact URL. Treat signed URLs as bearer credentials. |
+| `format` | Output format. |
+| `width`, `height` | Output dimensions. Image dimensions include device scale. |
+| `bytes` | Encoded artifact size in bytes. |
+| `duration_ms` | Reported capture duration in milliseconds; not a promised end-to-end latency. |
+| `cached` | Whether the capture reused cached output. |
+| `blocked_requests` | Count of requests blocked during rendering. |
+| `region`, `egress_country` | Optional region and observed egress metadata. |
+| `render_diagnostics` | Optional algorithm, section count, scale, stopping reason, and truncation metadata. |
+
+`data_url` is optional in the shared engine contract. Hosted REST integrations should use `cdn_url`; do not rely on embedded base64 output.
+
+## Diagnostics and completeness
+
+When `render_diagnostics` is present, check `truncated` before assuming a long page was fully captured. `algorithm` identifies `by_sections`, `native`, or `element`; `sections` records the capture section count. `scroll_height` and `device_scale_factor` help interpret output size.
+
+Validate the returned metadata against your application's needs. For example, a visual monitoring job may require known content and a minimum output height. Configure [readiness and quality checks](/capture/readiness) rather than treating every rendered page as the expected page.
+
+## Artifact lifetime
+
+`cache_ttl` controls reuse of an existing capture; it does not promise permanent artifact storage or a particular URL lifetime. Download completed artifacts promptly. Store your own copy for reports, archives, or audit evidence.
+
+API JSON responses use `Cache-Control: no-store`. Do not use HTTP response caching as a substitute for job tracking or the capture cache.

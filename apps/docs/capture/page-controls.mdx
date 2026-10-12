@@ -1,0 +1,56 @@
+---
+title: "Content filters and element captures"
+description: "Remove distracting content, modify the page, or capture one visible element."
+---
+
+## Content filters
+
+`block_ads`, `block_cookie_banners`, `block_chats`, and `block_trackers` all default to true. Set individual options to false when the original page content is part of your capture requirement.
+
+```json
+{
+  "url": "https://example.com",
+  "block_cookie_banners": false,
+  "block_ads": false,
+  "block_chats": false,
+  "block_trackers": false
+}
+```
+
+Filters use detection and blocking rules. They may not recognize every banner or widget, and blocking third-party requests can affect a site's functionality. Use explicit selectors when you control the page or know its structure.
+
+## Hide, remove, or restyle elements
+
+```json
+{
+  "url": "https://example.com",
+  "hide_selectors": [".floating-toolbar"],
+  "remove_selectors": [".promo-modal"],
+  "custom_css": "main { max-width: 960px; }"
+}
+```
+
+`hide_selectors` suppresses matching elements. `remove_selectors` removes matching nodes from the document, which can change layout. `custom_css` injects stylesheet content. `custom_js` executes supplied JavaScript in the page; use it for a deliberate page adjustment and validate the resulting output.
+
+Page modifiers can change the target's layout or behavior. Keep the unmodified capture as a reference when tuning them.
+
+## Capture an element
+
+```json
+{
+  "url": "https://example.com",
+  "selector": "main",
+  "wait_for_selector": "main",
+  "format": "png"
+}
+```
+
+`selector` targets the first matching visible element. If no visible element is available, the engine returns `invalid_request`. `wait_for_selector` controls readiness; it is separate from selecting the output region.
+
+Element targeting is supported for PNG, JPEG, and WebP. PDF with `selector` returns `unsupported_option`. Avoid combining element targeting with full-page options unless you specifically need to test their interaction.
+
+## Request headers
+
+`headers` is a string-to-string object forwarded to the target browser context. For example, an authorized internal preview service on a public origin may require a custom header.
+
+Your ScreenshotAPI API key authenticates the API request only. Do not put it in the target `headers` object. Keep target credentials server-side and ensure you are authorized to access the destination.

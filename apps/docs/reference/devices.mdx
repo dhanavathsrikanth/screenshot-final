@@ -1,0 +1,20 @@
+---
+title: "Device preset reference"
+description: "Supported device identifiers, layout dimensions, and output scale."
+---
+
+Use these identifiers in the `device` option. A preset takes precedence over an explicit `viewport`. Browser emulation does not run a physical device's native browser.
+
+| Identifier | CSS viewport | Scale | Mobile | Touch |
+| --- | --- | --- | --- | --- |
+| `desktop_standard` | 1280 × 720 | 2 | false | false |
+| `desktop_hd` | 1920 × 1080 | 2 | false | false |
+| `desktop_2k` | 2560 × 1440 | 2 | false | false |
+| `desktop_4k` | 3840 × 2160 | 2 | false | false |
+| `iphone_15_pro` | 393 × 852 | 3 | true | true |
+| `iphone_15_pro_max` | 430 × 932 | 3 | true | true |
+| `iphone_17_pro_max` | 440 × 956 | 3 | true | true |
+| `pixel_8` | 412 × 915 | 2.625 | true | true |
+| `ipad_pro_11` | 834 × 1194 | 2 | true | true |
+
+For explicit viewport settings, see [viewports and devices](/capture/viewport).

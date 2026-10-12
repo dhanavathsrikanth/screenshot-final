@@ -1,0 +1,27 @@
+---
+title: "Error code reference"
+description: "Default HTTP mapping and retry behavior for every capture error code."
+---
+
+These are contract defaults. The gateway can override a status for admission or service-availability failures, and an individual error can override its retry flag. Use the actual response's `error.retriable`.
+
+| Code | Default HTTP status | Default retriable |
+| --- | --- | --- |
+| `invalid_request` | 400 | false |
+| `idempotency_conflict` | 409 | false |
+| `unauthorized` | 401 | false |
+| `forbidden` | 403 | false |
+| `quota_exceeded` | 429 | false |
+| `rate_limited` | 429 | true |
+| `render_timeout` | 504 | true |
+| `render_incomplete` | 502 | true |
+| `navigation_failed` | 502 | true |
+| `blocked_by_target` | 451 | false |
+| `target_error` | 502 | false |
+| `render_crashed` | 500 | true |
+| `internal_error` | 500 | true |
+| `unsupported_option` | 400 | false |
+| `egress_unavailable` | 503 | true |
+| `egress_mismatch` | 502 | true |
+
+Retryable describes whether retrying may help; it does not guarantee success or prevent duplicate submissions. Before replaying an uncertain request, use [idempotent recovery](/integration/idempotency). For diagnosis, see [troubleshooting](/errors).

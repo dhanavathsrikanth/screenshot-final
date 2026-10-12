@@ -1,0 +1,92 @@
+---
+title: "Asynchronous jobs"
+description: "Submit work once, track its state, and handle capture failures independently of HTTP errors."
+---
+
+Use asynchronous execution when you need to capture long pages, process batches, or avoid holding a request open while rendering.
+
+## Submit a background capture
+
+```bash
+curl --request POST "https://api.screenshotapi.tech/v1/screenshot" \
+  --header "Authorization: Bearer $SCREENSHOTAPI_API_KEY" \
+  --header "Content-Type: application/json" \
+  --header "Idempotency-Key: report-2026-10-12-001" \
+  --data '{"url":"https://example.com","full_page":true,"sync":false}'
+```
+
+You can also use `POST /v1/screenshot?mode=async`. The query override selects asynchronous mode even if the body contains `sync: true`.
+
+An unfinished submission returns HTTP 202 with a job ID and a relative poll URL. A reused request that has already completed can return its terminal capture result immediately, so handle both 200 and 202.
+
+## Poll the job
+
+Use the submitting API key with `jobs:read` scope:
+
+```bash
+curl "https://api.screenshotapi.tech/v1/jobs/YOUR_JOB_ID" \
+  --header "Authorization: Bearer $SCREENSHOTAPI_API_KEY"
+```
+
+Poll about once per second initially, then increase the interval if the job remains pending. Apply an overall deadline appropriate to your workflow and respect `Retry-After` on 429 responses. Polling requests themselves are rate limited.
+
+| State | Meaning | Action |
+| --- | --- | --- |
+| waiting, prioritized | Queued for execution. | Keep waiting. |
+| active | Worker is processing the capture. | Keep waiting. |
+| delayed | Scheduled for later work or a retry. | Keep waiting. |
+| paused | Queue processing is paused. | Wait within your deadline. |
+| unknown | State is currently unavailable, including during recovery. | Reconcile the existing job; do not assume failure. |
+| completed | Terminal successful capture. | Read `result.data.cdn_url`. |
+| failed | Terminal capture failure. | Read `result.error`. |
+
+A successful lookup has this shape:
+
+```json
+{
+  "ok": true,
+  "request_id": "lookup-request-example",
+  "data": {
+    "id": "job-example",
+    "state": "completed",
+    "mode": "async",
+    "request_id": "capture-request-example",
+    "progress": 100,
+    "attempts_made": 1,
+    "attempt_budget": 3,
+    "enqueued_at": 1791763200000,
+    "webhook": null,
+    "result": {
+      "request_id": "capture-request-example",
+      "mode": "async",
+      "ok": true,
+      "duration_ms": 1800,
+      "attempts_made": 1,
+      "enqueued_at": 1791763200000,
+      "completed_at": 1791763201800,
+      "data": {
+        "url": "https://example.com",
+        "final_url": "https://example.com/",
+        "format": "webp",
+        "width": 2560,
+        "height": 4800,
+        "bytes": 142000,
+        "duration_ms": 1800,
+        "cached": false,
+        "blocked_requests": 0,
+        "cdn_url": "https://YOUR_ARTIFACT_HOST/capture.webp"
+      }
+    }
+  }
+}
+```
+
+Values are illustrative. Timestamps use Unix milliseconds. Treat progress as informational; it can be a number, string, or null. Do not infer completion from progress alone.
+
+## Timeouts and recovery
+
+A client timeout stops your client from waiting. It does not cancel the capture. Keep the job ID or idempotency key and look up the original work before starting another capture.
+
+If submission returns an error with `error.details.job_id`, reconcile that job first. With an idempotency key, use [request recovery](/integration/idempotency). Download results promptly; job and artifact retention are not permanent-storage guarantees.
+
+For background notification, configure [webhooks](/integration/webhooks). The [Node.js](/integration/node) and [Python](/integration/python) examples handle both direct completion and job polling.

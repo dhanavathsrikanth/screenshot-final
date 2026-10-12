@@ -1,5 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { Hono } from "hono";
+import { bodyLimit } from "hono/body-limit";
+import { handleMcpRequest } from "./mcp.js";
 import { ScreenshotAPIError, type ErrorCode } from "@screenshotapi/contracts";
 import { CaptureService, CaptureAdmissionError, HotCache, RedisCaptureAdmission, createRedisCaptureBilling, readCaptureRequest } from "@screenshotapi/queue";
 import type { CaptureBilling, CaptureDispatcher, CaptureQueue, CaptureSubmissionCodec, WebhookOutboxRepository } from "@screenshotapi/queue";
@@ -79,7 +81,8 @@ export function createGateway(deps: GatewayDependencies) {
     }
   });
 
-  app.use("/v1/*", async (c, next) => {
+  app.use("*", async (c, next) => {
+    if (!c.req.path.startsWith("/v1/") && c.req.path !== "/mcp") return next();
     const requestId = c.get("requestId");
     const match = /^Bearer (sf_live_[A-Za-z0-9_-]{20,})$/.exec(c.req.header("authorization") ?? "");
     if (!match) fail("unauthorized", "A valid Bearer API key is required", requestId);
@@ -105,7 +108,8 @@ export function createGateway(deps: GatewayDependencies) {
     await next();
   });
 
-  app.use("/v1/*", async (c, next) => {
+  app.use("*", async (c, next) => {
+    if (!c.req.path.startsWith("/v1/") && c.req.path !== "/mcp") return next();
     if (c.req.method === "POST" && c.req.path === "/v1/screenshot") return next();
     const now = Date.now();
     const result = await deps.redis.eval(rateScript, 1, `snapforge:rate:${c.var.apiKey.id}`, now, rate.windowMs, rate.requests, `${now}:${randomUUID()}`) as [number, number | string];
@@ -164,6 +168,20 @@ export function createGateway(deps: GatewayDependencies) {
       fail("idempotency_conflict", "Delivery is unavailable, already pending, or its generation changed", c.var.requestId);
     }
     return c.json({ ok: true, data: { job_id: c.req.param("id"), state: "pending" } }, 202);
+  });
+
+  app.use("/mcp", bodyLimit({ maxSize: 262144, onError: (c) => c.json({ error: "MCP request exceeds 256 KiB" }, 413) }));
+  app.all("/mcp", async (c) => {
+    const origin = c.req.header("origin");
+    if (origin && origin !== new URL(c.req.url).origin && origin !== "https://app.screenshotapi.tech") {
+      return c.json({ error: "Origin is not allowed" }, 403);
+    }
+    return handleMcpRequest(c.req.raw, async (path, init) => {
+      const headers = new Headers(init?.headers);
+      headers.set("authorization", c.req.header("authorization")!);
+      headers.set("x-request-id", c.var.requestId);
+      return app.request(path, { ...init, headers });
+    });
   });
 
   return app;

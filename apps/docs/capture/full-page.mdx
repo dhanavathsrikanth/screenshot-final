@@ -1,0 +1,43 @@
+---
+title: "Full-page captures"
+description: "Capture below the fold and understand the limits of long or dynamic pages."
+---
+
+Set `full_page: true` to capture the scrollable page rather than only the initial viewport.
+
+```json
+{
+  "url": "https://example.com",
+  "full_page": true,
+  "format": "png",
+  "full_page_algorithm": "by_sections",
+  "full_page_scroll_delay": 300,
+  "reduce_motion": true
+}
+```
+
+Full-page images cost 2 credits on successful completion. PDF output costs 3 credits whether or not `full_page` is enabled.
+
+## Select an algorithm
+
+`by_sections` is the default. The engine scrolls downward, captures visible sections, and assembles the output. This lets it capture content that appears during scrolling.
+
+`native` uses the engine's native full-page capture path after scroll preparation. Test both algorithms against your target when sticky navigation or scroll-dependent effects affect the result.
+
+## Control scrolling
+
+| Option | Behavior |
+| --- | --- |
+| `full_page_scroll_delay` | Optional delay between scroll steps, 0–5000 ms. |
+| `full_page_scroll_by` | Optional scroll step, 120–2160 CSS pixels. |
+| `reduce_motion` | Defaults to true. Reduces motion during capture. |
+
+More waiting can help a site load lazy content, but also increases work. Start with defaults and adjust only when the output shows missing content. Use a readiness selector when the application has a dependable loaded state.
+
+## Detect truncated output
+
+Infinite-scroll sites do not have a stable end. The engine uses deployment-configured height and scroll limits so a capture can terminate. Inspect `render_diagnostics.truncated` and `stopped_reason` when they are returned. A successful artifact can still be shorter than the target's eventual infinite document.
+
+For a fixed report, use `min_capture_height` or required text checks to enforce expectations. For a feed, define a finite section to capture with `selector` instead of assuming that all future items can be included.
+
+Full-page capture can change page state as it scrolls. If exact animation frames matter, validate the output on your page with `reduce_motion` configured appropriately.

@@ -114,6 +114,22 @@ export default function ApiKeysPage() {
         description="Keys authenticate every request to the capture API. Store them in your secret manager — the secret is shown once, at creation."
       />
 
+      <Card>
+        <CardHeader title="Connect your AI agent" description="Let your agent capture pages through your ScreenshotAPI account." />
+        <div className="space-y-4 p-5 text-sm text-ink-2">
+          <ol className="list-decimal space-y-2 pl-5">
+            <li>Create a dedicated agent key below. It allows captures and job tracking.</li>
+            <li>In an MCP client that supports HTTP and custom headers, add <code className="text-accent-ink">https://api.screenshotapi.tech/mcp</code>.</li>
+            <li>Add the header <code className="text-accent-ink">Authorization: Bearer YOUR_AGENT_KEY</code>, then reconnect your agent.</li>
+          </ol>
+          <p>Agent captures use your plan credits and limits. Revoke its dedicated key here to stop access. Share the key only with the trusted client connection settings.</p>
+          <Button disabled={busy || loading} onClick={() => void issueKey({ name: "AI agent", scopes: ["screenshot:write", "jobs:read"] })}>
+            <Icon name="key" className="size-4" /> Create agent key
+          </Button>
+          <a className="ml-4 text-accent-ink underline underline-offset-4" href="/docs/mcp">Connection guide</a>
+        </div>
+      </Card>
+
       {issued ? (
         <Card className="border-accent/50 p-5">
           <div className="flex items-start gap-3">
@@ -134,6 +150,11 @@ export default function ApiKeysPage() {
             >
               <Icon name="copy" className="size-4" />
               Copy &amp; close
+            </Button>
+            <Button variant="ghost" onClick={() => void navigator.clipboard.writeText(JSON.stringify({
+              mcpServers: { screenshotapi: { url: "https://api.screenshotapi.tech/mcp", headers: { Authorization: `Bearer ${issued}` } } },
+            }, null, 2)).catch(() => setError("Could not copy MCP settings. Copy the key and configure the connection manually."))}>
+              <Icon name="copy" className="size-4" /> Copy MCP settings
             </Button>
           </div>
         </Card>

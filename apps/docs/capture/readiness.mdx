@@ -1,0 +1,49 @@
+---
+title: "Page readiness and quality checks"
+description: "Wait for meaningful content and reject captures that fail your expectations."
+---
+
+A browser load event does not mean that an application's data has appeared. Configure readiness around something observable in the target page.
+
+```json
+{
+  "url": "https://example.com/report",
+  "wait_until": "domcontentloaded",
+  "wait_for_selector": "[data-report-ready]",
+  "wait_for_content": true,
+  "timeout": 45000,
+  "fail_if_content_missing": ["Report summary"],
+  "fail_if_content_contains": ["Something went wrong"]
+}
+```
+
+The selector and text above are examples. Replace them with markers present on your target.
+
+## Timing controls
+
+| Option | Default | Meaning |
+| --- | --- | --- |
+| `wait_until` | `load` | Navigation milestone: `load`, `domcontentloaded`, or `networkidle`. |
+| `wait_for_idle` | true | Enables additional network-idle settlement. |
+| `wait_for_selector` | Unset | Waits for a CSS-selected readiness element. |
+| `wait_for_content` | false | Enables content-readiness waiting. |
+| `delay` | 0 | Extra wait after settlement, 0–30000 ms. |
+| `timeout` | 30000 | Capture/navigation budget, 1000–60000 ms. |
+
+The capture timeout does not define the lifetime of the HTTP connection. A queued or slow capture can return `202` and complete later. Give your client a separate overall job deadline.
+
+Prefer a specific readiness selector over a large unconditional delay. Pages with continuous network traffic may need a selector with `wait_for_idle: false`.
+
+## Reject unusable output
+
+| Option | Validation |
+| --- | --- |
+| `fail_if_incomplete` | Rejects detected incomplete or loading-shell output. |
+| `fail_if_content_missing` | Required text markers; at most 32 strings, each 1–500 characters after trimming. |
+| `fail_if_content_contains` | Text markers that should not appear; the same list limits apply. |
+| `min_capture_height` | Positive integer minimum output height. |
+| `min_capture_bytes` | Positive integer minimum encoded output size. |
+
+These are guardrails for known expectations, not a guarantee that every visual defect can be detected. A rejection returns `render_incomplete` rather than reporting a usable successful artifact.
+
+If a required marker fails, first check that it appears in the actual target page and is compatible with your locale and content filters. Increase waiting only when the page genuinely needs more time.

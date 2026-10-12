@@ -1,0 +1,12 @@
+{
+  "name": "@screenshotapi/docs",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "generate": "node scripts/generate-reference.mjs",
+    "dev": "pnpm dlx mint@4.2.1006 dev",
+    "validate": "pnpm dlx mint@4.2.1006 validate",
+    "links": "pnpm dlx mint@4.2.1006 broken-links",
+    "check": "node scripts/check-content.mjs"
+  }
+}

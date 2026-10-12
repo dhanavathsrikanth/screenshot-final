@@ -1,0 +1,47 @@
+---
+title: "Credits, caching, and limits"
+description: "Budget capture costs and handle admission limits without duplicating work."
+---
+
+## Capture cost
+
+| Requested output | Credits on success |
+| --- | --- |
+| Viewport or element image | 1 |
+| Full-page image | 2 |
+| PDF, including full-page PDF | 3 |
+
+Credits are reserved before new work is admitted. A terminal successful capture commits the reservation; failure releases it. A pending reservation can temporarily reduce your available balance while the job runs or recovers. Settlement is handled by the service; your client does not need to poll to trigger normal background completion.
+
+When both balances exist, the account allocator uses monthly credits first, then prepaid credits. Consult your dashboard for the active plan, available balance, and purchase terms. Plan pricing and launch availability are separate from the capture API contract.
+
+## Caching
+
+`cache_ttl` is a nonnegative integer in seconds, defaulting to 3600. Set it to 0 when you require a fresh render:
+
+```json
+{
+  "url": "https://example.com",
+  "cache_ttl": 0
+}
+```
+
+A cache hit is identified by `cached: true`. Cache reuse depends on normalized capture settings and whether a matching artifact is available; it is not a freshness check against the target site's contents.
+
+Do not assume every cache hit is free. Some service configurations can return a hot-cache result before reservation; queued submissions, including the normal durable production path, reserve the capture cost and settle on success even if output was reused. Budget by the requested capture cost unless your deployment explicitly documents a different billing policy.
+
+`store` is accepted by the shared capture contract, but `store: false` does not make hosted REST output inline-only. The hosted service requires a downloadable artifact URL. Save your own copy for permanent retention.
+
+## Rate and concurrency limits
+
+Capture admission is coordinated across an account, including requests from different API keys and the dashboard. Changing keys does not create independent capture capacity. Other authenticated API requests also have per-key HTTP rate limiting.
+
+`429 rate_limited` means you should back off. Read `Retry-After` when present and use exponential backoff with jitter. Limit active submissions on your side instead of sending an unbounded batch.
+
+`429 quota_exceeded` means there are insufficient available credits. Add credits or wait for your allowance reset; repeating the request immediately will not fix it.
+
+Exact limits are deployment-specific. Do not use a repository default as a purchased-plan guarantee. Capture request bodies are limited to 256 KiB, and individual option limits are listed in the API reference.
+
+## Retry policy
+
+For a lost submission response, recover the same request using [idempotency](/integration/idempotency). For a known terminal failure, inspect the error before deliberately submitting another capture. Avoid automatic retries for invalid requests, missing scopes, or blocked targets.

@@ -1,0 +1,46 @@
+---
+title: "Language, theme, and region"
+description: "Control browser preferences and understand what changes the target's geographic response."
+---
+
+## Language, timezone, and theme
+
+```json
+{
+  "url": "https://example.com",
+  "locale": "en-GB",
+  "timezone": "Europe/London",
+  "color_scheme": "dark"
+}
+```
+
+`locale` controls browser language preferences. `timezone` uses an IANA timezone identifier. `color_scheme` accepts `light`, `dark`, or `no-preference`. `dark_mode: true` is also available for dark preference emulation.
+
+A dark preference affects pages that respond to it; it does not recolor every site. Locale and timezone alone do not change your network IP or guarantee geographically restricted content.
+
+## Region and proxy
+
+`region` selects a country-aligned locale/timezone bundle and an expected egress country. A matching network route must already exist, or you must supply a compatible proxy.
+
+```json
+{
+  "url": "https://example.com",
+  "region": "gb",
+  "verify_egress": true,
+  "proxy": {
+    "server": "http://YOUR_PUBLIC_PROXY_HOST:8080",
+    "username": "YOUR_PROXY_USERNAME",
+    "password": "YOUR_PROXY_PASSWORD"
+  }
+}
+```
+
+Replace the proxy fields with credentials and a public proxy endpoint you operate or are authorized to use. The region selector is not a promise of a managed proxy service.
+
+Supported region identifiers: `us`, `ca`, `gb`, `ie`, `de`, `fr`, `es`, `it`, `nl`, `sg`, `au`, `jp`, `kr`, `in`, `br`, `mx`, `za`, and `ae`.
+
+`verify_egress` defaults to true. With a requested region, verification checks the observed country before navigating the target. Verification can fail with `egress_unavailable` or `egress_mismatch`. Explicit `locale` and `timezone` override the bundle's corresponding values.
+
+## Network destinations
+
+Hosted captures and proxy endpoints must satisfy the public-network policy. Localhost, private networks, and metadata services are not supported capture destinations. Region targeting also does not guarantee passage through access controls or bot challenges; see [blocked targets](/errors#blocked-by-target).

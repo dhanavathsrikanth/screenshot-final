@@ -1,0 +1,43 @@
+---
+title: "Idempotency and request recovery"
+description: "Retry an uncertain submission without creating duplicate captures."
+---
+
+Send an `Idempotency-Key` header when a network retry must refer to the original capture.
+
+```http
+Idempotency-Key: invoice-preview-4821
+```
+
+The key must contain 1–128 ASCII letters, digits, dots, underscores, or hyphens. Generate a unique key for each intended capture and persist it before sending the request.
+
+## Retry the same request
+
+Use the same API key, idempotency key, capture options, execution mode, and webhook configuration. Matching retries reuse the original job and its reservation. If the job is still pending, the response can be 202; after success, it can be 200 with the existing artifact.
+
+Reusing an account's idempotency key with a different API key or conflicting configuration returns `409 idempotency_conflict`. Defaults are normalized before fingerprinting. Keep the whole original request stable, including webhook secrets and mode, instead of relying on hand-edited equivalence.
+
+An idempotency key identifies a logical submission. It is different from `X-Request-ID`, which identifies an HTTP request for tracing.
+
+## Recover after losing the response
+
+```bash
+curl "https://api.screenshotapi.tech/v1/requests/invoice-preview-4821" \
+  --header "Authorization: Bearer $SCREENSHOTAPI_API_KEY"
+```
+
+The response is the same job snapshot shape used by `GET /v1/jobs/{id}`. You need `jobs:read` and the submitting API key.
+
+If the job is pending or unknown, continue tracking it. If it is complete, use its artifact. If it failed, decide whether the underlying cause warrants a new capture with a new key. Reusing the old key does not request a new render after terminal failure.
+
+## Avoid duplicate work
+
+1. Save your idempotency key together with the original request.
+2. Submit the capture.
+3. Persist the returned job ID or artifact URL.
+4. After a network error, recover by key or replay the identical request with that key.
+5. Create a new key only when you intentionally want another capture.
+
+Idempotency depends on retained server-side submission records. Do not treat it as an indefinite archive or invent an expiry interval; your deployment's retention policy must be confirmed separately.
+
+If a deployment returns `unsupported_option` for idempotency, it does not have the durable submission capability configured. Correct deployment configuration before relying on retry deduplication.

@@ -1,0 +1,68 @@
+---
+title: "Connect your AI agent"
+description: "Connect an authorized AI agent to hosted captures and job tracking."
+---
+
+The hosted MCP endpoint is `https://api.screenshotapi.tech/mcp`. It uses Streamable HTTP and your ScreenshotAPI account credits, permissions, and capture limits. Rendering runs on hosted workers; no Chromium installation is required.
+
+## Connect without writing code
+
+1. Sign in to the [API keys page](https://app.screenshotapi.tech/api-keys) and choose **Create agent key**.
+2. Copy the secret, which has `screenshot:write` and `jobs:read` permissions.
+3. In your trusted client's MCP settings, choose Streamable HTTP and enter `https://api.screenshotapi.tech/mcp`.
+4. Set the custom header `Authorization: Bearer YOUR_AGENT_KEY` and reconnect.
+5. Ask: “Capture https://example.com as a full-page PNG. Estimate credits first, preserve the capture key for retries, and return the download link.”
+
+The client must support remote MCP with custom headers. Clients that require OAuth sign-in cannot use this connection yet; OAuth onboarding is not implemented. Keep credentials in connection settings, outside conversations and source control. Revoke the dedicated key to stop access, normally within the 5-second authorization cache.
+
+## Available tools
+
+| Tool | Purpose |
+| --- | --- |
+| `prepare_capture` | Generate an idempotency key and estimate credit cost without charging. |
+| `take_screenshot` | Capture a viewport, full page, or PDF. |
+| `capture_element` | Capture a CSS-selected element as PNG, JPEG, or WebP. |
+| `get_capture_job` | Read progress, result, or failure without another capture. |
+| `recover_capture_request` | Recover a submission by its idempotency key. |
+
+`take_screenshot` requires `idempotency_key` and `options`, including `url`. Options support device presets, full-page algorithms, readiness checks, localization, and content filters. `sync` and `store` are managed by the adapter. `capture_element` additionally requires top-level `selector` and accepts top-level `format`.
+
+Hosted page-text and accessible-DOM inspection are not available yet. Results contain compact metadata and artifact references, rather than large inline images.
+
+## Use the official client SDK
+
+Install `@modelcontextprotocol/sdk` from npm in your server-side application:
+
+```javascript
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
+
+const key = process.env.SCREENSHOTAPI_API_KEY;
+if (!key) throw new Error("Set SCREENSHOTAPI_API_KEY");
+const client = new Client({ name: "my-agent", version: "1.0.0" });
+await client.connect(new StreamableHTTPClientTransport(
+  new URL("https://api.screenshotapi.tech/mcp"),
+  { requestInit: { headers: { Authorization: `Bearer ${key}` } } },
+));
+try {
+  console.log(await client.listTools());
+  console.log(await client.callTool({
+    name: "prepare_capture",
+    arguments: { format: "png", full_page: true },
+  }));
+} finally {
+  await client.close();
+}
+```
+
+Use the key returned by `prepare_capture` as `idempotency_key` for `take_screenshot`. Persist the key and exact options before submitting. Supported protocol negotiation follows the deployed MCP SDK; verify compatibility with your client's version.
+
+## Finish captures and recover safely
+
+Tool output includes text, `structuredContent`, `isError`, and `http_status`. On 202, call `get_capture_job` with `data.job_id`; wait at least 2 seconds between polls and respect `retry_after_seconds`. On completion download `data.result.data.cdn_url`; on failure read `data.result.error`. Never forward your authorization header to the artifact host.
+
+Viewport images cost 1 credit, full-page images 2, and PDFs 3. Cached captures can be free; failures release reservations. Preserve the key and options across retries. Use `recover_capture_request` after losing a response. See [request recovery](/integration/idempotency) and [credits](/integration/credits-and-limits).
+
+## Documentation search is separate
+
+Mintlify's documentation MCP searches guidance. ScreenshotAPI's capture MCP executes account-authorized work. A documentation-search connection alone cannot create captures or spend credits.

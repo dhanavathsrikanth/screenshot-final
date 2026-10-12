@@ -1,6 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { randomBytes } from "node:crypto";
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import type { Redis } from "ioredis";
 import { CaptureQueue, createCaptureSubmissionCodec, type CaptureDispatcher, type CaptureJobView, type CaptureJobPayload, type SealedCaptureSubmission } from "@screenshotapi/queue";
 import { createGateway, type GatewayDependencies } from "./gateway.js";
@@ -49,6 +51,105 @@ function fixture(workers = 1, paused = false) {
 }
 
 const headers = { authorization: "Bearer sf_live_gateway_fixture_123456789", "content-type": "application/json" };
+const mcpRequest = (app: ReturnType<typeof createGateway>, method: string, params: unknown = {}, extraHeaders = {}) => app.request("/mcp", {
+  method: "POST", headers: { ...headers, accept: "application/json, text/event-stream", "mcp-protocol-version": "2025-06-18", ...extraHeaders },
+  body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
+});
+
+function durableMcpFixture() {
+  const f = fixture();
+  f.setState("waiting");
+  f.deps.keyCacheTtlMs = 0;
+  f.deps.redis.eval = (async (script: string) => script.includes("return {") ? [1, 0] : 1) as unknown as Redis["eval"];
+  f.deps.submissionCodec = createCaptureSubmissionCodec(randomBytes(32).toString("base64"));
+  const rows = new Map<string, SealedCaptureSubmission>();
+  f.deps.database!.submissions = {
+    existingRequest: async (account, id) => {
+      const row = rows.get(id);
+      return row?.accountId === account ? { fingerprint: row.requestFingerprint!, apiKeyId: row.apiKeyId } : null;
+    },
+    reserveSubmission: async (input) => { rows.set(input.jobId, input); f.calls.push("durable-reserve"); return true; },
+    dispatchSubmission: async (id, deliver) => { await deliver(rows.get(id)!); return true; },
+    claimPendingSubmissions: async () => [], pendingSubmission: async () => null,
+  };
+  return f;
+}
+
+test("hosted MCP initializes, advertises tools, and prepares unique keys without charging", async () => {
+  const f = fixture();
+  const app = createGateway(f.deps);
+  const initialized = await mcpRequest(app, "initialize", { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "test", version: "1" } });
+  assert.equal(initialized.status, 200);
+  const tools = await (await mcpRequest(app, "tools/list")).json() as { result: { tools: { name: string }[] } };
+  assert.deepEqual(tools.result.tools.map((tool) => tool.name).sort(), ["capture_element", "get_capture_job", "prepare_capture", "recover_capture_request", "take_screenshot"]);
+  const prepare = async () => (await (await mcpRequest(app, "tools/call", { name: "prepare_capture", arguments: { format: "pdf" } })).json() as { result: { structuredContent: { idempotency_key: string; estimated_credits: number } } }).result.structuredContent;
+  const first = await prepare();
+  assert.equal(first.estimated_credits, 3);
+  assert.notEqual(first.idempotency_key, (await prepare()).idempotency_key);
+  assert.deepEqual(f.calls, []);
+});
+
+test("official MCP HTTP client connects, discovers tools and calls credit preparation", async () => {
+  const f = fixture();
+  const app = createGateway(f.deps);
+  const client = new Client({ name: "integration-test", version: "1.0.0" });
+  const transport = new StreamableHTTPClientTransport(new URL("https://api.screenshotapi.tech/mcp"), {
+    requestInit: { headers: { authorization: headers.authorization } },
+    fetch: async (input, init) => app.request(new Request(input, init)),
+  });
+  try {
+    await client.connect(transport);
+    assert.equal((await client.listTools()).tools.length, 5);
+    const prepared = await client.callTool({ name: "prepare_capture", arguments: { format: "webp", full_page: true } });
+    assert.equal(prepared.isError, false);
+    assert.equal((prepared.structuredContent as { estimated_credits: number }).estimated_credits, 2);
+    assert.deepEqual(f.calls, []);
+  } finally {
+    await client.close();
+  }
+});
+
+test("hosted MCP bounds bodies and applies rate limits before invoking tools", async () => {
+  const f = fixture();
+  const app = createGateway(f.deps);
+  assert.equal((await app.request("/mcp", { method: "POST", headers, body: "x".repeat(262145) })).status, 413);
+  f.deps.redis.eval = (async () => [0, Date.now()]) as unknown as Redis["eval"];
+  assert.equal((await mcpRequest(app, "tools/list")).status, 429);
+  assert.deepEqual(f.calls, []);
+});
+
+test("hosted MCP captures use durable billing, retry deduplication, and account-isolated polling", async () => {
+  const f = durableMcpFixture();
+  const app = createGateway(f.deps);
+  const submit = async (url = "https://example.com") => (await (await mcpRequest(app, "tools/call", {
+    name: "take_screenshot", arguments: { idempotency_key: "mcp-retry", options: { url, full_page: true } },
+  })).json() as { result: { isError: boolean; structuredContent: { http_status: number; data: { job_id: string } } } }).result;
+  const original = await submit();
+  assert.equal(original.structuredContent.http_status, 202);
+  assert.equal((await submit()).structuredContent.data.job_id, original.structuredContent.data.job_id);
+  assert.deepEqual(f.calls, ["durable-reserve", "dispatch"]);
+  assert.equal((await submit("https://changed.example.com")).structuredContent.http_status, 409);
+  const poll = async () => (await (await mcpRequest(app, "tools/call", { name: "get_capture_job", arguments: { job_id: original.structuredContent.data.job_id } })).json() as { result: { isError: boolean; structuredContent: { http_status: number } } }).result;
+  assert.equal((await poll()).structuredContent.http_status, 200);
+  f.jobs.get(original.structuredContent.data.job_id)!.data.billing_account_id = "victim";
+  assert.equal((await poll()).isError, true);
+  assert.deepEqual(f.settlements, []);
+});
+
+test("hosted MCP rejects unauthenticated, revoked, insufficient-scope and cross-origin use", async () => {
+  const f = fixture();
+  f.deps.keyCacheTtlMs = 0;
+  const app = createGateway(f.deps);
+  assert.equal((await app.request("/mcp", { method: "POST", body: "{}" })).status, 401);
+  assert.equal((await mcpRequest(app, "tools/list", {}, { origin: "https://evil.example" })).status, 403);
+  f.deps.database!.findApiKeyByHash = async () => ({ id: "key", active: true, scopes: [] });
+  const denied = await (await mcpRequest(app, "tools/call", { name: "take_screenshot", arguments: { idempotency_key: "denied", options: { url: "https://example.com" } } })).json() as { result: { isError: boolean; structuredContent: { http_status: number } } };
+  assert.equal(denied.result.isError, true);
+  assert.equal(denied.result.structuredContent.http_status, 403);
+  f.deps.database!.findApiKeyByHash = async () => null;
+  assert.equal((await mcpRequest(app, "tools/list")).status, 401);
+  assert.deepEqual(f.calls, []);
+});
 const capture = (app: ReturnType<typeof createGateway>, body: unknown = { url: "https://example.com" }) => app.request("/v1/screenshot", { method: "POST", headers, body: JSON.stringify(body) });
 
 for (const [workers, paused, expected] of [[0, false, 503], [1, false, 200], [1, true, 503]] as const) {

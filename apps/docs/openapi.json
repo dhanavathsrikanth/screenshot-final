@@ -1,0 +1,1803 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "ScreenshotAPI",
+    "version": "1.0.0",
+    "description": "Hosted ScreenshotAPI capture endpoints, authentication, request options, and response envelopes."
+  },
+  "servers": [
+    {
+      "url": "https://api.screenshotapi.tech",
+      "description": "ScreenshotAPI production REST API"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "Captures"
+    },
+    {
+      "name": "Jobs"
+    },
+    {
+      "name": "Webhook delivery"
+    },
+    {
+      "name": "Service"
+    }
+  ],
+  "paths": {
+    "/v1/screenshot": {
+      "post": {
+        "operationId": "createCapture",
+        "summary": "Create a capture",
+        "tags": [
+          "Captures"
+        ],
+        "description": "Requires screenshot:write. Accepts a JSON body of at most 256 KiB. Returns capture data on 200 or a job handle on 202, including when sync is true. A query mode=async overrides the body's sync flag. Successful viewport images cost 1 credit, full-page images 2, and PDFs 3. Use the same key and identical request on an idempotent retry.",
+        "parameters": [
+          {
+            "name": "mode",
+            "in": "query",
+            "description": "Optional asynchronous override.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "async"
+              ]
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Stable logical submission key. Reuse with identical configuration and the same API key.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9._-]+$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CaptureRequest"
+              },
+              "example": {
+                "url": "https://example.com",
+                "format": "png",
+                "sync": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Completed capture. Download data.cdn_url.",
+            "headers": {},
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    },
+                    "request_id": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/CaptureData"
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "request_id",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Accepted work. Poll the relative poll_url on the same API origin.",
+            "headers": {},
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    },
+                    "request_id": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/AcceptedJob"
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "request_id",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Structured failure. Inspect error.code, error.retriable, and error.details before retrying.",
+            "headers": {},
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Structured failure. Inspect error.code, error.retriable, and error.details before retrying.",
+            "headers": {},
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Structured failure. Inspect error.code, error.retriable, and error.details before retrying.",
+            "headers": {},
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Structured failure. Inspect error.code, error.retriable, and error.details before retrying.",
+            "headers": {},
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Structured failure. Inspect error.code, error.retriable, and error.details before retrying.",
+            "headers": {
+              "Retry-After": {
+                "description": "Delay in seconds when provided.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "451": {
+            "description": "Structured failure. Inspect error.code, error.retriable, and error.details before retrying.",
+            "headers": {},
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Structured failure. Inspect error.code, error.retriable, and error.details before retrying.",
+            "headers": {},
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Structured failure. Inspect error.code, error.retriable, and error.details before retrying.",
+            "headers": {},
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Structured failure. Inspect error.code, error.retriable, and error.details before retrying.",
+            "headers": {},
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Structured failure. Inspect error.code, error.retriable, and error.details before retrying.",
+            "headers": {},
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/jobs/{id}": {
+      "get": {
+        "operationId": "getJob",
+        "summary": "Get a capture job",
+        "description": "Requires jobs:read and the submitting API key. Inspect data.state and data.result.ok; an outer ok=true means the lookup succeeded. An unknown state can be temporary during recovery.",
+        "tags": [
+          "Jobs"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Job ID returned by submission. Use the original submitting API key.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful lookup, not necessarily successful capture.",
+            "headers": {},
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    },
+                    "request_id": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/JobSnapshot"
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "request_id",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Structured failure. Inspect error.code, error.retriable, and error.details before retrying.",
+            "headers": {},
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Structured failure. Inspect error.code, error.retriable, and error.details before retrying.",
+            "headers": {},
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Structured failure. Inspect error.code, error.retriable, and error.details before retrying.",
+            "headers": {},
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Structured failure. Inspect error.code, error.retriable, and error.details before retrying.",
+            "headers": {
+              "Retry-After": {
+                "description": "Delay in seconds when provided.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Structured failure. Inspect error.code, error.retriable, and error.details before retrying.",
+            "headers": {},
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/requests/{key}": {
+      "get": {
+        "operationId": "recoverRequest",
+        "summary": "Recover a request by key",
+        "description": "Requires jobs:read and the submitting API key. Resolves the original job from its Idempotency-Key. A failed job needs a new key if you intentionally request another render.",
+        "tags": [
+          "Jobs"
+        ],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "description": "Original Idempotency-Key.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9._-]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful lookup, not necessarily successful capture.",
+            "headers": {},
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    },
+                    "request_id": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/JobSnapshot"
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "request_id",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Structured failure. Inspect error.code, error.retriable, and error.details before retrying.",
+            "headers": {},
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Structured failure. Inspect error.code, error.retriable, and error.details before retrying.",
+            "headers": {},
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Structured failure. Inspect error.code, error.retriable, and error.details before retrying.",
+            "headers": {},
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Structured failure. Inspect error.code, error.retriable, and error.details before retrying.",
+            "headers": {
+              "Retry-After": {
+                "description": "Delay in seconds when provided.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Structured failure. Inspect error.code, error.retriable, and error.details before retrying.",
+            "headers": {},
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/jobs/{id}/webhook": {
+      "get": {
+        "operationId": "getWebhookDelivery",
+        "summary": "Get webhook delivery status",
+        "tags": [
+          "Webhook delivery"
+        ],
+        "description": "Requires jobs:read and the submitting API key. Available only for jobs with a webhook delivery record. Save the exact quoted ETag to request redelivery.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Job ID returned by submission. Use the original submitting API key.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current delivery status.",
+            "headers": {
+              "ETag": {
+                "description": "Quoted generation, for example \"0\".",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/WebhookStatus"
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Structured failure. Inspect error.code, error.retriable, and error.details before retrying.",
+            "headers": {},
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Structured failure. Inspect error.code, error.retriable, and error.details before retrying.",
+            "headers": {},
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Structured failure. Inspect error.code, error.retriable, and error.details before retrying.",
+            "headers": {},
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Structured failure. Inspect error.code, error.retriable, and error.details before retrying.",
+            "headers": {
+              "Retry-After": {
+                "description": "Delay in seconds when provided.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Structured failure. Inspect error.code, error.retriable, and error.details before retrying.",
+            "headers": {},
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/jobs/{id}/webhook/redeliver": {
+      "post": {
+        "operationId": "redeliverWebhook",
+        "summary": "Redeliver a webhook",
+        "tags": [
+          "Webhook delivery"
+        ],
+        "description": "Requires screenshot:write and the submitting API key. Sends the existing result without another render or capture charge. A stale generation, pending delivery, or unavailable record returns 409.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Job ID returned by submission. Use the original submitting API key.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "description": "Exact quoted ETag from the delivery-status response.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^\"[0-9]{1,3}\"$",
+              "example": "\"0\""
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Redelivery queued.",
+            "headers": {},
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "job_id": {
+                          "type": "string"
+                        },
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "pending"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "job_id",
+                        "state"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Structured failure. Inspect error.code, error.retriable, and error.details before retrying.",
+            "headers": {},
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Structured failure. Inspect error.code, error.retriable, and error.details before retrying.",
+            "headers": {},
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Structured failure. Inspect error.code, error.retriable, and error.details before retrying.",
+            "headers": {},
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Structured failure. Inspect error.code, error.retriable, and error.details before retrying.",
+            "headers": {},
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Structured failure. Inspect error.code, error.retriable, and error.details before retrying.",
+            "headers": {
+              "Retry-After": {
+                "description": "Delay in seconds when provided.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Structured failure. Inspect error.code, error.retriable, and error.details before retrying.",
+            "headers": {},
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/health": {
+      "get": {
+        "operationId": "getHealth",
+        "summary": "Check service readiness",
+        "tags": [
+          "Service"
+        ],
+        "security": [],
+        "description": "No API key required. Readiness checks Redis, database connectivity, unpaused queue processing, and available worker heartbeats. A healthy response is not a latency guarantee.",
+        "responses": {
+          "200": {
+            "description": "Service ready.",
+            "headers": {},
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service is not ready; some diagnostics can be absent on an outage.",
+            "headers": {},
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "webhooks": {
+    "captureResult": {
+      "post": {
+        "operationId": "receiveCaptureResult",
+        "summary": "Receive a capture result",
+        "tags": [
+          "Webhook delivery"
+        ],
+        "security": [],
+        "description": "Outbound POST to the callback specified in your capture request. Verify the exact raw body using HMAC-SHA256(secret, timestamp + '.' + rawBody), enforce timestamp tolerance, and deduplicate delivery. Callback delivery is independent of rendering.",
+        "parameters": [
+          {
+            "name": "x-screenshotapi-signature",
+            "in": "header",
+            "description": "Signature: t=UNIX_SECONDS,v1=HEX_DIGEST.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-screenshotapi-job-id",
+            "in": "header",
+            "description": "Capture job ID.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-screenshotapi-event",
+            "in": "header",
+            "description": "Terminal capture event.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "capture.completed",
+                "capture.failed"
+              ]
+            }
+          },
+          {
+            "name": "x-screenshotapi-delivery-id",
+            "in": "header",
+            "description": "Stable delivery ID.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-screenshotapi-generation",
+            "in": "header",
+            "description": "Delivery generation.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-screenshotapi-delivery",
+            "in": "header",
+            "description": "Attempt number.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebhookPayload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Return a 2xx status after safely accepting the event."
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Active sf_live_ API key with endpoint-specific scopes. Keep this credential server-side."
+      }
+    },
+    "schemas": {
+      "CaptureRequest": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Public HTTP or HTTPS target. Bare hostnames are normalized to HTTPS. Private network destinations are blocked by the hosted service."
+          },
+          "viewport": {
+            "type": "object",
+            "properties": {
+              "width": {
+                "type": "integer",
+                "minimum": 320,
+                "maximum": 3840,
+                "default": 1280
+              },
+              "height": {
+                "type": "integer",
+                "minimum": 240,
+                "maximum": 2160,
+                "default": 720
+              },
+              "deviceScaleFactor": {
+                "type": "number",
+                "minimum": 1,
+                "maximum": 3,
+                "default": 2
+              },
+              "isMobile": {
+                "type": "boolean",
+                "default": false
+              },
+              "hasTouch": {
+                "type": "boolean",
+                "default": false
+              }
+            },
+            "description": "CSS-pixel viewport and output density. A device preset takes precedence over an explicit viewport."
+          },
+          "device": {
+            "type": "string",
+            "description": "Supported preset identifier; takes precedence over viewport settings.",
+            "enum": [
+              "desktop_standard",
+              "desktop_hd",
+              "desktop_2k",
+              "desktop_4k",
+              "iphone_15_pro",
+              "iphone_15_pro_max",
+              "iphone_17_pro_max",
+              "pixel_8",
+              "ipad_pro_11"
+            ]
+          },
+          "full_page": {
+            "type": "boolean",
+            "default": false,
+            "description": "Capture the scrollable page. Successful full-page images cost 2 credits."
+          },
+          "full_page_algorithm": {
+            "type": "string",
+            "enum": [
+              "by_sections",
+              "native"
+            ],
+            "default": "by_sections",
+            "description": "Section capture is the default. Native uses the alternative full-page path."
+          },
+          "full_page_scroll_delay": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 5000,
+            "description": "Delay between full-page scroll steps, in milliseconds."
+          },
+          "full_page_scroll_by": {
+            "type": "integer",
+            "minimum": 120,
+            "maximum": 2160,
+            "description": "Full-page scroll step in CSS pixels."
+          },
+          "reduce_motion": {
+            "type": "boolean",
+            "default": true,
+            "description": "Reduce motion while capturing."
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "png",
+              "jpeg",
+              "webp",
+              "pdf"
+            ],
+            "default": "webp",
+            "description": "Output format. Full-page by_sections PDFs package rendered pixels; native and viewport PDFs use browser PDF export. PDFs cost 3 credits and cannot be combined with selector."
+          },
+          "quality": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 90,
+            "description": "JPEG or WebP encoding quality; does not control PNG encoding."
+          },
+          "delay": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 30000,
+            "default": 0,
+            "description": "Additional wait after page settlement, in milliseconds."
+          },
+          "timeout": {
+            "type": "integer",
+            "minimum": 1000,
+            "maximum": 60000,
+            "default": 30000,
+            "description": "Capture/navigation time budget in milliseconds, independent of the synchronous HTTP wait budget."
+          },
+          "wait_for_selector": {
+            "type": "string",
+            "description": "CSS readiness selector to wait for before capture."
+          },
+          "wait_for_content": {
+            "type": "boolean",
+            "default": false,
+            "description": "Enable content-readiness waiting for dynamic pages."
+          },
+          "wait_for_idle": {
+            "type": "boolean",
+            "default": true,
+            "description": "Enable additional network-idle settlement."
+          },
+          "wait_until": {
+            "type": "string",
+            "enum": [
+              "load",
+              "domcontentloaded",
+              "networkidle"
+            ],
+            "default": "load",
+            "description": "Navigation milestone to wait for."
+          },
+          "fail_if_incomplete": {
+            "type": "boolean",
+            "default": false,
+            "description": "Reject detected incomplete or loading-shell captures."
+          },
+          "fail_if_content_missing": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500
+            },
+            "maxItems": 32,
+            "default": [],
+            "description": "Required text markers, trimmed before validation."
+          },
+          "fail_if_content_contains": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500
+            },
+            "maxItems": 32,
+            "default": [],
+            "description": "Disallowed text markers, trimmed before validation."
+          },
+          "min_capture_height": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "description": "Minimum output height accepted by quality checks."
+          },
+          "min_capture_bytes": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "description": "Minimum encoded output bytes accepted by quality checks."
+          },
+          "dark_mode": {
+            "type": "boolean",
+            "default": false,
+            "description": "Emulate a dark preference when color_scheme is not explicitly set."
+          },
+          "color_scheme": {
+            "type": "string",
+            "enum": [
+              "light",
+              "dark",
+              "no-preference"
+            ],
+            "description": "Explicit browser color-scheme preference."
+          },
+          "locale": {
+            "type": "string",
+            "description": "Browser locale; overrides the region locale if supplied."
+          },
+          "timezone": {
+            "type": "string",
+            "description": "IANA browser timezone; overrides the region timezone if supplied."
+          },
+          "user_agent": {
+            "type": "string",
+            "description": "Explicit browser user agent."
+          },
+          "region": {
+            "type": "string",
+            "description": "Country-aligned locale/timezone preset and expected egress country. Does not provision a managed proxy.",
+            "enum": [
+              "us",
+              "ca",
+              "gb",
+              "ie",
+              "de",
+              "fr",
+              "es",
+              "it",
+              "nl",
+              "sg",
+              "au",
+              "jp",
+              "kr",
+              "in",
+              "br",
+              "mx",
+              "za",
+              "ae"
+            ]
+          },
+          "proxy": {
+            "type": "object",
+            "properties": {
+              "server": {
+                "type": "string",
+                "minLength": 1
+              },
+              "bypass": {
+                "type": "string"
+              },
+              "username": {
+                "type": "string"
+              },
+              "password": {
+                "type": "string",
+                "writeOnly": true
+              }
+            },
+            "required": [
+              "server"
+            ],
+            "description": "Caller-supplied public proxy endpoint and optional authentication."
+          },
+          "verify_egress": {
+            "type": "boolean",
+            "default": true,
+            "description": "Verify observed egress country when a region is requested."
+          },
+          "block_ads": {
+            "type": "boolean",
+            "default": true,
+            "description": "Enable ad filtering."
+          },
+          "block_cookie_banners": {
+            "type": "boolean",
+            "default": true,
+            "description": "Enable cookie-banner filtering."
+          },
+          "block_chats": {
+            "type": "boolean",
+            "default": true,
+            "description": "Enable chat-widget filtering."
+          },
+          "block_trackers": {
+            "type": "boolean",
+            "default": true,
+            "description": "Enable tracker filtering."
+          },
+          "selector": {
+            "type": "string",
+            "description": "Capture the first matching visible element. Not supported with PDF."
+          },
+          "hide_selectors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "default": [],
+            "description": "Suppress matching elements."
+          },
+          "remove_selectors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "default": [],
+            "description": "Remove matching nodes; can affect layout."
+          },
+          "custom_css": {
+            "type": "string",
+            "description": "CSS injected into the target page."
+          },
+          "custom_js": {
+            "type": "string",
+            "description": "JavaScript executed in the target page."
+          },
+          "headers": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Headers sent to the target, not credentials for the ScreenshotAPI request. Keep target credentials private."
+          },
+          "sync": {
+            "type": "boolean",
+            "default": true,
+            "description": "Wait for immediate completion when true; a slow or queued capture still returns 202. The mode=async query overrides this field."
+          },
+          "cache_ttl": {
+            "type": "integer",
+            "minimum": 0,
+            "default": 3600,
+            "description": "Maximum capture reuse age in seconds. Zero requests a fresh capture; not a storage-lifetime guarantee."
+          },
+          "store": {
+            "type": "boolean",
+            "default": false,
+            "description": "Shared engine storage flag. Hosted REST output still requires a downloadable artifact."
+          },
+          "webhook": {
+            "type": "object",
+            "properties": {
+              "url": {
+                "type": "string",
+                "format": "uri",
+                "maxLength": 2048
+              },
+              "secret": {
+                "type": "string",
+                "minLength": 16,
+                "maxLength": 256,
+                "writeOnly": true
+              }
+            },
+            "required": [
+              "url",
+              "secret"
+            ],
+            "description": "Public HTTPS callback on port 443 with a 16–256 character signing secret. Delivered after terminal settlement."
+          }
+        },
+        "required": [
+          "url"
+        ]
+      },
+      "CaptureData": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "final_url": {
+            "type": "string"
+          },
+          "format": {
+            "type": "string"
+          },
+          "width": {
+            "type": "number"
+          },
+          "height": {
+            "type": "number"
+          },
+          "bytes": {
+            "type": "number"
+          },
+          "duration_ms": {
+            "type": "number"
+          },
+          "cached": {
+            "type": "boolean",
+            "default": false
+          },
+          "data_url": {
+            "type": "string"
+          },
+          "cdn_url": {
+            "type": "string"
+          },
+          "blocked_requests": {
+            "type": "number",
+            "default": 0
+          },
+          "region": {
+            "type": "string"
+          },
+          "egress_country": {
+            "type": "string"
+          },
+          "render_diagnostics": {
+            "type": "object",
+            "properties": {
+              "version": {
+                "type": "integer"
+              },
+              "algorithm": {
+                "type": "string",
+                "enum": [
+                  "by_sections",
+                  "native",
+                  "element"
+                ]
+              },
+              "sections": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "device_scale_factor": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "scroll_height": {
+                "type": "number",
+                "minimum": 0
+              },
+              "stopped_reason": {
+                "type": "string"
+              },
+              "truncated": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "version",
+              "algorithm",
+              "sections",
+              "device_scale_factor",
+              "scroll_height",
+              "stopped_reason",
+              "truncated"
+            ]
+          }
+        },
+        "required": [
+          "url",
+          "final_url",
+          "format",
+          "width",
+          "height",
+          "bytes",
+          "duration_ms",
+          "cached",
+          "blocked_requests"
+        ]
+      },
+      "CaptureError": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "invalid_request",
+              "idempotency_conflict",
+              "unauthorized",
+              "forbidden",
+              "quota_exceeded",
+              "rate_limited",
+              "render_timeout",
+              "render_incomplete",
+              "navigation_failed",
+              "blocked_by_target",
+              "target_error",
+              "render_crashed",
+              "internal_error",
+              "unsupported_option",
+              "egress_unavailable",
+              "egress_mismatch"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "retriable": {
+            "type": "boolean"
+          },
+          "request_id": {
+            "type": "string"
+          },
+          "docs_url": {
+            "type": "string"
+          },
+          "details": {
+            "type": "object",
+            "additionalProperties": {}
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "retriable",
+          "request_id"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "const": false
+          },
+          "request_id": {
+            "type": "string"
+          },
+          "error": {
+            "$ref": "#/components/schemas/CaptureError"
+          }
+        },
+        "required": [
+          "ok",
+          "request_id",
+          "error"
+        ]
+      },
+      "AcceptedJob": {
+        "type": "object",
+        "properties": {
+          "job_id": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "waiting",
+              "prioritized",
+              "active",
+              "completed",
+              "failed",
+              "delayed",
+              "paused",
+              "unknown"
+            ]
+          },
+          "poll_url": {
+            "type": "string",
+            "description": "Relative API path."
+          }
+        },
+        "required": [
+          "job_id",
+          "state",
+          "poll_url"
+        ]
+      },
+      "JobResult": {
+        "type": "object",
+        "properties": {
+          "request_id": {
+            "type": "string"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "sync",
+              "async"
+            ]
+          },
+          "ok": {
+            "type": "boolean"
+          },
+          "data": {
+            "$ref": "#/components/schemas/CaptureData"
+          },
+          "error": {
+            "$ref": "#/components/schemas/CaptureError"
+          },
+          "duration_ms": {
+            "type": "number"
+          },
+          "attempts_made": {
+            "type": "integer"
+          },
+          "enqueued_at": {
+            "type": "integer",
+            "description": "Unix milliseconds."
+          },
+          "completed_at": {
+            "type": "integer",
+            "description": "Unix milliseconds."
+          },
+          "worker_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "request_id",
+          "mode",
+          "ok",
+          "duration_ms",
+          "attempts_made",
+          "enqueued_at",
+          "completed_at"
+        ]
+      },
+      "JobSnapshot": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "waiting",
+              "prioritized",
+              "active",
+              "completed",
+              "failed",
+              "delayed",
+              "paused",
+              "unknown"
+            ]
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "sync",
+              "async"
+            ]
+          },
+          "request_id": {
+            "type": "string"
+          },
+          "progress": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "attempts_made": {
+            "type": "integer"
+          },
+          "attempt_budget": {
+            "type": "integer"
+          },
+          "enqueued_at": {
+            "type": "integer"
+          },
+          "result": {
+            "$ref": "#/components/schemas/JobResult"
+          },
+          "webhook": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "url": {
+                    "type": "string"
+                  },
+                  "event": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "url"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "state",
+          "mode",
+          "request_id",
+          "progress",
+          "attempts_made",
+          "attempt_budget",
+          "enqueued_at",
+          "webhook"
+        ]
+      },
+      "WebhookStatus": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "delivered",
+              "failed"
+            ]
+          },
+          "attempts": {
+            "type": "integer"
+          },
+          "generation": {
+            "type": "integer"
+          },
+          "statusCode": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "state",
+          "attempts",
+          "generation",
+          "statusCode"
+        ]
+      },
+      "WebhookPayload": {
+        "type": "object",
+        "properties": {
+          "event": {
+            "type": "string",
+            "enum": [
+              "capture.completed",
+              "capture.failed"
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "job_id": {
+            "type": "string"
+          },
+          "request_id": {
+            "type": "string"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "sync",
+              "async"
+            ]
+          },
+          "ok": {
+            "type": "boolean"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CaptureData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CaptureError"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "duration_ms": {
+            "type": "number"
+          },
+          "attempts_made": {
+            "type": "integer"
+          },
+          "enqueued_at": {
+            "type": "integer"
+          },
+          "completed_at": {
+            "type": "integer"
+          },
+          "delivery_id": {
+            "type": "string"
+          },
+          "delivery_generation": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "event",
+          "id",
+          "job_id",
+          "request_id",
+          "mode",
+          "ok",
+          "data",
+          "error",
+          "duration_ms",
+          "attempts_made",
+          "enqueued_at",
+          "completed_at",
+          "delivery_id",
+          "delivery_generation"
+        ]
+      },
+      "HealthResponse": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "redis": {
+                "type": "string",
+                "enum": [
+                  "ready",
+                  "unavailable"
+                ]
+              },
+              "database": {
+                "type": "string",
+                "enum": [
+                  "ready",
+                  "unavailable"
+                ]
+              },
+              "worker_ready": {
+                "type": "boolean"
+              },
+              "ready_workers": {
+                "type": "integer"
+              },
+              "queue": {
+                "type": "object",
+                "properties": {
+                  "waiting": {
+                    "type": "integer"
+                  },
+                  "active": {
+                    "type": "integer"
+                  },
+                  "prioritized": {
+                    "type": "integer"
+                  },
+                  "delayed": {
+                    "type": "integer"
+                  },
+                  "completed": {
+                    "type": "integer"
+                  },
+                  "failed": {
+                    "type": "integer"
+                  },
+                  "paused": {
+                    "type": "boolean"
+                  },
+                  "total_pending": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "waiting",
+                  "active",
+                  "prioritized",
+                  "delayed",
+                  "completed",
+                  "failed",
+                  "paused",
+                  "total_pending"
+                ]
+              },
+              "settlement": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "number"
+                }
+              },
+              "webhooks": {
+                "type": "object",
+                "properties": {
+                  "delivered": {
+                    "type": "integer"
+                  },
+                  "failed": {
+                    "type": "integer"
+                  },
+                  "errors": {
+                    "type": "integer"
+                  },
+                  "active": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "delivered",
+                  "failed",
+                  "errors",
+                  "active"
+                ]
+              }
+            },
+            "required": [
+              "redis",
+              "worker_ready"
+            ]
+          }
+        },
+        "required": [
+          "ok",
+          "data"
+        ]
+      }
+    }
+  }
+}

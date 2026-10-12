@@ -1,0 +1,35 @@
+---
+title: "ScreenshotAPI documentation"
+description: "Turn web pages into images and PDFs, then build captures into your application."
+---
+
+ScreenshotAPI renders a URL in a browser and returns a downloadable capture with metadata. Use it for website previews, reporting, visual monitoring, or tools that need to inspect a web page.
+
+You choose the viewport, output format, page readiness rules, and content controls. The REST API handles queued execution and returns either the finished capture or a job you can track.
+
+<CardGroup cols={2}>
+  <Card title="Make your first capture" icon="bolt" href="/quickstart">Create an API key, submit a URL, and download the result.</Card>
+  <Card title="Understand the response" icon="file-lines" href="/responses">Handle finished captures, accepted jobs, and structured errors.</Card>
+  <Card title="Capture a full page" icon="expand" href="/capture/full-page">Configure scrolling, resolution, and capture diagnostics.</Card>
+  <Card title="Run captures in the background" icon="clock" href="/integration/async-jobs">Track queued work without holding an HTTP connection open.</Card>
+</CardGroup>
+
+## Choose your integration
+
+| Integration | Use it when |
+| --- | --- |
+| REST API | Your application needs hosted rendering, job tracking, and account billing. |
+| [Node.js](/integration/node) or [Python](/integration/python) | You want a complete example using standard HTTP libraries. |
+| [Local MCP server](/agents/mcp) | An AI client needs local screenshot and page-inspection tools. |
+
+The hosted REST API base URL is `https://api.screenshotapi.tech`. The examples include this address directly; only `SCREENSHOTAPI_API_KEY` needs your private value. The documentation domain is a separate site and does not accept capture requests.
+
+## What to expect
+
+- Image formats are PNG, JPEG, and WebP. PDF captures preserve the rendered appearance of the page.
+- A successful capture includes dimensions, byte size, final URL, timing, and an artifact URL.
+- A request can remain queued after the HTTP response. Treat `202 Accepted` as a job handle and wait for its terminal result.
+- Failed captures release their reserved credits. Credit cost depends on the requested output.
+- Public API captures require public network destinations. Target access restrictions and bot challenges can still prevent a capture.
+
+Continue with the [quickstart](/quickstart), then add [idempotency](/integration/idempotency) and [webhooks](/integration/webhooks) when your workflow needs reliable background execution.

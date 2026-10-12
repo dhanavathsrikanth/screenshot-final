@@ -1,0 +1,43 @@
+---
+title: "Images and PDFs"
+description: "Choose the file format and quality settings that fit your workflow."
+---
+
+| Format | Useful for | Quality option |
+| --- | --- | --- |
+| `webp` | Compact previews and web delivery; the default. | 1–100, defaults to 90. |
+| `png` | Lossless screenshots, text, and visual comparison. | Does not control PNG encoding. |
+| `jpeg` | Photographic content where lossy compression is acceptable. | 1–100, defaults to 90. |
+| `pdf` | A document containing the rendered visual capture. | Do not treat it as JPEG/WebP quality control. |
+
+## Make an image
+
+```json
+{
+  "url": "https://example.com",
+  "format": "webp",
+  "quality": 85,
+  "viewport": { "width": 1280, "height": 720, "deviceScaleFactor": 1 }
+}
+```
+
+Lower JPEG or WebP quality usually reduces file size at the expense of image detail. Choose PNG when lossy artifacts would make comparison or text inspection difficult.
+
+## Make a PDF
+
+```json
+{
+  "url": "https://example.com",
+  "format": "pdf",
+  "full_page": true,
+  "wait_for_idle": true
+}
+```
+
+With `full_page: true` and the default `by_sections` algorithm, PDF output packages captured pixels into a document. This preserves the visual scroll capture; it does not provide semantic text, links, or accessibility tags.
+
+Viewport PDFs and the `native` full-page path use the browser's PDF export with screen media. Their output can differ from the section capture. Test the selected path against your target rather than assuming print layout or searchable content is identical across algorithms.
+
+PDF cannot be combined with `selector`; the engine returns `unsupported_option`. Use an image format for element captures.
+
+Download `cdn_url` to a file with the extension matching `format`. Verify response and artifact metadata before ingesting it into a document pipeline.

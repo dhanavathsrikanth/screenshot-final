@@ -8,11 +8,11 @@ test("customer documentation covers the hosted service without local deployment 
   assert.doesNotMatch(markdown, /snapforge/i);
   assert.match(markdown, /ScreenshotAPI/);
   assert.match(markdown, /SCREENSHOTAPI_API_KEY/);
-  assert.match(markdown, /capture-api-production-4e2d\.up\.railway\.app/);
+  assert.match(markdown, /api\.screenshotapi\.tech/);
   assert.ok(getDoc("integrations"));
   assert.equal(getDoc("local-development"), undefined);
   assert.doesNotMatch(markdown, /pnpm|playwright install|localhost|DATABASE_URL|SCREENSHOTAPI_LOCAL_CAPTURE|@screenshotapi\/mcp|\/docs\/local-development/);
-  assert.doesNotMatch(markdown, /api\.screenshotapi\.tech/);
+  assert.doesNotMatch(markdown, /capture-api-production-4e2d\.up\.railway\.app/);
 });
 
 test("the parameter reference covers the capture schema and its actual defaults", () => {

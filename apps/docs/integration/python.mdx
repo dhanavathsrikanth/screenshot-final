@@ -1,0 +1,106 @@
+---
+title: "Capture with Python"
+description: "Submit, poll, and download using only the Python standard library."
+---
+
+Use Python 3. No third-party packages are required.
+
+The example uses the hosted API at `https://api.screenshotapi.tech`. Set `SCREENSHOTAPI_API_KEY` to an active key with `screenshot:write` and `jobs:read` permissions. You do not need to configure a base URL.
+
+The example deliberately submits an asynchronous PNG capture. It also accepts a direct completed result, polls pending jobs, honors rate-limit delays, checks nested job failure, and downloads the artifact without forwarding your API key to its host.
+
+Save the printed idempotency key. If submission fails at the network layer, recover by that key before creating another capture. CAPTURE_IDEMPOTENCY_KEY lets you replay the same logical submission; keep the request and API key unchanged.
+
+The overall client budget is three minutes. Reaching it does not cancel server-side work. In production, persist job handles and schedule polling or use webhooks rather than keeping a process alive for every capture.
+
+Save this as capture.py and run `python capture.py`:
+
+```python
+import json
+import os
+import random
+import time
+import uuid
+from urllib.error import HTTPError
+from urllib.parse import quote
+from urllib.request import Request, urlopen
+
+base = "https://api.screenshotapi.tech"
+key = os.environ["SCREENSHOTAPI_API_KEY"]
+idempotency_key = os.environ.get("CAPTURE_IDEMPOTENCY_KEY") or str(uuid.uuid4())
+print("Save this idempotency key for recovery:", idempotency_key)
+deadline = time.monotonic() + 180
+
+
+def remaining():
+    seconds = deadline - time.monotonic()
+    if seconds <= 0:
+        raise TimeoutError("Client deadline reached; recover the existing request by key")
+    return seconds
+
+
+def api(path, payload=None, headers=None):
+    request_headers = {"Authorization": "Bearer " + key}
+    request_headers.update(headers or {})
+    encoded = None if payload is None else json.dumps(payload).encode("utf-8")
+    request = Request(base + path, data=encoded, headers=request_headers)
+    try:
+        response = urlopen(request, timeout=min(30, remaining()))
+    except HTTPError as error:
+        response = error
+    with response:
+        return response.code, response.headers, json.load(response)
+
+
+status, _, body = api(
+    "/v1/screenshot",
+    {"url": "https://example.com", "format": "png", "sync": False},
+    {"Content-Type": "application/json", "Idempotency-Key": idempotency_key},
+)
+if status not in (200, 202) or not body.get("ok"):
+    raise RuntimeError(json.dumps(body))
+
+capture = body["data"] if status == 200 else None
+if status == 202:
+    job_id = body["data"]["job_id"]
+    print("Job:", job_id)
+    poll_path = "/v1/jobs/" + quote(job_id, safe="")
+    interval = 1.0
+    while capture is None:
+        if interval >= remaining():
+            raise TimeoutError("Client deadline reached; recover the existing request by key")
+        time.sleep(interval)
+        status, headers, body = api(poll_path)
+        if status == 429 and body.get("error", {}).get("code") == "rate_limited":
+            try:
+                retry_after = float(headers.get("Retry-After", "0"))
+            except ValueError:
+                retry_after = 0
+            interval = (retry_after if retry_after > 0 else min(interval * 2, 10)) + random.uniform(0, 0.25)
+            continue
+        if status != 200 or not body.get("ok"):
+            raise RuntimeError(json.dumps(body))
+        snapshot = body["data"]
+        if snapshot["state"] == "failed":
+            raise RuntimeError(json.dumps(snapshot.get("result", {}).get("error")))
+        if snapshot["state"] == "completed":
+            if not snapshot.get("result", {}).get("ok"):
+                raise RuntimeError("Completed job has no successful result")
+            capture = snapshot["result"]["data"]
+        interval = min(interval + 0.25, 3)
+
+artifact_url = capture.get("cdn_url")
+if not artifact_url:
+    raise RuntimeError("Capture has no artifact URL")
+with urlopen(artifact_url, timeout=min(30, remaining())) as response:
+    with open("capture.png", "wb") as output:
+        while True:
+            remaining()
+            chunk = response.read(65536)
+            if not chunk:
+                break
+            output.write(chunk)
+print("Saved capture.png", capture["width"], capture["height"], capture["bytes"])
+```
+
+HTTP errors are decoded as JSON so rate-limit responses can be handled. Transport errors still raise an exception: preserve the idempotency key and [recover the existing request](/integration/idempotency).

@@ -1,0 +1,77 @@
+---
+title: "Completion webhooks"
+description: "Receive signed capture results, deduplicate delivery, and recover failed notifications."
+---
+
+Add a webhook to your capture request to receive a POST after the job reaches a terminal result. Notification delivery runs independently of rendering; a failed notification does not turn a completed capture into a failed capture.
+
+## Configure a destination
+
+```json
+{
+  "url": "https://example.com",
+  "sync": false,
+  "webhook": {
+    "url": "https://YOUR_PUBLIC_WEBHOOK_HOST/captures",
+    "secret": "REPLACE_WITH_A_RANDOM_SECRET_AT_LEAST_16_CHARACTERS"
+  }
+}
+```
+
+The destination must use HTTPS on port 443, resolve to public addresses, and contain no URL credentials or fragment. Secrets must contain 16–256 characters. Store your chosen secret in the receiving service as well as supplying it for the capture. Do not use the placeholder as a real secret.
+
+Use `capture.completed` and `capture.failed` to distinguish terminal outcomes. The payload contains `job_id`, `request_id`, `ok`, `data` or `error`, result timing, `delivery_id`, and `delivery_generation`. The full shape appears in the API reference under the capture-result webhook.
+
+## Verify the signature before parsing
+
+The `x-screenshotapi-signature` header has the form `t=UNIX_SECONDS,v1=HEX_DIGEST`. The digest is HMAC-SHA256 of the timestamp, a period, and the exact raw request body, using your webhook secret.
+
+This Node.js verifier accepts a UTF-8 raw body and applies a five-minute timestamp tolerance:
+
+```javascript
+import { createHmac, timingSafeEqual } from "node:crypto";
+
+export function verifyCaptureWebhook(rawBody, signature, secret) {
+  if (typeof signature !== "string" || !secret) return false;
+  const match = /^t=(\d+),v1=([a-f0-9]{64})$/.exec(signature);
+  if (!match) return false;
+  const timestamp = Number(match[1]);
+  if (!Number.isSafeInteger(timestamp)) return false;
+  if (Math.abs(Math.floor(Date.now() / 1000) - timestamp) > 300) return false;
+  const expected = createHmac("sha256", secret)
+    .update(match[1] + ".")
+    .update(rawBody)
+    .digest();
+  const actual = Buffer.from(match[2], "hex");
+  return actual.length === expected.length && timingSafeEqual(actual, expected);
+}
+```
+
+Use your framework's raw-body facility before JSON middleware. Re-serializing parsed JSON can change spacing or key order and invalidate the signature. Keep your server clock synchronized.
+
+After verification, parse the JSON and validate its expected fields. Deduplicate notifications using `delivery_id` and `delivery_generation`; also deduplicate your business action by job ID if it should happen once across manual redeliveries. A valid signature alone does not prevent replay within the timestamp window.
+
+## Acknowledge quickly
+
+Persist the verified event or enqueue your own work, then return a 2xx response. The delivery consumer has a bounded timeout and retries transient failures, including 429, 5xx, and transport errors, with backoff. Other non-2xx HTTP responses are treated as terminal delivery failures. Redirects are not followed.
+
+The current default consumer attempts delivery up to five times, with a maximum ten-second timeout per attempt. Deployment settings can change these values. Design your handler for duplicate delivery even when your first response was successful.
+
+## Inspect and redeliver
+
+```bash
+curl --include "https://api.screenshotapi.tech/v1/jobs/YOUR_JOB_ID/webhook" \
+  --header "Authorization: Bearer $SCREENSHOTAPI_API_KEY"
+```
+
+Delivery status includes `state` (`pending`, `delivered`, or `failed`), attempts, generation, and the last HTTP status. The response has an `ETag` header. Copy its exact quoted value into `If-Match`:
+
+```bash
+curl --request POST "https://api.screenshotapi.tech/v1/jobs/YOUR_JOB_ID/webhook/redeliver" \
+  --header "Authorization: Bearer $SCREENSHOTAPI_API_KEY" \
+  --header 'If-Match: "0"'
+```
+
+The value `"0"` is an example; use the ETag from your status response. Redelivery requires `screenshot:write`. It returns 202 when accepted, or 409 if the delivery is unavailable, already pending, or its generation changed. Redelivery sends the existing capture result; it does not render again or charge for another capture.
+
+If webhooks are unavailable on your deployment, use [job polling](/integration/async-jobs) until durable delivery is configured.

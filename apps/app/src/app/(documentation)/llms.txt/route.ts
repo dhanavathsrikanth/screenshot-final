@@ -8,7 +8,7 @@ export function GET() {
     "",
     "## Integration essentials",
     "",
-    "- Hosted API base URL: https://capture-api-production-4e2d.up.railway.app. Set SCREENSHOTAPI_API_URL to this address. No renderer installation is required.",
+    "- Hosted API base URL: https://api.screenshotapi.tech. Set SCREENSHOTAPI_API_URL to this address. No renderer installation is required.",
     "- REST requests use Authorization: Bearer $SCREENSHOTAPI_API_KEY. Create captures with POST /v1/screenshot.",
     "- Always support HTTP 202 job polling, even with sync: true. Poll GET /v1/jobs/{id}.",
     "- Completed data.url is the source page; data.cdn_url is the artifact download URL.",

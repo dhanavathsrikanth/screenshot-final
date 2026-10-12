@@ -1,0 +1,55 @@
+---
+title: "Errors and troubleshooting"
+description: "Resolve failures by their structured code and preserve enough context to recover safely."
+---
+
+An API error response includes `ok: false`, a request ID, and an error object:
+
+```json
+{
+  "ok": false,
+  "request_id": "request-example",
+  "error": {
+    "code": "invalid_request",
+    "message": "Capture options are invalid",
+    "retriable": false,
+    "request_id": "request-example"
+  }
+}
+```
+
+Use the code for program logic and the message for diagnosis. The generated [error reference](/reference/error-codes) lists the default status mapping and retry flag for every contract code. HTTP statuses can vary for deployment or admission failures; inspect the actual response.
+
+## Invalid request or unsupported option
+
+Check the target URL, JSON body, option types, range limits, and selector. Ensure the body is under 256 KiB. PDF with element targeting is unsupported. Private network targets are unavailable through the hosted API. Correct the request before retrying.
+
+## Authentication or scope failure
+
+For 401, confirm the bearer key is active and belongs to the intended deployment. For 403, add the endpoint's required scope. Use the original submitting key to inspect jobs or recover requests.
+
+## Rate limit or exhausted credits
+
+For `rate_limited`, follow `Retry-After` when present and reduce concurrent submissions. For `quota_exceeded`, check available credits, including reservations still tied to pending work. These two conditions may both use HTTP 429 but need different responses.
+
+## Timeout or incomplete capture
+
+Use a readiness selector for dynamic applications. Check required text markers and whether filters removed content you expected. Increase capture timeout only within the 60000 ms limit. A client timeout is not a terminal job failure; [recover the existing request](/integration/idempotency) first.
+
+## Blocked by target
+
+A challenge, CAPTCHA, or target access restriction can return `blocked_by_target`. Automated access is not guaranteed for every site. Do not run a tight retry loop: the contract marks this error non-retriable. Use a permitted destination or resolve access with the target owner.
+
+## Region failures
+
+`egress_unavailable` can indicate a verification failure or an uncertain durable submission outcome. If `error.details.job_id` is present, check that job before resubmitting.
+
+For `egress_mismatch`, make sure your network route or supplied proxy matches the requested country. Locale alone does not change IP geography.
+
+## Missing job or webhook
+
+A job outside your ownership or key visibility is returned as not found. Confirm you used the original API key and the exact job ID. Webhook status is available only when that job has a delivery record. Retention also limits how long records remain accessible.
+
+## Reporting a problem
+
+Preserve the effective request ID, job ID, response status, error code, and capture settings with secrets removed. Include readiness expectations and a target URL that can be accessed for diagnosis. Redact API keys, target authorization headers, proxy credentials, webhook secrets, and signed artifact URLs.

@@ -1,0 +1,37 @@
+---
+title: "API keys and authentication"
+description: "Keep credentials on your server and grant the scopes your integration needs."
+---
+
+Authenticate REST requests with an API key in the `Authorization` header:
+
+```http
+Authorization: Bearer YOUR_SECRET_API_KEY
+```
+
+Issued keys use the `sf_live_` prefix. A key must be active and recognized by the service; adding the prefix to an arbitrary string does not create a valid key.
+
+## Required scopes
+
+| Endpoint | Scope |
+| --- | --- |
+| `POST /v1/screenshot` | `screenshot:write` |
+| `GET /v1/jobs/{id}` | `jobs:read` |
+| `GET /v1/requests/{key}` | `jobs:read` |
+| `GET /v1/jobs/{id}/webhook` | `jobs:read` |
+| `POST /v1/jobs/{id}/webhook/redeliver` | `screenshot:write` |
+| `GET /v1/health` | None |
+
+Use the same API key to submit, recover, and inspect a job. Job lookups are checked against both account ownership and the submitting API key. Another key on the same account does not automatically grant access to the job.
+
+## Store keys safely
+
+Store your key in a server environment variable or secret manager. Call ScreenshotAPI from your backend. Do not place the key in frontend bundles, browser storage, URLs, or source control.
+
+Use separately labeled keys for individual integrations so you can revoke or rotate one without disrupting the others. When rotating a key, finish or reconcile its in-flight jobs before switching job lookups to the new key.
+
+## Authentication failures
+
+`401 unauthorized` means the header is missing or malformed, or the key is invalid or revoked. `403 forbidden` means a valid key lacks a required scope. Correct the credential or scope before retrying.
+
+An optional `X-Request-ID` header lets you supply a trace identifier containing 1–100 letters, digits, underscores, dots, or hyphens. The response echoes the effective identifier in `x-request-id`. It is for tracing; use [Idempotency-Key](/integration/idempotency) to prevent duplicate submissions.
