@@ -55,7 +55,8 @@ export function DocsShell({ navigation, current, headings, children }: {
           <button type="button" aria-expanded={menuOpen} aria-controls="docs-navigation" onClick={() => setMenuOpen(!menuOpen)} className={styles.menuButton}><Icon name={menuOpen ? "x" : "menu"} /><span>Menu</span></button>
           <Link href="/docs" aria-current={current.group !== "API reference" ? "page" : undefined}>Documentation</Link>
           <Link href="/docs/api/screenshot" aria-current={current.group === "API reference" ? "page" : undefined}>API reference</Link>
-          <Link href="/docs/mcp">MCP & agents<span className={styles.smallBadge}>3 tools</span></Link>
+          <Link href="/docs/integrations">Code examples</Link>
+          <Link href="/docs/mcp">AI agents</Link>
           <a href="/llms.txt" className={styles.agentLink}><Icon name="sparkles" className="size-3.5" />llms.txt</a>
         </div></div>
       </header>

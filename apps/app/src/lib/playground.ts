@@ -193,24 +193,6 @@ except HTTPError as error:
     print(json.load(error)["error"])`;
 }
 
-export function buildMcpConfig(): string {
-  return JSON.stringify(
-    {
-      mcpServers: {
-        screenshotapi: {
-          command: "node",
-          args: ["/absolute/path/to/screenshotapi/packages/mcp/dist/main.js"],
-          env: {
-            SCREENSHOTAPI_MCP_CONCURRENCY: "2",
-          },
-        },
-      },
-    },
-    null,
-    2,
-  );
-}
-
 export function toQueryString(state: PlaygroundState): string {
   return toQuery(toCaptureOptions(state) as Record<string, unknown>);
 }

@@ -3,12 +3,15 @@ import test from "node:test";
 import { captureOptionsSchema, ERROR_CODES } from "@screenshotapi/contracts";
 import { CAPTURE_CODE, CAPTURE_EXAMPLE, DOC_FIELDS, DOC_PAGES, docMarkdown, getDoc } from "./docs-content.js";
 
-test("public documentation uses the domain-based brand and local MCP entry point", () => {
+test("customer documentation covers the hosted service without local deployment instructions", () => {
   const markdown = DOC_PAGES.map(docMarkdown).join("\n");
   assert.doesNotMatch(markdown, /snapforge/i);
   assert.match(markdown, /ScreenshotAPI/);
   assert.match(markdown, /SCREENSHOTAPI_API_KEY/);
-  assert.match(markdown, /@screenshotapi\/mcp/);
+  assert.match(markdown, /capture-api-production-4e2d\.up\.railway\.app/);
+  assert.ok(getDoc("integrations"));
+  assert.equal(getDoc("local-development"), undefined);
+  assert.doesNotMatch(markdown, /pnpm|playwright install|localhost|DATABASE_URL|SCREENSHOTAPI_LOCAL_CAPTURE|@screenshotapi\/mcp|\/docs\/local-development/);
   assert.doesNotMatch(markdown, /api\.screenshotapi\.tech/);
 });
 

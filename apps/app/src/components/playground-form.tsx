@@ -17,7 +17,6 @@ import {
 } from "@/components/ui";
 import {
   buildCurl,
-  buildMcpConfig,
   buildPython,
   buildTypeScript,
   DEFAULT_STATE,
@@ -44,7 +43,7 @@ const DEVICES = [
   { key: "custom", label: "Custom viewport" },
 ];
 
-const SNIPPETS = ["curl", "typescript", "python", "mcp"] as const;
+const SNIPPETS = ["curl", "typescript", "python"] as const;
 
 function SettingsSection({ title, description, defaultOpen = false, children }: {
   title: string;
@@ -101,8 +100,6 @@ export function Playground({ localCapture = false }: { localCapture?: boolean })
         return buildTypeScript(state);
       case "python":
         return buildPython(state);
-      case "mcp":
-        return buildMcpConfig();
     }
   }, [snippet, state]);
 
@@ -480,7 +477,7 @@ export function Playground({ localCapture = false }: { localCapture?: boolean })
             <CodeTabs
               tabs={SNIPPETS.map((key) => ({
                 key,
-                label: key === "curl" ? "cURL" : key === "typescript" ? "TypeScript" : key === "python" ? "Python" : "MCP",
+                label: key === "curl" ? "cURL" : key === "typescript" ? "TypeScript" : "Python",
               }))}
               active={snippet}
               onChange={setSnippet}

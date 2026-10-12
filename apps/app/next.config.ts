@@ -7,7 +7,10 @@ loadEnv({ path: path.resolve(__dirname, "../../.env") });
 const nextConfig: NextConfig = {
   turbopack: {
     root: path.resolve(__dirname, "../.."),
-    resolveAlias: { "./capture-artifact.js": "./src/lib/capture-artifact.ts" },
+    resolveAlias: {
+      "./capture-artifact.js": "./src/lib/capture-artifact.ts",
+      "./docs-integration-examples.js": "./src/lib/docs-integration-examples.ts",
+    },
   },
   transpilePackages: ["@screenshotapi/contracts", "@screenshotapi/brand", "@screenshotapi/database"],
   serverExternalPackages: [

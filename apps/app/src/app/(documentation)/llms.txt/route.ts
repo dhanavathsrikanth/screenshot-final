@@ -8,7 +8,7 @@ export function GET() {
     "",
     "## Integration essentials",
     "",
-    "- Configure SCREENSHOTAPI_API_URL with your gateway URL. Local gateway default: http://localhost:8787. Do not assume a production hostname.",
+    "- Hosted API base URL: https://capture-api-production-4e2d.up.railway.app. Set SCREENSHOTAPI_API_URL to this address. No renderer installation is required.",
     "- REST requests use Authorization: Bearer $SCREENSHOTAPI_API_KEY. Create captures with POST /v1/screenshot.",
     "- Always support HTTP 202 job polling, even with sync: true. Poll GET /v1/jobs/{id}.",
     "- Completed data.url is the source page; data.cdn_url is the artifact download URL.",
@@ -16,7 +16,8 @@ export function GET() {
     "- Failed captures release reserved credits. Successful captures, including cache hits, consume credits.",
     "- cache_ttl controls acceptable reuse age, not artifact retention or download-link expiry.",
     "- Region presets require your own matching proxy for regional egress. Capture destinations must resolve to public networks.",
-    "- The MCP package runs locally over stdio and does not require a hosted ScreenshotAPI API key.",
+    "- AI agents use the authenticated hosted REST API from their backend. A hosted MCP endpoint is not currently available.",
+    "- Copy complete Node.js and Python capture, polling, and artifact-download examples from /docs/markdown/integrations.",
     "",
   ];
   for (const group of [...new Set(DOC_PAGES.map((page) => page.group))]) {
