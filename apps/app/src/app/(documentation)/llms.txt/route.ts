@@ -4,7 +4,7 @@ export function GET() {
   const lines = [
     "# ScreenshotAPI",
     "",
-    "> A browser capture API for screenshots, PDFs, and AI agents. This index links to the complete public developer documentation and its Markdown equivalents.",
+    "> A browser capture API for screenshots, PDFs, and AI agents. This index links to the developer documentation and its Markdown equivalents. On app.screenshotapi.tech, documentation requires a signed-in console session. Export Markdown from an authenticated browser for agents without that session.",
     "",
     "## Integration essentials",
     "",

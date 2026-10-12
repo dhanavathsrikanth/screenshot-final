@@ -138,10 +138,10 @@ const API_BASE = "$SCREENSHOTAPI_API_URL";
 export function buildCurl(state: PlaygroundState): string {
   const options = toCaptureOptions(state) as Record<string, unknown>;
   return [
-    `curl -X POST ${API_BASE}/v1/screenshot \\`,
+    `curl -X POST "${API_BASE}/v1/screenshot" \\`,
     `  -H "Authorization: Bearer $SCREENSHOTAPI_API_KEY" \\`,
     `  -H "Content-Type: application/json" \\`,
-    `  -d '${JSON.stringify(options, null, 2)}'`,
+    `  -d '${JSON.stringify(options, null, 2).replaceAll("'", "'\\''")}'`,
   ].join("\n");
 }
 
@@ -164,33 +164,33 @@ ${options}
 
 const payload = await response.json();
 if (!response.ok || !payload.ok) throw new Error(payload.error?.message ?? "Capture failed");
-console.log(payload.data);`;
+if (response.status === 202) console.log("Poll this job:", payload.data.poll_url);
+else console.log("Download:", payload.data.cdn_url);`;
 }
 
 export function buildPython(state: PlaygroundState): string {
   return `import json
 import os
-import requests
+from urllib.request import Request, urlopen
+from urllib.error import HTTPError
 
-response = requests.post(
+request = Request(
     os.environ["SCREENSHOTAPI_API_URL"] + "/v1/screenshot",
     headers={
         "Authorization": f"Bearer {os.environ['SCREENSHOTAPI_API_KEY']}",
         "Content-Type": "application/json",
     },
-    json=json.loads(${JSON.stringify(JSON.stringify(toCaptureOptions(state)))}),
-    timeout=60,
+    data=${JSON.stringify(JSON.stringify(toCaptureOptions(state)))}.encode(),
+    method="POST",
 )
 
-payload = response.json()
-print(payload["data"]["url"], payload["data"]["duration_ms"], "ms")`;
-}
-
-export function buildQueryCurl(state: PlaygroundState): string {
-  return `curl -G ${API_BASE}/v1/screenshot \\
-  -H "Authorization: Bearer $SCREENSHOTAPI_API_KEY" \\
-  --data-urlencode "url=${state.url}"${state.format === "png" ? "" : ` \\
-  --data-urlencode "format=${state.format}"`}`;
+try:
+    with urlopen(request, timeout=90) as response:
+        payload = json.load(response)
+        field = "poll_url" if response.status == 202 else "cdn_url"
+        print(payload["data"][field])
+except HTTPError as error:
+    print(json.load(error)["error"])`;
 }
 
 export function buildMcpConfig(): string {

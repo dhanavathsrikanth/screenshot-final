@@ -12,6 +12,6 @@ API keys are created and revoked through the dashboard and stored in Postgres as
 - `GET /v1/jobs/:id` polls a job and returns its result envelope when complete. Keys need `jobs:read`.
 - `GET /v1/health` reports Redis, Neon database, worker, and queue readiness.
 
-Requests use `Authorization: Bearer sf_live_...`. Rate limits default to 60 requests per key per minute, and each key can have five queued or running captures. Rate-limited responses include `Retry-After`.
+Requests use `Authorization: Bearer sf_live_...`. Rate limits default to 60 requests per key per minute. An account shares a default capacity of five queued or running captures across all its keys and the console. Rate-limited responses include `Retry-After`.
 
 Error responses use `{ "ok": false, "request_id": "...", "error": { "code", "message", "retriable", "request_id" } }`.

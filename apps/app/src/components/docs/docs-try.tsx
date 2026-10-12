@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useAuth } from "@clerk/nextjs";
-import { CAPTURE_FORMATS, type CaptureFormat } from "@screenshotapi/contracts";
+import { CAPTURE_FORMATS, captureCreditCost, type CaptureFormat } from "@screenshotapi/contracts";
 import { createContext, useContext, useEffect, useId, useRef, useState } from "react";
 import { Icon } from "@/components/icons";
 import { PdfPreview } from "../pdf-preview";
@@ -103,6 +103,7 @@ export function DocsTryProvider({ children }: { children: React.ReactNode }) {
   const responseError = docResponseError(response?.body);
   const activeJob = pendingDocJob(response?.body);
   const isCapture = example?.operation === "capture";
+  const creditCost = captureCreditCost({ format, full_page: example?.body?.full_page === true });
   const needsKey = !isCapture && authentication === "api-key" && example?.operation !== "health";
   const canSend = isLoaded && ((!isCapture && authentication === "api-key") || isSignedIn) && (!needsKey || apiKey.trim().length > 0) && (!info.handle || handle.trim().length > 0) && (example?.operation !== "redeliver" || etag.length > 0) && (!isCapture || website.trim().length > 0);
   const endpoint = info.endpoint.replace("{id}", handle || "{id}").replace("{key}", handle || "{key}");
@@ -140,14 +141,14 @@ export function DocsTryProvider({ children }: { children: React.ReactNode }) {
               <pre className={styles.liveJson} tabIndex={0}><code>{printableDocResponse(response.body)}</code></pre>
             </div>
             {activeJob && !busy && example?.operation === "capture" && <button type="button" className={styles.trySecondary} onClick={() => open({ operation: "job", title: "Check the accepted job" })}><Icon name="refresh" />Check job status</button>}
-          </> : <div className={styles.responseEmpty}><Icon name={busy ? "clock" : "play"} /><strong>{busy ? "Capturing website…" : "Your preview will appear here"}</strong>{busy && startedIn !== null && <p role="status">Request started in {startedIn.toLocaleString()} ms</p>}</div>}
+          </> : <div className={styles.responseEmpty}><Icon name={busy ? "clock" : "play"} /><strong>{busy ? (isCapture ? "Capturing website…" : "Sending request…") : "Your preview will appear here"}</strong>{busy && startedIn !== null && <p role="status">Request started in {startedIn.toLocaleString()} ms</p>}</div>}
         </div>
         {busy && responses.length > 0 && <p className={styles.tryProgress} role="status"><Icon name="clock" />Following the accepted job…</p>}
         {responseError && <div className={styles.tryError} role="alert"><Icon name="alert" /><p>{responseError}</p></div>}
         {error && <div className={styles.tryError} role="alert"><Icon name="alert" /><p>{error}</p></div>}
         <span className={styles.srOnly} role="status">{copied ? "Response copied" : ""}</span>
       </div>
-      <div className={styles.tryFooter}>{busy ? <><span>Capturing…</span><button type="button" className={styles.trySecondary} onClick={stop}>Stop waiting</button></> : <><span>{isCapture ? "1 credit on success" : "Live API request"}</span><button type="submit" form={`${id}-form`} disabled={!canSend} className={styles.trySend}><Icon name="play" />{info.label}</button></>}</div>
+      <div className={styles.tryFooter}>{busy ? <><span>{isCapture ? "Capturing…" : "Sending request…"}</span><button type="button" className={styles.trySecondary} onClick={stop}>Stop waiting</button></> : <><span>{isCapture ? creditCost + (creditCost === 1 ? " credit on success" : " credits on success") : "Live API request"}</span><button type="submit" form={`${id}-form`} disabled={!canSend} className={styles.trySend}><Icon name="play" />{info.label}</button></>}</div>
     </dialog>
   </TryContext.Provider>;
 }

@@ -19,7 +19,6 @@ import {
   buildCurl,
   buildMcpConfig,
   buildPython,
-  buildQueryCurl,
   buildTypeScript,
   DEFAULT_STATE,
   toCaptureOptions,
@@ -106,8 +105,6 @@ export function Playground({ localCapture = false }: { localCapture?: boolean })
         return buildMcpConfig();
     }
   }, [snippet, state]);
-
-  const queryCode = useMemo(() => buildQueryCurl(state), [state]);
 
   const watch = useCallback(async (jobId: string, controller: AbortController) => {
     const payload = await followCapture(jobId, { signal: controller.signal, onProgress: setResult });
@@ -489,16 +486,6 @@ export function Playground({ localCapture = false }: { localCapture?: boolean })
               onChange={setSnippet}
               code={code}
             />
-            {snippet === "curl" ? (
-              <div className="border-t border-line p-5">
-                <p className="mb-2 text-xs font-medium text-ink-3">
-                  Or as a signed GET
-                </p>
-                <pre className="overflow-x-auto rounded-md border border-line bg-canvas p-3 font-mono text-[11px] leading-relaxed text-ink-2">
-                  {queryCode}
-                </pre>
-              </div>
-            ) : null}
           </Card>
       </div>
     </div>
