@@ -102,10 +102,12 @@ export function PreviewPanel({ result, pending, device, url, localCapture = fals
 
   const preset = DEVICE_PRESETS[device];
   const isDevice = !!preset?.viewport.isMobile;
+  const isTablet = device.startsWith("ipad");
   const frameClass = device.startsWith("ipad") ? styles.tabletFrame : device.startsWith("iphone") ? styles.iphoneFrame : styles.androidFrame;
   const deviceStyle = preset ? {
     "--device-ratio": preset.viewport.width / preset.viewport.height,
-    "--device-width": `${preset.viewport.width + 22}px`,
+    "--device-width": `${preset.viewport.width + 20}px`,
+    "--frame-ratio": 1 / ((isTablet ? 0.92 : 0.96) * preset.viewport.height / preset.viewport.width + (isTablet ? 0.16 : 0.19)),
   } as CSSProperties : undefined;
   const content = <PreviewContent result={result} pending={pending} device={device} localCapture={localCapture} />;
 
@@ -130,6 +132,8 @@ export function PreviewPanel({ result, pending, device, url, localCapture = fals
           <div className={styles.deviceStage} style={deviceStyle}>
             <div className={`${styles.deviceFrame} ${frameClass}`} role="group" aria-label={`${preset.name} preview`}>
               <span className={styles.deviceButton} aria-hidden="true" />
+              <span className={styles.deviceVolume} aria-hidden="true" />
+              <div className={styles.deviceDisplay}>
               <div className={styles.deviceStatusBar} aria-hidden="true">
                 <span className={styles.deviceTime}>9:41</span>
                 <span className={styles.deviceIsland} />
@@ -137,6 +141,7 @@ export function PreviewPanel({ result, pending, device, url, localCapture = fals
               </div>
               <div className={styles.deviceScreen} aria-busy={pending || !!result?.pending}>{content}</div>
               <div className={styles.deviceHomeBar} aria-hidden="true"><span /></div>
+              </div>
             </div>
             <p className={styles.deviceCaption} title={displayedUrl}>{preset.name} · {domain}</p>
           </div>
