@@ -1,12 +1,14 @@
 import { Redis } from "ioredis";
 import { captureSubmissionCodecFromEnv, CaptureDispatcher, CaptureQueue, CaptureService, HotCache, RedisCaptureAdmission, createQueue, readyWorkerCount, resolveQueueConfig } from "@screenshotapi/queue";
 import { captureLifecycle, captureSubmissions, linkReservationToJob, recordCapture, reservationForJob, reserveCapture, settleCapture } from "@screenshotapi/database";
+import { createRemoteCaptureRuntime } from "./capture-remote-service.js";
 
 export function localCaptureEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
   return env.NODE_ENV !== "production" && (env.SCREENSHOTAPI_LOCAL_CAPTURE ?? env.SNAPFORGE_LOCAL_CAPTURE) === "1";
 }
 
 async function createRuntime() {
+  if (process.env.NODE_ENV === "production") return createRemoteCaptureRuntime();
   const submissionCodec = captureSubmissionCodecFromEnv();
   if (!(process.env.REDIS_URL?.trim() || process.env.UPSTASH_REDIS_URL?.trim())) throw new Error("Capture queue requires Redis TCP configuration");
   const config = resolveQueueConfig();

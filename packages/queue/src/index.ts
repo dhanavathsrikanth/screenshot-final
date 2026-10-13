@@ -15,4 +15,5 @@ export * from "./submission.js";
 export * from "./idempotency.js";
 export * from "./webhook-outbox.js";
 export * from "./hot-cache.js";
+export * from "./dashboard-transport.js";
 export { PLAN_CATALOG, allocateCaptureCredits, type PlanName } from "@screenshotapi/contracts";

@@ -4,7 +4,7 @@ import { randomBytes } from "node:crypto";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import type { Redis } from "ioredis";
-import { CaptureQueue, createCaptureSubmissionCodec, type CaptureDispatcher, type CaptureJobView, type CaptureJobPayload, type SealedCaptureSubmission } from "@screenshotapi/queue";
+import { CaptureQueue, createCaptureSubmissionCodec, signDashboardRequest, type CaptureDispatcher, type CaptureJobView, type CaptureJobPayload, type SealedCaptureSubmission } from "@screenshotapi/queue";
 import { createGateway, type GatewayDependencies } from "./gateway.js";
 
 function fixture(workers = 1, paused = false) {
@@ -51,6 +51,31 @@ function fixture(workers = 1, paused = false) {
 }
 
 const headers = { authorization: "Bearer sf_live_gateway_fixture_123456789", "content-type": "application/json" };
+
+test("signed dashboard requests preserve retries and account ownership without public Redis", async () => {
+  const f = durableMcpFixture();
+  const secret = "d".repeat(64);
+  f.deps.dashboardTransportSecret = secret;
+  const app = createGateway(f.deps);
+  const send = (input: Record<string, unknown>, tampered = false) => {
+    const body = JSON.stringify(input);
+    const timestamp = String(Date.now());
+    return app.request("/internal/dashboard", { method: "POST", body: tampered ? body.replace("user_test", "user_other") : body,
+      headers: { "content-type": "application/json", "x-dashboard-timestamp": timestamp,
+        "x-dashboard-signature": signDashboardRequest(secret, timestamp, body) } });
+  };
+  const input = { operation: "submit", account_id: "user_test", request_id: "dashboard-test", key: "dashboard-retry-key", options: { url: "https://example.com" } };
+  assert.equal((await app.request("/internal/dashboard", { method: "POST", body: JSON.stringify(input) })).status, 401);
+  assert.equal((await send(input, true)).status, 401);
+  const created = await send(input);
+  assert.equal(created.status, 200);
+  const id = (await created.json() as { data: { id: string } }).data.id;
+  assert.equal((await send(input)).status, 200);
+  assert.equal(f.jobs.size, 1);
+  assert.equal(f.calls.filter((value) => value === "durable-reserve").length, 1);
+  assert.equal((await send({ operation: "lookup", account_id: "user_other", request_id: "other", job_id: id })).status, 400);
+  assert.equal((await send({ operation: "lookup", account_id: "user_test", request_id: "owner", job_id: id })).status, 200);
+});
 
 test("OAuth discovery is public and verified clients use account billing and permissions", async () => {
   const f = durableMcpFixture();

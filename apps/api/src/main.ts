@@ -34,6 +34,7 @@ const webhooks = new WebhookDeliveryConsumer(webhookDeliveries, submissionCodec,
 webhooks.start();
 const app = createGateway({ redis: connection.producer, queue, dispatcher, submissionCodec, webhooks: webhookDeliveries,
   verifyOAuthToken: createOAuthVerifier(process.env.CLERK_SECRET_KEY),
+  dashboardTransportSecret: process.env.CAPTURE_INTENT_ENCRYPTION_KEY,
   webhookStats: () => webhooks.stats(), settlementStats: () => completion.stats(), readyWorkers: () => readyWorkerCount(connection.producer, config), database: {
   ...billing,
   ping: async () => { await pool.query("SELECT 1"); },

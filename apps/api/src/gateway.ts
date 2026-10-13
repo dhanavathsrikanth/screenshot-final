@@ -4,7 +4,8 @@ import { bodyLimit } from "hono/body-limit";
 import { handleMcpRequest } from "./mcp.js";
 import { MCP_RESOURCE, MCP_SCOPES, OAUTH_ISSUER } from "./oauth.js";
 import { ScreenshotAPIError, type ErrorCode } from "@screenshotapi/contracts";
-import { CaptureService, CaptureAdmissionError, HotCache, RedisCaptureAdmission, createRedisCaptureBilling, readCaptureRequest } from "@screenshotapi/queue";
+import { CaptureService, CaptureAdmissionError, HotCache, RedisCaptureAdmission, createRedisCaptureBilling, readCaptureRequest, verifyDashboardRequest } from "@screenshotapi/queue";
+import { z } from "zod";
 import type { CaptureBilling, CaptureDispatcher, CaptureQueue, CaptureSubmissionCodec, WebhookOutboxRepository } from "@screenshotapi/queue";
 import type { Redis } from "ioredis";
 
@@ -30,6 +31,7 @@ export interface GatewayDependencies {
   settlementStats?: () => Record<string, number>;
   webhookStats?: () => { delivered: number; failed: number; errors: number; active: boolean };
   verifyOAuthToken?: (token: string) => Promise<ApiKeyRecord | null>;
+  dashboardTransportSecret?: string;
   database?: CaptureBilling & {
     ping(): Promise<void>;
     findApiKeyByHash(keyHash: string): Promise<ApiKeyRecord | null>;
@@ -92,6 +94,33 @@ export function createGateway(deps: GatewayDependencies) {
     const response = await fetch(`${OAUTH_ISSUER}/.well-known/oauth-authorization-server`, { signal: AbortSignal.timeout(8000) });
     if (!response.ok) return Response.json({ error: "OAuth discovery unavailable" }, { status: 503 });
     return Response.json(await response.json(), { headers: { "cache-control": "no-store" } });
+  });
+
+  app.use("/internal/dashboard", bodyLimit({ maxSize: 262144 }));
+  app.post("/internal/dashboard", async (c) => {
+    const body = await c.req.text();
+    if (!verifyDashboardRequest(deps.dashboardTransportSecret, c.req.header("x-dashboard-timestamp"), c.req.header("x-dashboard-signature"), body)) {
+      fail("unauthorized", "Invalid dashboard request", c.var.requestId);
+    }
+    const parsed = z.object({
+      operation: z.enum(["submit", "lookup", "request"]),
+      account_id: z.string().regex(/^user_[A-Za-z0-9]+$/).max(100),
+      request_id: z.string().regex(/^[\w.-]{1,100}$/),
+      options: z.unknown().optional(),
+      key: z.string().min(1).max(128).optional(),
+      job_id: z.string().min(1).max(128).optional(),
+    }).strict().safeParse(JSON.parse(body));
+    if (!parsed.success) fail("invalid_request", "Invalid dashboard operation", c.var.requestId);
+    const input = parsed.data;
+    const identity = { accountId: input.account_id };
+    const snapshot = input.operation === "submit"
+      ? await service.submit(identity, input.options, input.request_id, "async", input.key ?? input.request_id)
+      : input.operation === "request" && input.key
+        ? await service.lookupRequest(identity, input.key, input.request_id)
+        : input.operation === "lookup" && input.job_id
+          ? await service.lookup(identity, input.job_id, input.request_id)
+          : fail("invalid_request", "Missing dashboard handle", c.var.requestId);
+    return c.json({ ok: true, data: snapshot });
   });
 
   app.use("*", async (c, next) => {
