@@ -38,7 +38,7 @@ export function Sidebar({ collapsed, onSearch, onToggle, onNavigate, onClose }: 
         ))}
       </div>
       <div className={styles.footer}>
-        <Link href="/docs" onClick={onNavigate} aria-label="Getting started" title={collapsed ? "Getting started" : undefined} className={styles.startCard}>
+        <Link href="https://docs.screenshotapi.tech/quickstart" onClick={onNavigate} aria-label="Getting started" title={collapsed ? "Getting started" : undefined} className={styles.startCard}>
           <span className={styles.startIcon}><Icon name="book" /></span>
           {!collapsed && <><span className={styles.startCopy}><strong>Getting started</strong><span>Build your first capture</span></span><Icon name="chevron" className="size-3 shrink-0" /></>}
         </Link>

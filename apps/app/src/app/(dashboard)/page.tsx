@@ -38,7 +38,7 @@ export default async function OverviewPage() {
         </Card>
         <Card><CardHeader title="Get started" description="Build a workflow that fits your application" /><div className="divide-y divide-line px-5">{STEPS.map((step) => <Link key={step.href} href={step.href} className="group flex items-start gap-3 py-5"><Icon name={step.icon} className="mt-0.5 size-4 shrink-0 text-ink-3 group-hover:text-accent-ink" /><div className="flex-1"><p className="text-[13px] font-medium text-ink">{step.title}</p><p className="mt-1 text-xs leading-relaxed text-ink-3">{step.body}</p></div><Icon name="chevron" className="mt-1 size-3 text-ink-3" /></Link>)}</div></Card>
       </div>
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-5 text-xs text-ink-3"><p>PNG, JPEG, WebP, or PDF. One workspace for every capture.</p><Link href="/docs" className="inline-flex items-center gap-1 text-ink-2 hover:text-accent-ink">Read the API documentation<Icon name="chevron" className="size-3" /></Link></div>
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-5 text-xs text-ink-3"><p>PNG, JPEG, WebP, or PDF. One workspace for every capture.</p><Link href="https://docs.screenshotapi.tech" className="inline-flex items-center gap-1 text-ink-2 hover:text-accent-ink">Read the API documentation<Icon name="chevron" className="size-3" /></Link></div>
     </div>
   );
 }

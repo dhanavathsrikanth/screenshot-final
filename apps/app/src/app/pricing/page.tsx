@@ -13,7 +13,7 @@ export default function PricingPage() {
       <div className="mx-auto max-w-6xl px-5 pb-12 sm:px-8">
         <nav aria-label="Main navigation" className="flex flex-wrap items-center justify-between gap-4 border-b border-line py-6">
           <Link href="/pricing" className="font-display text-xl font-semibold tracking-tight">ScreenshotAPI.</Link>
-          <div className="flex items-center gap-5 text-sm"><Link href="/docs" className="text-ink-2 hover:text-accent-ink">Documentation</Link><Link href="/billing" className="text-ink-2 hover:text-accent-ink">Your workspace</Link><Link href="/sign-up" className="rounded-md bg-accent px-4 py-2 font-medium text-n-0 hover:bg-accent-hover">Start free</Link></div>
+          <div className="flex items-center gap-5 text-sm"><Link href="https://docs.screenshotapi.tech" className="text-ink-2 hover:text-accent-ink">Documentation</Link><Link href="/billing" className="text-ink-2 hover:text-accent-ink">Your workspace</Link><Link href="/sign-up" className="rounded-md bg-accent px-4 py-2 font-medium text-n-0 hover:bg-accent-hover">Start free</Link></div>
         </nav>
         <header className="max-w-3xl py-12 sm:py-16">
           <p className="text-sm font-medium text-accent-ink">Screenshot API + capture playground</p>

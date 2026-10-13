@@ -74,6 +74,16 @@
     ]
   },
   "navbar": {
+    "links": [
+      {
+        "label": "Playground",
+        "href": "https://app.screenshotapi.tech/playground"
+      },
+      {
+        "label": "API keys",
+        "href": "https://app.screenshotapi.tech/api-keys"
+      }
+    ],
     "primary": {
       "type": "button",
       "label": "Dashboard",

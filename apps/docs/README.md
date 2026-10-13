@@ -52,7 +52,7 @@ The language samples in `examples/` are executable source; their guides display 
 
 ## Publish on a subdomain
 
-Proposed documentation address: `docs.screenshotapi.tech`. This is a deployment target, not a claim that DNS or hosting is already configured.
+Published documentation address: `https://docs.screenshotapi.tech`.
 
 1. Create or select the ScreenshotAPI project in Mintlify and connect the GitHub repository containing this site. Grant the GitHub app access to that repository.
 2. Choose the intended production branch. In Git Settings, enable the subdirectory setting and set the documentation path to `/apps/docs`, with no trailing slash.
@@ -63,7 +63,17 @@ Proposed documentation address: `docs.screenshotapi.tech`. This is a deployment 
 7. Wait for domain verification and automatic TLS provisioning. Check HTTPS and representative pages on the custom domain.
 8. Once live, update website/dashboard links and redirect each legacy documentation URL to the corresponding new page. Keep current links active until the new domain is verified.
 
-No Mintlify account, GitHub app installation, DNS record, production link, or legacy documentation route is changed by adding this directory.
+Mintlify deploys `main` from `dhanavathsrikanth/screenshot-final`, using `/apps/docs`. Cloudflare hosts the DNS-only `docs` CNAME pointing to `cname.mintlify.builders`, plus the Mintlify-provided hostname and certificate verification TXT records. Keep those verification records for certificate renewal.
+
+The dashboard's Documentation, Getting started, and agent connection links point to the published site. Its legacy `/docs` pages and `/llms.txt` redirect to the corresponding Mintlify pages. The landing page links directly to the documentation domain.
+
+## Publication verification on 2026-10-13
+
+- Mintlify production domain is connected and HTTPS is working.
+- The updated OAuth and inspection pages are published.
+- Contracts build, content validation (22 pages), Mintlify build validation, and broken-link checks passed.
+- The documentation home, quickstart, MCP, OAuth, inspection, capture endpoint, health endpoint, and `llms.txt` returned HTTP 200 without an unresolved API origin placeholder.
+- The dashboard production build passed with the documentation links and legacy route mappings.
 
 Official setup references:
 

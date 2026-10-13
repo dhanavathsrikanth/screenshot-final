@@ -26,7 +26,7 @@ export const NAV_GROUPS: NavGroup[] = [
     label: "Developer",
     items: [
       { href: "/api-keys", label: "API keys", icon: "key" },
-      { href: "/docs", label: "Documentation", icon: "book" },
+      { href: "https://docs.screenshotapi.tech", label: "Documentation", icon: "book" },
     ],
   },
   {

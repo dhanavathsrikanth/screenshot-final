@@ -141,7 +141,7 @@ export default function ApiKeysPage() {
             <Button variant="ghost" onClick={() => void navigator.clipboard.writeText("https://api.screenshotapi.tech/mcp").catch(() => setError("Select and copy the MCP URL manually."))}><Icon name="copy" className="size-4" /> Copy URL</Button>
           </div>
           <p className="text-xs text-ink-3">Captures and page inspection use your credits. Only approve clients you trust.</p>
-          <a className="text-accent-ink underline underline-offset-4" href="/docs/mcp">Connection guide</a>
+          <a className="text-accent-ink underline underline-offset-4" href="https://docs.screenshotapi.tech/agents/mcp">Connection guide</a>
         </div>
       </Card>
       <Card>

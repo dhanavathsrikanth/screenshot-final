@@ -7,6 +7,7 @@
     { "source": "/pricing", "destination": "/#pricing", "permanent": true },
     { "source": "/sign-in/:path*", "destination": "https://app.screenshotapi.tech/sign-in/:path*", "permanent": false },
     { "source": "/sign-up/:path*", "destination": "https://app.screenshotapi.tech/sign-up/:path*", "permanent": false },
+    { "source": "/docs", "destination": "https://docs.screenshotapi.tech", "permanent": false },
     { "source": "/docs/:path*", "destination": "https://app.screenshotapi.tech/docs/:path*", "permanent": false },
     { "source": "/playground", "destination": "https://app.screenshotapi.tech/playground", "permanent": false },
     { "source": "/billing", "destination": "https://app.screenshotapi.tech/billing", "permanent": false }
