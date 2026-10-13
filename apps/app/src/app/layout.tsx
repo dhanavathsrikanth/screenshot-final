@@ -1,13 +1,13 @@
 import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import { Inter } from "next/font/google";
 import { BRAND_NEUTRAL, BRAND_PRIMARY, BRAND_SURFACE_LIGHT } from "@screenshotapi/brand";
 import "./globals.css";
 
-const geist = localFont({
-  src: "./fonts/GeistSans.woff2",
-  weight: "100 900",
-  variable: "--font-geist-sans",
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
   display: "swap",
 });
 
@@ -31,7 +31,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" data-theme="light" className={`${geist.variable} ${geistMono.variable}`}>
+    <html lang="en" data-theme="light" className={`${inter.variable} ${geistMono.variable}`}>
       <body className="min-h-screen antialiased">
         <ClerkProvider
           appearance={{
@@ -46,8 +46,8 @@ export default function RootLayout({
               colorInputForeground: BRAND_NEUTRAL[900],
               colorRing: BRAND_PRIMARY[500],
               colorBorder: BRAND_SURFACE_LIGHT.border,
-              fontFamily: "var(--font-geist-sans), sans-serif",
-              fontFamilyButtons: "var(--font-geist-sans), sans-serif",
+              fontFamily: "var(--font-inter), sans-serif",
+              fontFamilyButtons: "var(--font-inter), sans-serif",
               borderRadius: "0.625rem",
             },
             elements: {
