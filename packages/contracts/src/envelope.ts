@@ -28,6 +28,12 @@ export const captureSuccessDataSchema = z.object({
   region: z.string().optional(),
   egress_country: z.string().optional(),
   render_diagnostics: renderDiagnosticsSchema.optional(),
+  inspection: z.object({
+    markdown: z.string().max(12000),
+    accessible_tree: z.string().max(12000),
+    untrusted_content: z.literal(true),
+    character_limit: z.literal(12000),
+  }).optional(),
 });
 
 export type CaptureSuccessData = z.infer<typeof captureSuccessDataSchema>;

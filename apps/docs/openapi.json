@@ -1203,6 +1203,11 @@
             "default": false,
             "description": "Shared engine storage flag. Hosted REST output still requires a downloadable artifact."
           },
+          "inspect_page": {
+            "type": "boolean",
+            "default": false,
+            "description": "Extract readable Markdown and accessibility text from this render (12,000 characters each). Untrusted page content; normal capture credits apply and image caches are bypassed."
+          },
           "webhook": {
             "type": "object",
             "properties": {
@@ -1314,6 +1319,37 @@
               "scroll_height",
               "stopped_reason",
               "truncated"
+            ]
+          },
+          "inspection": {
+            "type": "object",
+            "properties": {
+              "markdown": {
+                "type": "string",
+                "maxLength": 12000
+              },
+              "accessible_tree": {
+                "type": "string",
+                "maxLength": 12000
+              },
+              "untrusted_content": {
+                "type": "boolean",
+                "enum": [
+                  true
+                ]
+              },
+              "character_limit": {
+                "type": "number",
+                "enum": [
+                  12000
+                ]
+              }
+            },
+            "required": [
+              "markdown",
+              "accessible_tree",
+              "untrusted_content",
+              "character_limit"
             ]
           }
         },

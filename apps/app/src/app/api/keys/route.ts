@@ -31,7 +31,10 @@ export async function POST(request: Request) {
   const scopes: (typeof KEY_SCOPES)[number][] = Array.isArray(body.scopes)
     ? body.scopes.filter((scope): scope is (typeof KEY_SCOPES)[number] => typeof scope === "string" && (KEY_SCOPES as readonly string[]).includes(scope))
     : (previous?.scopes ?? []).filter((scope): scope is (typeof KEY_SCOPES)[number] => (KEY_SCOPES as readonly string[]).includes(scope));
-  const selectedScopes = scopes.length ? [...new Set(scopes)] : [...KEY_SCOPES];
+  if (!scopes.length || (Array.isArray(body.scopes) && scopes.length !== body.scopes.length)) {
+    return Response.json({ error: "Select at least one valid permission" }, { status: 400 });
+  }
+  const selectedScopes = [...new Set(scopes)];
   const secret = `sf_live_${randomBytes(24).toString("base64url")}`;
   let key;
   const keyInput = {

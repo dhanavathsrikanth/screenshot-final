@@ -241,6 +241,7 @@ export class ScreenshotAPIEngine {
       throw toScreenshotAPIError(parsed.error, requestId);
     }
     const options = parsed.data;
+    mode = { ...mode, inspectPage: mode.inspectPage || options.inspect_page };
     if (!this.config.allowPrivateNetwork) {
       await timer.measure("network_policy", async () => {
         await assertPublicUrl(options.url, requestId);

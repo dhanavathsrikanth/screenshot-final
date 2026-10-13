@@ -2,6 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { handleMcpRequest } from "./mcp.js";
+import { MCP_RESOURCE, MCP_SCOPES, OAUTH_ISSUER } from "./oauth.js";
 import { ScreenshotAPIError, type ErrorCode } from "@screenshotapi/contracts";
 import { CaptureService, CaptureAdmissionError, HotCache, RedisCaptureAdmission, createRedisCaptureBilling, readCaptureRequest } from "@screenshotapi/queue";
 import type { CaptureBilling, CaptureDispatcher, CaptureQueue, CaptureSubmissionCodec, WebhookOutboxRepository } from "@screenshotapi/queue";
@@ -28,6 +29,7 @@ export interface GatewayDependencies {
   readyWorkers?: () => Promise<number>;
   settlementStats?: () => Record<string, number>;
   webhookStats?: () => { delivered: number; failed: number; errors: number; active: boolean };
+  verifyOAuthToken?: (token: string) => Promise<ApiKeyRecord | null>;
   database?: CaptureBilling & {
     ping(): Promise<void>;
     findApiKeyByHash(keyHash: string): Promise<ApiKeyRecord | null>;
@@ -81,9 +83,29 @@ export function createGateway(deps: GatewayDependencies) {
     }
   });
 
+  const metadata = { resource: MCP_RESOURCE, authorization_servers: [OAUTH_ISSUER],
+    scopes_supported: MCP_SCOPES, bearer_methods_supported: ["header"],
+    resource_name: "ScreenshotAPI", resource_documentation: "https://app.screenshotapi.tech/docs/mcp" };
+  app.get("/.well-known/oauth-protected-resource", (c) => c.json(metadata));
+  app.get("/.well-known/oauth-protected-resource/mcp", (c) => c.json(metadata));
+  app.get("/.well-known/oauth-authorization-server", async () => {
+    const response = await fetch(`${OAUTH_ISSUER}/.well-known/oauth-authorization-server`, { signal: AbortSignal.timeout(8000) });
+    if (!response.ok) return Response.json({ error: "OAuth discovery unavailable" }, { status: 503 });
+    return Response.json(await response.json(), { headers: { "cache-control": "no-store" } });
+  });
+
   app.use("*", async (c, next) => {
     if (!c.req.path.startsWith("/v1/") && c.req.path !== "/mcp") return next();
     const requestId = c.get("requestId");
+    c.header("www-authenticate", `Bearer resource_metadata="https://api.screenshotapi.tech/.well-known/oauth-protected-resource/mcp", scope="${MCP_SCOPES.join(" ")}"`);
+    const bearer = /^Bearer ([^\s]+)$/.exec(c.req.header("authorization") ?? "");
+    if (bearer && !bearer[1].startsWith("sf_live_") && deps.verifyOAuthToken) {
+      const record = await deps.verifyOAuthToken(bearer[1]);
+      if (!record?.active || !record.billing_account_id) fail("unauthorized", "OAuth access token is invalid, expired, revoked, or intended for another resource", requestId);
+      c.set("apiKey", record);
+      await next();
+      return;
+    }
     const match = /^Bearer (sf_live_[A-Za-z0-9_-]{20,})$/.exec(c.req.header("authorization") ?? "");
     if (!match) fail("unauthorized", "A valid Bearer API key is required", requestId);
     const digest = createHash("sha256").update(match[1]).digest("hex");

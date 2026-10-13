@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Badge, Button, Card, CardHeader, EmptyState, Input, Label, PageHeader } from "@/components/ui";
 import { Icon } from "@/components/icons";
 import { formatRelative } from "@/lib/format";
@@ -33,6 +33,14 @@ export default function ApiKeysPage() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState("active");
+  const [copied, setCopied] = useState(false);
+  const [confirmation, setConfirmation] = useState<{ key: PublicKey; action: "rotate" | "revoke" } | null>(null);
+  const dialog = useRef<HTMLDialogElement>(null);
+  const activeKeys = keys.filter((key) => !key.revoked_at);
+  const visibleKeys = keys.filter((key) => (filter === "all" || (filter === "active" ? !key.revoked_at : Boolean(key.revoked_at))) &&
+    `${key.name} ${key.prefix}`.toLowerCase().includes(query.toLowerCase()));
 
   const load = useCallback(async () => {
     try {
@@ -41,7 +49,7 @@ export default function ApiKeysPage() {
       const payload = (await response.json()) as { keys: PublicKey[]; scopes: string[] };
       setKeys(payload.keys);
       setScopes(payload.scopes);
-      setSelected((previous) => previous.length === 0 ? payload.scopes : previous.filter((scope) => payload.scopes.includes(scope)));
+      setSelected((previous) => previous.length === 0 ? ["screenshot:write", "jobs:read"] : previous.filter((scope) => payload.scopes.includes(scope)));
     } catch (error) { setError(error instanceof Error ? error.message : "Could not load API keys."); }
     finally { setLoading(false); }
   }, []);
@@ -50,6 +58,13 @@ export default function ApiKeysPage() {
     const timer = setTimeout(() => void load(), 0);
     return () => clearTimeout(timer);
   }, [load]);
+
+  useEffect(() => {
+    if (!confirmation) return;
+    const element = dialog.current;
+    element?.showModal();
+    return () => element?.close();
+  }, [confirmation]);
 
   const create = async () => {
     if (await issueKey({ name, scopes: selected })) setName("");
@@ -70,6 +85,7 @@ export default function ApiKeysPage() {
         return false;
       }
       setIssued(payload.key.secret);
+      setCopied(false);
       await load();
       return true;
     } catch (error) {
@@ -81,7 +97,7 @@ export default function ApiKeysPage() {
   };
 
   const rotate = async (key: PublicKey) => {
-    await issueKey({ name: key.name, scopes: key.scopes, rotate_id: key.id });
+    return issueKey({ name: key.name, scopes: key.scopes, rotate_id: key.id });
   };
 
   const revoke = async (id: string) => {
@@ -90,13 +106,14 @@ export default function ApiKeysPage() {
       const response = await fetch(`/api/keys?id=${encodeURIComponent(id)}`, { method: "DELETE" });
       if (!response.ok) throw new Error("The API key could not be revoked. Please try again.");
       await load();
-    } catch (error) { setError(error instanceof Error ? error.message : "Could not revoke key."); }
+      return true;
+    } catch (error) { setError(error instanceof Error ? error.message : "Could not revoke key."); return false; }
     finally { setBusy(false); }
   };
 
   const copyIssued = async () => {
     if (!issued) return;
-    try { await navigator.clipboard.writeText(issued); setIssued(null); }
+    try { await navigator.clipboard.writeText(issued); setCopied(true); }
     catch { setError("Could not access the clipboard. Select and copy the key before closing this page."); }
   };
 
@@ -111,28 +128,39 @@ export default function ApiKeysPage() {
       <PageHeader
         eyebrow="Access control"
         title="API keys"
-        description="Keys authenticate every request to the capture API. Store them in your secret manager — the secret is shown once, at creation."
+        description="Connect your code or your AI assistant. Give each integration its own access, and stop it whenever you need."
       />
 
+      <div className="grid gap-4 md:grid-cols-2">
       <Card>
-        <CardHeader title="Connect your AI agent" description="Let your agent capture pages through your ScreenshotAPI account." />
+        <CardHeader title="Connect with sign-in" description="For AI clients that support MCP OAuth" />
         <div className="space-y-4 p-5 text-sm text-ink-2">
-          <ol className="list-decimal space-y-2 pl-5">
-            <li>Create a dedicated agent key below. It allows captures and job tracking.</li>
-            <li>In an MCP client that supports HTTP and custom headers, add <code className="text-accent-ink">https://api.screenshotapi.tech/mcp</code>.</li>
-            <li>Add the header <code className="text-accent-ink">Authorization: Bearer YOUR_AGENT_KEY</code>, then reconnect your agent.</li>
-          </ol>
-          <p>Agent captures use your plan credits and limits. Revoke its dedicated key here to stop access. Share the key only with the trusted client connection settings.</p>
+          <p>Add this remote MCP URL in your AI client. Choose OAuth, sign in to ScreenshotAPI, and review the permissions before allowing access.</p>
+          <div className="flex flex-wrap items-center gap-2 rounded-lg border border-line bg-canvas p-3">
+            <code className="min-w-0 flex-1 break-all text-xs text-accent-ink">https://api.screenshotapi.tech/mcp</code>
+            <Button variant="ghost" onClick={() => void navigator.clipboard.writeText("https://api.screenshotapi.tech/mcp").catch(() => setError("Select and copy the MCP URL manually."))}><Icon name="copy" className="size-4" /> Copy URL</Button>
+          </div>
+          <p className="text-xs text-ink-3">Captures and page inspection use your credits. Only approve clients you trust.</p>
+          <a className="text-accent-ink underline underline-offset-4" href="/docs/mcp">Connection guide</a>
+        </div>
+      </Card>
+      <Card>
+        <CardHeader title="Connect with an API key" description="For code, automations, and clients with custom headers" />
+        <div className="space-y-4 p-5 text-sm text-ink-2">
+          <p>Create a dedicated key and add it to your integration’s secret settings. For MCP, send <code className="text-accent-ink">Authorization: Bearer YOUR_AGENT_KEY</code>.</p>
+          <p className="text-xs text-ink-3">Agent keys can create captures and read their jobs. Revoke one below to stop its access.</p>
           <Button disabled={busy || loading} onClick={() => void issueKey({ name: "AI agent", scopes: ["screenshot:write", "jobs:read"] })}>
             <Icon name="key" className="size-4" /> Create agent key
           </Button>
-          <a className="ml-4 text-accent-ink underline underline-offset-4" href="/docs/mcp">Connection guide</a>
         </div>
       </Card>
+      </div>
+
+      {error ? <div role="alert" className="rounded-lg border border-bad/30 bg-bad/10 p-4 text-sm text-bad-ink">{error}</div> : null}
 
       {issued ? (
         <Card className="border-accent/50 p-5">
-          <div className="flex items-start gap-3">
+          <div className="flex flex-wrap items-start gap-3">
             <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md bg-ok/15 text-ok-ink">
               <Icon name="key" className="size-4" />
             </span>
@@ -145,12 +173,13 @@ export default function ApiKeysPage() {
             </div>
             <Button
               variant="ghost"
-              aria-label="Copy API key and close"
+              aria-label="Copy API key"
               onClick={() => void copyIssued()}
             >
               <Icon name="copy" className="size-4" />
-              Copy &amp; close
+              {copied ? "Copied" : "Copy key"}
             </Button>
+            <Button variant="ghost" onClick={() => setIssued(null)}>Done</Button>
             <Button variant="ghost" onClick={() => void navigator.clipboard.writeText(JSON.stringify({
               mcpServers: { screenshotapi: { url: "https://api.screenshotapi.tech/mcp", headers: { Authorization: `Bearer ${issued}` } } },
             }, null, 2)).catch(() => setError("Could not copy MCP settings. Copy the key and configure the connection manually."))}>
@@ -162,16 +191,22 @@ export default function ApiKeysPage() {
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
         <Card>
-          <CardHeader title="Keys" description={loading ? "Loading your keys…" : `${keys.length} key${keys.length === 1 ? "" : "s"}`} />
-          {keys.length === 0 ? (
+          <CardHeader title="Your integrations" description={loading ? "Loading your keys…" : `${activeKeys.length} active · ${keys.length - activeKeys.length} revoked`} />
+          <div className="flex flex-wrap gap-3 border-b border-line p-4">
+            <Input aria-label="Search keys" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search by name or prefix" className="min-w-0 flex-1" />
+            <select aria-label="Key status" value={filter} onChange={(event) => setFilter(event.target.value)} className="rounded-md border border-line bg-canvas px-3 text-sm text-ink">
+              <option value="active">Active</option><option value="revoked">Revoked</option><option value="all">All keys</option>
+            </select>
+          </div>
+          {visibleKeys.length === 0 ? (
             <EmptyState
               icon="key"
-              title={loading ? "Loading API keys" : "No API keys yet"}
-              description="Create a scoped key to authenticate requests. Secrets are shown once and stored as hashes."
+              title={loading ? "Loading API keys" : keys.length ? "No matching keys" : "Connect your first integration"}
+              description={keys.length ? "Try another name or change the status filter." : "Create a key with capture and job permissions to get started. You’ll see the secret once."}
             />
           ) : (
             <ul className="divide-y divide-line">
-              {keys.map((key) => (
+              {visibleKeys.map((key) => (
                 <li key={key.id} className="flex flex-wrap items-center gap-4 px-5 py-4">
                   <span className="flex size-8 shrink-0 items-center justify-center rounded-md border border-line bg-raised text-ink-2">
                     <Icon name="key" className="size-4" />
@@ -179,7 +214,7 @@ export default function ApiKeysPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <p className="truncate text-sm text-ink">{key.name}</p>
-                      {key.revoked_at ? <Badge tone="danger">revoked</Badge> : null}
+                      <Badge tone={key.revoked_at ? "danger" : "neutral"}>{key.revoked_at ? "Revoked" : "Active"}</Badge>
                     </div>
                     <p className="mt-0.5 break-words font-mono text-xs text-ink-3">
                       {key.prefix}•••• • created {formatRelative(key.created_at)} •{" "}
@@ -195,11 +230,11 @@ export default function ApiKeysPage() {
                   </div>
                   {key.revoked_at ? null : (
                     <div className="flex items-center gap-2">
-                      <Button variant="ghost" disabled={busy} onClick={() => void rotate(key)}>
+                      <Button variant="ghost" disabled={busy} onClick={() => setConfirmation({ key, action: "rotate" })}>
                         <Icon name="refresh" className="size-4" />
                         Rotate
                       </Button>
-                      <Button variant="danger" disabled={busy} onClick={() => void revoke(key.id)}>
+                      <Button variant="danger" disabled={busy} onClick={() => setConfirmation({ key, action: "revoke" })}>
                         <Icon name="trash" className="size-4" />
                         Revoke
                       </Button>
@@ -212,19 +247,24 @@ export default function ApiKeysPage() {
         </Card>
 
         <Card className="h-fit">
-          <CardHeader title="Create key" description="Pick the narrowest scope set" />
-          <div className="space-y-4 p-5">
+          <CardHeader title="Create key" description="One key for each integration" />
+          <form className="space-y-4 p-5" onSubmit={(event) => { event.preventDefault(); if (!busy && selected.length && name.trim().length >= 2) void create(); }}>
             <div className="space-y-1.5">
               <Label htmlFor="key-name">Label</Label>
               <Input
                 id="key-name"
                 value={name}
                 placeholder="Production worker"
+                maxLength={80}
                 onChange={(event) => setName(event.target.value)}
               />
             </div>
             <div className="space-y-2">
               <Label>Scopes</Label>
+              <div className="flex flex-wrap gap-2">
+                <Button type="button" variant="ghost" onClick={() => setSelected(["screenshot:write", "jobs:read"])}>Capture &amp; inspect</Button>
+                <Button type="button" variant="ghost" onClick={() => setSelected(["jobs:read"])}>Read jobs only</Button>
+              </div>
               {scopes.map((scope) => (
                 <label
                   key={scope}
@@ -243,19 +283,30 @@ export default function ApiKeysPage() {
                 </label>
               ))}
             </div>
-            {error ? <p role="alert" className="text-xs text-bad-ink">{error}</p> : null}
             <Button
+              type="submit"
               variant="primary"
               className="w-full"
               disabled={busy || loading || !selected.length || name.trim().length < 2}
-              onClick={() => void create()}
             >
               <Icon name="key" className="size-4" />
               {busy ? "Creating…" : "Create key"}
             </Button>
-          </div>
+            <p className="text-xs leading-relaxed text-ink-3">Keep keys on your server or in a secret manager. Never include them in browser code or public repositories.</p>
+          </form>
         </Card>
       </div>
+      {confirmation ? (
+          <dialog ref={dialog} onCancel={(event) => { if (busy) event.preventDefault(); else setConfirmation(null); }} aria-labelledby="key-confirm-title" aria-describedby="key-confirm-description" className="m-auto w-[calc(100%_-_2rem)] max-w-md rounded-xl border border-line bg-raised p-6 shadow-xl backdrop:bg-canvas/90">
+            <h2 id="key-confirm-title" className="text-lg font-medium text-ink">{confirmation.action === "rotate" ? "Replace" : "Revoke"} {confirmation.key.name}?</h2>
+            <p id="key-confirm-description" className="mt-3 text-sm leading-relaxed text-ink-2">{confirmation.action === "rotate" ? "The current key stops working immediately. Copy the new secret and update your integration to restore access." : "This integration will lose access. You can create a new key later, but this key cannot be restored."}</p>
+            <div className="mt-6 flex justify-end gap-3">
+              <Button autoFocus variant="ghost" disabled={busy} onClick={() => setConfirmation(null)}>Cancel</Button>
+              <Button variant="danger" disabled={busy} onClick={() => void (confirmation.action === "rotate" ? rotate(confirmation.key) : revoke(confirmation.key.id)).then((success) => { if (success) setConfirmation(null); })}>{busy ? "Updating…" : confirmation.action === "rotate" ? "Replace key" : "Revoke key"}</Button>
+            </div>
+            {error ? <p role="alert" className="mt-3 text-sm text-bad-ink">{error}</p> : null}
+          </dialog>
+      ) : null}
     </div>
   );
 }

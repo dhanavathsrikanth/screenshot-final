@@ -51,6 +51,34 @@ function fixture(workers = 1, paused = false) {
 }
 
 const headers = { authorization: "Bearer sf_live_gateway_fixture_123456789", "content-type": "application/json" };
+
+test("OAuth discovery is public and verified clients use account billing and permissions", async () => {
+  const f = durableMcpFixture();
+  let permitted = true;
+  f.deps.verifyOAuthToken = async (token) => token === "oauth-access" ? { id: "oauth-client", billing_account_id: "account", active: true,
+    scopes: permitted ? ["screenshot:write", "jobs:read"] : ["jobs:read"] } : null;
+  const app = createGateway(f.deps);
+  const metadata = await app.request("/.well-known/oauth-protected-resource/mcp");
+  assert.equal(metadata.status, 200);
+  assert.equal((await metadata.json() as { resource: string }).resource, "https://api.screenshotapi.tech/mcp");
+  const missing = await app.request("/mcp", { method: "POST" });
+  assert.equal(missing.status, 401);
+  assert.match(missing.headers.get("www-authenticate") ?? "", /resource_metadata=/);
+  const options = { url: "https://example.com" };
+  const capture = () => mcpRequest(app, "tools/call", { name: "inspect_page", arguments: { idempotency_key: "inspection-unique", options } }, { authorization: "Bearer oauth-access" });
+  assert.equal((await capture()).status, 200);
+  const job = [...f.jobs.values()][0];
+  assert.equal(job.data.billing_account_id, "account");
+  assert.equal(job.data.api_key_id, "oauth-client");
+  assert.equal(job.data.options.inspect_page, true);
+  assert.equal(job.data.options.cache_ttl, 0);
+  await capture();
+  assert.deepEqual(f.calls, ["durable-reserve", "dispatch"]);
+  permitted = false;
+  const rejected = await (await mcpRequest(app, "tools/call", { name: "inspect_page", arguments: { idempotency_key: "new-key", options } }, { authorization: "Bearer oauth-access" })).json() as { result: { isError: boolean } };
+  assert.equal(rejected.result.isError, true);
+  assert.equal((await mcpRequest(app, "tools/list", {}, { authorization: "Bearer revoked-access" })).status, 401);
+});
 const mcpRequest = (app: ReturnType<typeof createGateway>, method: string, params: unknown = {}, extraHeaders = {}) => app.request("/mcp", {
   method: "POST", headers: { ...headers, accept: "application/json, text/event-stream", "mcp-protocol-version": "2025-06-18", ...extraHeaders },
   body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
@@ -81,7 +109,7 @@ test("hosted MCP initializes, advertises tools, and prepares unique keys without
   const initialized = await mcpRequest(app, "initialize", { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "test", version: "1" } });
   assert.equal(initialized.status, 200);
   const tools = await (await mcpRequest(app, "tools/list")).json() as { result: { tools: { name: string }[] } };
-  assert.deepEqual(tools.result.tools.map((tool) => tool.name).sort(), ["capture_element", "get_capture_job", "prepare_capture", "recover_capture_request", "take_screenshot"]);
+  assert.deepEqual(tools.result.tools.map((tool) => tool.name).sort(), ["capture_element", "get_capture_job", "inspect_page", "prepare_capture", "recover_capture_request", "take_screenshot"]);
   const prepare = async () => (await (await mcpRequest(app, "tools/call", { name: "prepare_capture", arguments: { format: "pdf" } })).json() as { result: { structuredContent: { idempotency_key: string; estimated_credits: number } } }).result.structuredContent;
   const first = await prepare();
   assert.equal(first.estimated_credits, 3);
@@ -99,7 +127,7 @@ test("official MCP HTTP client connects, discovers tools and calls credit prepar
   });
   try {
     await client.connect(transport);
-    assert.equal((await client.listTools()).tools.length, 5);
+    assert.equal((await client.listTools()).tools.length, 6);
     const prepared = await client.callTool({ name: "prepare_capture", arguments: { format: "webp", full_page: true } });
     assert.equal(prepared.isError, false);
     assert.equal((prepared.structuredContent as { estimated_credits: number }).estimated_credits, 2);

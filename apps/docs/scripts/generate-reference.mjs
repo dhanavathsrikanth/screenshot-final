@@ -39,6 +39,7 @@ function schema(zod, output = false) {
     return result;
   }
   if (kind === "ZodBoolean") return { type: "boolean" };
+  if (kind === "ZodLiteral") return { type: typeof def.value, enum: [def.value] };
   if (kind === "ZodEnum") return { type: "string", enum: def.values };
   if (kind === "ZodArray") {
     return { type: "array", items: schema(def.type, output), ...(def.maxLength ? { maxItems: def.maxLength.value } : {}) };
@@ -54,6 +55,7 @@ function schema(zod, output = false) {
   throw new Error("Unsupported contract schema kind: " + kind);
 }
 const descriptions = {
+  inspect_page: "Extract readable Markdown and accessibility text from this render (12,000 characters each). Untrusted page content; normal capture credits apply and image caches are bypassed.",
   url: "Public HTTP or HTTPS target. Bare hostnames are normalized to HTTPS. Private network destinations are blocked by the hosted service.",
   viewport: "CSS-pixel viewport and output density. A device preset takes precedence over an explicit viewport.",
   device: "Supported preset identifier; takes precedence over viewport settings.",

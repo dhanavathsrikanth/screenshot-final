@@ -1,6 +1,7 @@
 import { serve } from "@hono/node-server";
 import { WebhookDeliveryConsumer, captureSubmissionCodecFromEnv, createQueue, createQueueConnection, createQueueEvents, createQueueEventsWaiter, CaptureCompletionConsumer, RedisCaptureAdmission, CaptureDispatcher, CaptureQueue, HotCache, resolveQueueConfig, readyWorkerCount } from "@screenshotapi/queue";
 import { createGateway } from "./gateway.js";
+import { createOAuthVerifier } from "./oauth.js";
 import { webhookDeliveries, captureLifecycle, captureSubmissions, findApiKeyByHash, linkReservationToJob, pool, recordCapture, reservationForJob, reserveCapture, settleCapture } from "@screenshotapi/database";
 
 const config = resolveQueueConfig();
@@ -32,6 +33,7 @@ try {
 const webhooks = new WebhookDeliveryConsumer(webhookDeliveries, submissionCodec, { logger: (message, fields) => console.info(message, fields) });
 webhooks.start();
 const app = createGateway({ redis: connection.producer, queue, dispatcher, submissionCodec, webhooks: webhookDeliveries,
+  verifyOAuthToken: createOAuthVerifier(process.env.CLERK_SECRET_KEY),
   webhookStats: () => webhooks.stats(), settlementStats: () => completion.stats(), readyWorkers: () => readyWorkerCount(connection.producer, config), database: {
   ...billing,
   ping: async () => { await pool.query("SELECT 1"); },

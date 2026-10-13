@@ -41,6 +41,7 @@ export class HotCache {
    * Synchronous: callers on the dispatch hot path do not pay an event-loop turn.
    */
   get(options: CaptureOptions): CaptureSuccessData | undefined {
+    if (options.inspect_page) return undefined;
     const ttlMs = HotCache.resolveTtlMs(options);
     if (ttlMs === 0) return undefined;
     return this.lru.get(cacheKey(options));
@@ -51,6 +52,7 @@ export class HotCache {
    * entirely so a request that asked not to be cached never ends up in memory.
    */
   set(options: CaptureOptions, data: CaptureSuccessData): void {
+    if (options.inspect_page) return;
     const ttlMs = HotCache.resolveTtlMs(options);
     if (ttlMs === 0) return;
     const ttl = this.defaultTtlMs > 0 ? Math.min(ttlMs, this.defaultTtlMs) : ttlMs;

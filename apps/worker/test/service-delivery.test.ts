@@ -70,12 +70,19 @@ test("shared service delivers real PNG and PDF browser output through artifact l
     },
   });
   for (const format of ["png", "pdf"] as const) {
-    const snapshot = await service.submit({ accountId: "fixture-account" }, {
-      url: base, format, cache_ttl: 0, store: true, timeout: 10_000,
+    let snapshot = await service.submit({ accountId: "fixture-account" }, {
+      url: base, format, cache_ttl: 0, store: true, inspect_page: true, timeout: 30_000,
       viewport: { width: 320, height: 240 }, fail_if_content_missing: ["Capture delivery test"],
     }, `request-${format}`, "sync");
+    const deadline = Date.now() + 30_000;
+    while (snapshot.state !== "completed" && snapshot.state !== "failed" && Date.now() < deadline) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      snapshot = await service.lookup({ accountId: "fixture-account" }, snapshot.id, `poll-${format}`);
+    }
     assert.equal(snapshot.state, "completed");
     const data = snapshot.result?.data;
+    assert.match(data?.inspection?.markdown ?? "", /Capture delivery test/);
+    assert.match(data?.inspection?.accessible_tree ?? "", /Capture delivery test/);
     assert.ok(data?.cdn_url);
     assert.equal(data.data_url, undefined);
     const response = await fetch(data.cdn_url);
@@ -84,8 +91,8 @@ test("shared service delivers real PNG and PDF browser output through artifact l
     assert.equal(bytes.length, data.bytes);
     if (format === "png") {
       assert.deepEqual(bytes.subarray(0, 8), Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
-      assert.equal(bytes.readUInt32BE(16), 320);
-      assert.equal(bytes.readUInt32BE(20), 240);
+      assert.equal(bytes.readUInt32BE(16), 640);
+      assert.equal(bytes.readUInt32BE(20), 480);
     } else {
       assert.equal(response.headers.get("content-type"), "application/pdf");
       assert.equal(bytes.subarray(0, 5).toString(), "%PDF-");

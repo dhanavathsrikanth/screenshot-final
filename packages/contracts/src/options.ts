@@ -140,6 +140,7 @@ export const captureOptionsSchema = z.object({
   sync: z.boolean().default(true),
   cache_ttl: z.number().int().min(0).default(3600),
   store: z.boolean().default(false),
+  inspect_page: z.boolean().default(false),
 });
 
 export type CaptureOptions = z.infer<typeof captureOptionsSchema>;

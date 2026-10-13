@@ -27,7 +27,7 @@ export function createWorkerExecutor(deps: {
 
     let outcome: CaptureOutcome;
     try {
-      outcome = await deps.engine.capture(options);
+      outcome = await deps.engine.capture(options, { inspectPage: options.inspect_page });
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error);
       log("warn", "worker job failed at engine", {
@@ -67,6 +67,11 @@ export function createWorkerExecutor(deps: {
       cached: stored.cached,
     });
 
-    return { data: stored };
+    return { data: { ...stored, ...(options.inspect_page ? { inspection: {
+      markdown: (outcome.inspection?.markdown ?? "").slice(0, 12000),
+      accessible_tree: (outcome.inspection?.accessibleTree ?? "").slice(0, 12000),
+      untrusted_content: true as const,
+      character_limit: 12000 as const,
+    } } : {}) } };
   };
 }
