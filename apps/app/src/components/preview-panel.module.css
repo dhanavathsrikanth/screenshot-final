@@ -3,7 +3,7 @@
 }
 .panel { min-width: 0; }
 .previewTitle { margin-right: auto; color: var(--sf-text-primary); font-size: 14px; font-weight: 500; }
-.previewArea { height: max(240px, calc(100dvh - 240px)); overflow: auto; overscroll-behavior: contain; }
+.previewArea { height: max(240px, calc(100dvh - 240px)); overflow: auto; overscroll-behavior: contain; container-type: size; }
 .previewArea > section { min-height: 100%; }
 .captureScroll { max-height: max(200px, calc(100dvh - 282px)); overflow: auto; overscroll-behavior: contain; }
 .emptyScreen { min-height: max(198px, calc(100dvh - 282px)); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; color: var(--sf-text-muted); background: var(--sf-bg-canvas); font-size: 13px; }
@@ -82,13 +82,17 @@
 .deviceFrame {
   position: relative;
   box-sizing: border-box;
-  width: calc(100% + 22px);
-  margin-inline: -11px;
+  display: grid;
+  grid-template-rows: 30px minmax(0, 1fr) 20px;
+  width: min(var(--device-width), calc(100cqw - 40px), calc((100cqh - 136px) * var(--device-ratio) + 22px));
   padding: 10px;
   border: 1px solid var(--sf-color-neutral-900);
   background: linear-gradient(145deg, var(--sf-color-neutral-800), var(--sf-color-neutral-950) 38%);
   box-shadow: 0 18px 42px color-mix(in srgb, var(--sf-color-neutral-950) 28%, transparent), inset 0 0 0 1px color-mix(in srgb, var(--sf-color-neutral-50) 8%, transparent);
 }
+
+.deviceStage { display: flex; width: 100%; height: 100%; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 12px 20px; }
+.deviceCaption { max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: var(--sf-text-muted); font-size: 11px; }
 
 .iphoneFrame,
 .androidFrame {
@@ -102,12 +106,12 @@
 
 .deviceScreen {
   position: relative;
-  max-height: min(680px, calc(100vh - 280px));
-  min-height: 280px;
+  min-height: 0;
+  aspect-ratio: var(--device-ratio);
   overflow: auto;
   overscroll-behavior: contain;
   border-radius: 32px;
-  background: var(--sf-color-neutral-900);
+  background: var(--sf-bg-canvas);
   scrollbar-color: var(--sf-color-neutral-700) transparent;
   scrollbar-width: thin;
 }
@@ -216,6 +220,10 @@
   height: 50px;
 }
 
+.tabletFrame .deviceScreen { border-radius: 14px; }
+.deviceScreen .stageMessage { padding: 16px; font-size: 12px; }
+.deviceScreen .stageMessage p { font-size: 12px; }
+
 .androidFrame .deviceIsland {
   width: 9px;
   height: 9px;
@@ -235,9 +243,8 @@
 
 @media (max-width: 520px) {
   .deviceFrame {
-    width: calc(100% + 16px);
-    margin-inline: -8px;
     padding: 7px;
+    grid-template-rows: 26px minmax(0, 1fr) 17px;
   }
 
   .iphoneFrame,

@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import { Icon } from "./icons";
-import { IPhone17ProMax } from "./apple-iphone-17-pro";
 import { PdfPreview } from "./pdf-preview";
 import styles from "./preview-panel.module.css";
 import { Badge, Button } from "./ui";
@@ -68,16 +67,6 @@ function PreviewContent({
   const isPdf = metrics.format === "pdf";
   const deviceScaleFactor = isPdf ? 1 : metrics.render_diagnostics?.device_scale_factor ?? 1;
   const previewWidth = metrics.width / deviceScaleFactor;
-  const preset = DEVICE_PRESETS[device];
-  const isIphone17ProMax = device === "iphone_17_pro_max";
-  const deviceFrame = !preset?.viewport.isMobile || isIphone17ProMax
-    ? null
-    : device.startsWith("iphone")
-      ? "iphoneFrame"
-      : device.startsWith("ipad") || preset.viewport.width >= 700
-        ? "tabletFrame"
-        : "androidFrame";
-
   const renderedImage = image ? (
     isPdf ? (
       <PdfPreview src={image} width={previewWidth} />
@@ -87,34 +76,8 @@ function PreviewContent({
   ) : null;
 
   return (
-    <div className="mx-auto w-full max-w-full" style={{ width: previewWidth }}>
-      <div className={styles.preview}>
-        {isIphone17ProMax ? (
-          <IPhone17ProMax>
-            {renderedImage}
-          </IPhone17ProMax>
-        ) : deviceFrame ? (
-          <div className={`${styles.deviceFrame} ${styles[deviceFrame]}`}>
-            <span className={styles.deviceButton} aria-hidden="true" />
-            <div className={styles.deviceStatusBar} aria-hidden="true">
-              <span className={styles.deviceTime}>9:41</span>
-              <span className={styles.deviceIsland} />
-              <span className={styles.deviceIndicators}>
-                <span className={styles.signal} />
-                <span className={styles.battery} />
-              </span>
-            </div>
-            <div className={styles.deviceScreen}>
-              {renderedImage}
-            </div>
-            <div className={styles.deviceHomeBar} aria-hidden="true">
-              <span />
-            </div>
-          </div>
-        ) : (
-          <div className="sf-checkerboard w-full">{renderedImage}</div>
-        )}
-      </div>
+    <div className="mx-auto w-full max-w-full" style={{ width: DEVICE_PRESETS[device]?.viewport.isMobile ? "100%" : previewWidth }}>
+      {renderedImage}
     </div>
   );
 }
@@ -137,6 +100,15 @@ export function PreviewPanel({ result, pending, device, url, localCapture = fals
   let domain = "New capture";
   try { domain = new URL(/^https?:\/\//i.test(displayedUrl) ? displayedUrl : `https://${displayedUrl}`).hostname; } catch {}
 
+  const preset = DEVICE_PRESETS[device];
+  const isDevice = !!preset?.viewport.isMobile;
+  const frameClass = device.startsWith("ipad") ? styles.tabletFrame : device.startsWith("iphone") ? styles.iphoneFrame : styles.androidFrame;
+  const deviceStyle = preset ? {
+    "--device-ratio": preset.viewport.width / preset.viewport.height,
+    "--device-width": `${preset.viewport.width + 22}px`,
+  } as CSSProperties : undefined;
+  const content = <PreviewContent result={result} pending={pending} device={device} localCapture={localCapture} />;
+
   return (
     <section className={styles.panel} aria-label="Capture preview">
       <div className={styles.actions}>
@@ -154,15 +126,31 @@ export function PreviewPanel({ result, pending, device, url, localCapture = fals
         <Button variant="primary" onClick={onCapture} disabled={pending}><Icon name="play" className="size-4" />{pending ? "Capturing…" : `Capture · ${creditCost} ${creditCost === 1 ? "credit" : "credits"}`}</Button>
       </div>
       <div className={styles.previewArea}>
+        {isDevice ? (
+          <div className={styles.deviceStage} style={deviceStyle}>
+            <div className={`${styles.deviceFrame} ${frameClass}`} role="group" aria-label={`${preset.name} preview`}>
+              <span className={styles.deviceButton} aria-hidden="true" />
+              <div className={styles.deviceStatusBar} aria-hidden="true">
+                <span className={styles.deviceTime}>9:41</span>
+                <span className={styles.deviceIsland} />
+                <span className={styles.deviceIndicators}><span className={styles.signal} /><span className={styles.battery} /></span>
+              </div>
+              <div className={styles.deviceScreen} aria-busy={pending || !!result?.pending}>{content}</div>
+              <div className={styles.deviceHomeBar} aria-hidden="true"><span /></div>
+            </div>
+            <p className={styles.deviceCaption} title={displayedUrl}>{preset.name} · {domain}</p>
+          </div>
+        ) : (
         <div className={styles.browserWindow}>
           <div className={styles.browserBar}>
             <span className={styles.windowControls} aria-hidden="true"><span className={styles.closeDot} /><span className={styles.minimizeDot} /><span className={styles.maximizeDot} /></span>
             <span className={styles.browserTab} title={displayedUrl || domain}><Icon name="device" className="size-3 shrink-0" /><span>{domain}</span></span>
           </div>
           <div className={styles.browserScreen} aria-busy={pending || !!result?.pending}>
-            <PreviewContent result={result} pending={pending} device={device} localCapture={localCapture} />
+            {content}
           </div>
         </div>
+        )}
       </div>
     </section>
   );
