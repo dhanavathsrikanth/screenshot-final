@@ -1,7 +1,7 @@
 import { Redis } from "ioredis";
 import { captureSubmissionCodecFromEnv, CaptureDispatcher, CaptureQueue, CaptureService, HotCache, RedisCaptureAdmission, createQueue, readyWorkerCount, resolveQueueConfig } from "@screenshotapi/queue";
 import { captureLifecycle, captureSubmissions, linkReservationToJob, recordCapture, reservationForJob, reserveCapture, settleCapture } from "@screenshotapi/database";
-import { createRemoteCaptureRuntime } from "./capture-remote-service.js";
+import { createRemoteCaptureRuntime } from "@/lib/capture-remote-service";
 
 export function localCaptureEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
   return env.NODE_ENV !== "production" && (env.SCREENSHOTAPI_LOCAL_CAPTURE ?? env.SNAPFORGE_LOCAL_CAPTURE) === "1";
