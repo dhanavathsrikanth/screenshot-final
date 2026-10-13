@@ -24,7 +24,7 @@ The CLI scripts use `pnpm dlx mint@4.2.1006`, so the first run needs network acc
 - Start building: product overview, first capture, credentials, and response semantics.
 - Capture controls: viewport/device sizing, full-page algorithms, image/PDF differences, readiness checks, DOM controls, and localization.
 - Reliable integration: asynchronous jobs, idempotent recovery, signed webhooks, credits/caching/limits, and executable Node.js/Python examples.
-- AI agents: the private local stdio MCP implementation and its actual tools.
+- AI agents: hosted Streamable HTTP MCP, six tools, OAuth client requirements, and API-key connections.
 - Contract reference: generated device presets, errors, and the six public route paths with seven operations, plus outbound webhook payloads.
 
 The public content intentionally avoids unverified production latency claims, unpublished SDK install commands, guaranteed bot bypass, and managed proxy promises. API host, plan availability, purchased limits, and artifact retention must be confirmed against the deployment.
@@ -42,7 +42,9 @@ The public content intentionally avoids unverified production latency claims, un
 | Job snapshots | `packages/queue/src/types.ts`, `outcome.ts` |
 | Webhook signatures, payload, delivery | `packages/queue/src/webhook.ts`, `webhook-outbox.ts` |
 | PDF paths and viewport precedence | `packages/engine/src/formats.ts`, `tiles.ts`, `context.ts` |
-| MCP transport, tools, package availability | `packages/mcp/src/main.ts`, `index.ts`, `package.json` |
+| Hosted MCP transport and tools | `apps/api/src/mcp.ts`, `gateway.ts` |
+| OAuth resource, token checks, scopes | `apps/api/src/oauth.ts`, `gateway.ts` |
+| Hosted page inspection | `apps/worker/src/executor.ts`, `packages/engine/src/engine.ts` |
 
 Contract refinement rules that cannot be represented automatically, such as public destination policies and HTTPS webhook constraints, are described in prose. Review gateway changes against the manually described operation behavior. Never convert a roadmap checkbox into a capability claim without checking its code and deployment status.
 

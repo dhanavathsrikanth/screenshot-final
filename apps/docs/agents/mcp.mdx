@@ -11,6 +11,8 @@ For a remote MCP client with OAuth support, add `https://api.screenshotapi.tech/
 
 The client must support authorization-code flow with S256 PKCE and send `resource=https://api.screenshotapi.tech/mcp` when authorizing and exchanging a code. Tokens for another resource are rejected. Request `screenshot:write jobs:read`; Clerk handles consent, expiration, and refresh. Compatible clients onboard through CIMD. Legacy dynamic registration is disabled; clients without CIMD support need a separately registered OAuth application.
 
+See [agent OAuth sign-in](/agents/oauth) for discovery addresses, client requirements, ownership rules, and troubleshooting.
+
 ## Connect with an API key
 
 1. Sign in to the [API keys page](https://app.screenshotapi.tech/api-keys) and choose **Create agent key**.

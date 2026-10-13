@@ -26,6 +26,8 @@ Use the same API key to submit, recover, and inspect a job. Job lookups are chec
 
 ## Store keys safely
 
+Create and label keys in the [API keys console](https://app.screenshotapi.tech/api-keys). Choose the capture-and-job permissions for a rendering integration, or job-read permission for a status-only integration. Copy a new secret before closing its reveal panel: the console does not reveal it again.
+
 Store your key in a server environment variable or secret manager. Call ScreenshotAPI from your backend. Do not place the key in frontend bundles, browser storage, URLs, or source control.
 
 Use separately labeled keys for individual integrations so you can revoke or rotate one without disrupting the others. When rotating a key, finish or reconcile its in-flight jobs before switching job lookups to the new key.
@@ -35,3 +37,7 @@ Use separately labeled keys for individual integrations so you can revoke or rot
 `401 unauthorized` means the header is missing or malformed, or the key is invalid or revoked. `403 forbidden` means a valid key lacks a required scope. Correct the credential or scope before retrying.
 
 An optional `X-Request-ID` header lets you supply a trace identifier containing 1–100 letters, digits, underscores, dots, or hyphens. The response echoes the effective identifier in `x-request-id`. It is for tracing; use [Idempotency-Key](/integration/idempotency) to prevent duplicate submissions.
+
+## Agents without API-key headers
+
+The [hosted MCP endpoint](/agents/mcp) also supports [OAuth sign-in](/agents/oauth). A compatible client asks the user to sign in and approve scoped account access. Keep API keys for your server integrations; use the agent connection guide when your client supports OAuth discovery.

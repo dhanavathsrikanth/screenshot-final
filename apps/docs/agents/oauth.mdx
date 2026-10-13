@@ -1,0 +1,48 @@
+---
+title: "Agent OAuth sign-in"
+description: "Connect compatible remote MCP clients through user consent without copying an API key."
+---
+
+Use OAuth when a remote MCP client supports browser sign-in and cannot configure custom authorization headers. The user signs in to ScreenshotAPI and reviews access before the client can act on their account.
+
+## Connect a compatible client
+
+1. Add `https://api.screenshotapi.tech/mcp` as a remote Streamable HTTP MCP server.
+2. Choose OAuth authentication in your client.
+3. Follow its browser sign-in and confirm that the client identity is the one you intended to connect.
+4. Review and approve the requested capture and job permissions.
+5. Ask the agent to estimate a capture first, then submit and track it.
+
+OAuth access uses the signed-in account's credits and limits. Consent does not create free or unlimited usage.
+
+## Client requirements
+
+| Setting | Required value or behavior |
+| --- | --- |
+| Protected resource | `https://api.screenshotapi.tech/mcp` |
+| Resource metadata | `https://api.screenshotapi.tech/.well-known/oauth-protected-resource/mcp` |
+| Authorization server | `https://clerk.app.screenshotapi.tech` |
+| Grant | Authorization code with S256 PKCE. |
+| Capture scope | `screenshot:write` |
+| Job scope | `jobs:read` |
+| Resource parameter | Send the protected resource when authorizing and exchanging the code. |
+| Client onboarding | CIMD, or a separately registered OAuth application. |
+
+The authorization server publishes its endpoints at `https://clerk.app.screenshotapi.tech/.well-known/oauth-authorization-server`. Use discovery instead of hardcoding authorization and token endpoint paths. Let the client's OAuth library manage state, PKCE, token storage, expiration, and refresh.
+
+Legacy dynamic client registration is disabled. A client that requires DCR and cannot use CIMD needs a separately registered application; otherwise use the [custom-header API-key connection](/agents/mcp).
+
+## Authorization and ownership
+
+The API checks token validity, revocation, expiration, resource audience, and the required scope. Tokens issued for another resource are rejected. Capture and job access stays tied to the signed-in account and OAuth client. A different client does not automatically gain access to another client's jobs.
+
+Store tokens in your client's credential store, outside prompts, source files, and browser application code. Disconnecting a local client alone might only remove its saved connection; revoke its granted access to stop a compromised token.
+
+## Troubleshoot sign-in
+
+- **Registration is unsupported:** check CIMD support or use a registered client. DCR is not enabled.
+- **`401 unauthorized`:** reconnect or refresh using the client. Check the resource parameter, token expiration, and revocation.
+- **`403 forbidden`:** reconnect with the required scope and review the user's consent.
+- **Insufficient credits:** use the [billing console](https://app.screenshotapi.tech/billing) to upgrade or top up.
+
+The production service publishes OAuth discovery and enforces token checks. Client compatibility varies; test your chosen client's consent and refresh flow before depending on unattended execution.

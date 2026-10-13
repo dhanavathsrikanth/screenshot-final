@@ -30,7 +30,8 @@
               "capture/formats",
               "capture/readiness",
               "capture/page-controls",
-              "capture/localization"
+              "capture/localization",
+              "capture/inspection"
             ]
           },
           {
@@ -47,7 +48,8 @@
           {
             "group": "AI agents",
             "pages": [
-              "agents/mcp"
+              "agents/mcp",
+              "agents/oauth"
             ]
           },
           {

@@ -30,6 +30,7 @@ With a job lookup, HTTP `200` and outer `ok: true` mean the job was retrieved. I
 | `blocked_requests` | Count of requests blocked during rendering. |
 | `region`, `egress_country` | Optional region and observed egress metadata. |
 | `render_diagnostics` | Optional algorithm, section count, scale, stopping reason, and truncation metadata. |
+| `inspection` | Optional readable Markdown and accessibility text when `inspect_page: true` was requested. |
 
 `data_url` is optional in the shared engine contract. Hosted REST integrations should use `cdn_url`; do not rely on embedded base64 output.
 

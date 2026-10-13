@@ -20,7 +20,7 @@ You choose the viewport, output format, page readiness rules, and content contro
 | --- | --- |
 | REST API | Your application needs hosted rendering, job tracking, and account billing. |
 | [Node.js](/integration/node) or [Python](/integration/python) | You want a complete example using standard HTTP libraries. |
-| [Local MCP server](/agents/mcp) | An AI client needs local screenshot and page-inspection tools. |
+| [Hosted MCP](/agents/mcp) | An AI agent needs authorized captures and page inspection using OAuth or an API key. |
 
 The hosted REST API base URL is `https://api.screenshotapi.tech`. The examples include this address directly; only `SCREENSHOTAPI_API_KEY` needs your private value. The documentation domain is a separate site and does not accept capture requests.
 
@@ -33,3 +33,5 @@ The hosted REST API base URL is `https://api.screenshotapi.tech`. The examples i
 - Public API captures require public network destinations. Target access restrictions and bot challenges can still prevent a capture.
 
 Continue with the [quickstart](/quickstart), then add [idempotency](/integration/idempotency) and [webhooks](/integration/webhooks) when your workflow needs reliable background execution.
+
+For AI workflows, connect the [hosted MCP service](/agents/mcp) or request [page text with your capture](/capture/inspection). You can grant a dedicated integration only the permissions it needs.

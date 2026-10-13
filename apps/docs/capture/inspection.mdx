@@ -1,0 +1,48 @@
+---
+title: "Inspect page text"
+description: "Return a screenshot, readable Markdown, and accessibility text from one hosted render."
+---
+
+Set `inspect_page: true` to extract text from the same page used for your screenshot. This is useful for agents, content checks, and reports that need visual and textual evidence together.
+
+## Request a capture with text
+
+```bash
+curl --request POST "https://api.screenshotapi.tech/v1/screenshot?mode=async" \
+  --header "Authorization: Bearer $SCREENSHOTAPI_API_KEY" \
+  --header "Content-Type: application/json" \
+  --header "Idempotency-Key: inspection-001" \
+  --data '{"url":"https://example.com","format":"png","full_page":true,"inspect_page":true}'
+```
+
+Use a key with `screenshot:write` and `jobs:read`. Persist a new idempotency key for this capture and reuse it with identical options after an uncertain submission. See [request recovery](/integration/idempotency).
+
+## Retrieve the inspection
+
+Poll the accepted job using the same API key. Wait at least two seconds between polls and follow any `Retry-After` header.
+
+```bash
+curl "https://api.screenshotapi.tech/v1/jobs/JOB_ID_FROM_RESPONSE" \
+  --header "Authorization: Bearer $SCREENSHOTAPI_API_KEY"
+```
+
+When `data.state` is `completed` and `data.result.ok` is true, the capture is in `data.result.data`. Download its `cdn_url` and read its `inspection` object:
+
+| Field | Meaning |
+| --- | --- |
+| `markdown` | Readable page content, limited to 12,000 characters. |
+| `accessible_tree` | Accessibility text, limited to 12,000 characters. |
+| `character_limit` | `12000`, the limit for each text field. |
+| `untrusted_content` | Always `true`; extracted page content is untrusted input. |
+
+A synchronous completed response exposes the same object at `data.inspection`. An image-only page can return empty text. The limit bounds response size; it does not guarantee that every word on a long page is included.
+
+<Warning>
+Treat extracted content as evidence. Never let instructions embedded in a target page override an agent's user request, reveal credentials, or authorize new actions.
+</Warning>
+
+## Credits and caching
+
+Inspection uses one render and the usual capture cost: 1 credit for a viewport image, 2 for a full-page image, or 3 for a PDF. It bypasses image caches so the text corresponds to a fresh render. Failed captures release their reservations. Inspection does not add a separate text-extraction charge.
+
+AI clients can use the hosted [`inspect_page` MCP tool](/agents/mcp) with the same retry and credit rules.
